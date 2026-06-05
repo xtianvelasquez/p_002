@@ -1,4 +1,4 @@
-# P_002: One Calenday Appointment System
+# One Calenday Appointment System
 
 ## Description
 
@@ -8,82 +8,78 @@ The system incorporates a registration and authentication process to enable user
 
 **Features:**
 - **User Interface:** Built with HTML, CSS, and Bootstrap v5.3 for a responsive, minimalist, and interactive design.
-- **Backend:** Powered by PHP for handling booking logic and data management.
-- **Development Environment:** XAMPP and Visual Studio Code for PHP development.
-- **Database Management:** HeidiSQL for database management and administration.
+- **Backend:** Decoupled Modular MVC framework written in PHP with a custom URL Router.
+- **Database:** PostgreSQL for robust and secure data handling using PDO prepared statements.
 
-## Table of Contents
+---
 
-1. [Installation](#installation)
-2. [Functionalities](#functionalities)
-3. [Limitation](#limitation)
-4. [Project Structure](#project-structure)
-5. [Author](#author)
-6. [Acknowledgements](#acknowledgements)
-
-## Installation
+## Installation & Setup
 
 To set up the One Calenday system on your local machine, follow these steps:
 
-1. **Clone the Repository:**
-   ```bash
-   git clone https://github.com/xtianvelasquez/p_002.git
-   ```
+### 1. Clone the Repository:
+```bash
+git clone https://github.com/xtianvelasquez/p_002.git
+cd p_002
+```
 
-2. **Navigate to the Project Directory:**
-   ```bash
-   cd p_002
-   ```
+### 2. Configure the Database Connection:
+Ensure PostgreSQL is running on port `5433` (or update it in `config/config.php` to your local port). The database credentials are configured in [config/config.php](file:///c:/p_002/config/config.php):
+```php
+return [
+    'host' => 'localhost',
+    'port' => '5433', // PostgreSQL port
+    'dbname' => 'calenday',
+    'user' => 'postgres',
+    'password' => 'admin123'
+];
+```
 
-3. **Set Up XAMPP:**
-   - Ensure that XAMPP is installed and running on your local machine.
-   - Copy the project files into the `htdocs` directory of your XAMPP installation.
+### 3. Create and Import the PostgreSQL Database:
+1. Create a database named `calenday` in your PostgreSQL instance.
+2. Import the [p_002_postgres.sql](file:///c:/p_002/p_002_postgres.sql) schema and data dump file.
+   - Using command line:
+     ```bash
+     psql -h localhost -p 5433 -U postgres -d calenday -f p_002_postgres.sql
+     ```
+   - Alternatively, copy-paste the SQL contents from `p_002_postgres.sql` and run them inside pgAdmin, DBeaver, or your database management utility.
 
-4. **Import the Database:**
-   - Open HeidiSQL and create a new database for the project.
-   - Import the `.sql` file included in the project directory to set up the database schema.
+### 4. Start the Local Server:
+Navigate to the `public` directory and start a local PHP development server:
+```powershell
+cd public
+php -S localhost:8000
+```
 
-5. **Configure the Database Connection:**
-   - Update the database connection settings in the `config.php` file to match your local database credentials.
+### 5. Access the Application:
+Open a web browser and navigate to `http://localhost:8000` to view the application.
 
-6. **Start XAMPP:**
-   - Ensure Apache and MySQL services are running in XAMPP.
+---
 
-7. **Access the Application:**
-   - Open a web browser and navigate to `http://localhost/index.php` to view the application.
-
-## Functionalities:
+## Functionalities
 
 1. **Signup and Login**
-- Users must create an account to access the system's features. Once registered, users can log in to their panel to view and manage their appointments.
+   - Users must create an account to access the system's features. Once registered, users can log in to their panel to view and manage their appointments.
 
 2. **Appointment Booking**
-- Users can search for another user's account and schedule an appointment by selecting a preferred date and specifying the time of appointment in the search bar in the navigation.
-- The received bar in the navigation bar displays all booked appointments, including details such as the name of the user who booked the appointment, the date, event name or description, the location, and many more that is relevant to the person who made the appointment.
-- Users can view the appointments they have requested with other users in the "Sent" panel, with the option to delete those appointments.
+   - Users can search for another user's account and schedule an appointment by selecting a preferred date and specifying the time of appointment in the search bar.
+   - The received bar displays all booked appointments, including details such as the name of the user who booked the appointment, the date, event name/description, and location.
+   - Users can view the appointments they have requested with other users in the "Sent" panel, with the option to delete those appointments.
 
-3 **Appointment Management**
-- The system includes an action button within the appointment details, allowing users to view detailed information about the person booking the appointment, edit the appointment status (approved, denied, canceled), or delete the appointment.
+3. **Appointment Management**
+   - An action button within the appointment details allows users to view detailed info, edit the appointment status (approved, denied, canceled), or delete the appointment.
 
-## Limitation:
+---
 
-- The system only supports one-day schedules for specific times, which is why it's called "One Calenday." The functionality allows users to determine whether a date and time are already booked, but other users can still book the same day. Users have the freedom to cancel or deny appointments based on their schedules.
+## Limitations
+
+- The system only supports one-day schedules for specific times. The functionality allows users to determine whether a date and time are already booked, but other users can still book the same day. Users can cancel or deny appointments based on their schedules.
+
+---
 
 ## Project Structure
 
-- **`/bootstrap`**: Downloaded Bootstrap v5.3 files.
-- **`/images`**: Includes the system's logo.
-- **`/uploads`**: The path for the user's profile picture.
-- **`/sql`**: Contains the `.sql` file for database setup.
-
-## Author
-
-- [@xtianvelasquez](https://github.com/xtianvelasquez)
-
-## Acknowledgements
-
-- **Bootstrap v5.3**: For styling and responsive design.
-- **PHP**: For backend development.
-- **XAMPP**: For local server setup.
-- **HeidiSQL**: For database management.
-- **Visual Studio Code**: For development.
+- **`/core`**: Router, Database interface, Base Controller, and Model.
+- **`/config`**: Configuration settings (e.g. database credentials).
+- **`/modules`**: Separated domain modules (**Auth**, **User**, **Appointment**).
+- **`/public`**: Application entry point (`index.php`), Bootstrap resources, images, and user profile picture uploads.
