@@ -99,8 +99,60 @@ class AppointmentModel extends BaseModel {
         return ($row && (int)$row['total'] > 0);
     }
 
+    public function getBookedSlots($receiverId, $date) {
+        $stmt = $this->db->prepare("
+            SELECT appointment_time 
+            FROM appointment_details 
+            WHERE receiver_id = ? AND appointment_date = ? AND appointment_status IN ('approved', 'pending')
+        ");
+        $stmt->execute([$receiverId, $date]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+    }
+
+    public function generateAvailableSlots($receiverId, $date) {
+        $user = $this->getUserDetails($receiverId);
+        if (!$user) {
+            return [];
+        }
+
+        $startTimeStr = !empty($user['work_start_time']) ? $user['work_start_time'] : '09:00';
+        $endTimeStr = !empty($user['work_end_time']) ? $user['work_end_time'] : '17:00';
+        $intervalMinutes = !empty($user['slot_duration_minutes']) ? (int)$user['slot_duration_minutes'] : 30;
+
+        $bookedTimes = $this->getBookedSlots($receiverId, $date);
+
+        $startTimestamp = strtotime($date . ' ' . $startTimeStr);
+        $endTimestamp = strtotime($date . ' ' . $endTimeStr);
+        $currentTimestamp = time();
+
+        $slots = [];
+        $step = max(15, $intervalMinutes) * 60;
+
+        for ($t = $startTimestamp; $t < $endTimestamp; $t += $step) {
+            $timeFormatted = date('H:i', $t);
+            $timeDisplay = date('g:i A', $t);
+            $isBooked = in_array($timeFormatted, $bookedTimes, true);
+            $isPast = ($t < $currentTimestamp);
+
+            $slots[] = [
+                'time' => $timeFormatted,
+                'display' => $timeDisplay,
+                'available' => (!$isBooked && !$isPast),
+                'reason' => $isBooked ? 'Booked' : ($isPast ? 'Past' : 'Available')
+            ];
+        }
+
+        return $slots;
+    }
+
     public function getUserDetails($userId) {
-        $stmt = $this->db->prepare("SELECT first_name, last_name, contact_number, email_address, profile_picture FROM user_account WHERE user_id = ? LIMIT 1");
+        $stmt = $this->db->prepare("
+            SELECT user_id, first_name, middle_name, last_name, search_name, contact_number, email_address, profile_picture,
+                   work_start_time, work_end_time, slot_duration_minutes 
+            FROM user_account 
+            WHERE user_id = ? 
+            LIMIT 1
+        ");
         $stmt->execute([$userId]);
         return $stmt->fetch();
     }

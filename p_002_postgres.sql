@@ -7,16 +7,19 @@ DROP TABLE IF EXISTS user_account CASCADE;
 -- Table structure for table user_account
 --
 CREATE TABLE user_account (
-  user_id varchar(20) NOT NULL,
+  user_id varchar(50) NOT NULL,
   first_name varchar(100) NOT NULL,
   middle_name varchar(100) DEFAULT NULL,
   last_name varchar(100) NOT NULL,
   search_name varchar(200) NOT NULL,
-  contact_number varchar(10) NOT NULL,
+  contact_number varchar(25) NOT NULL,
   email_address varchar(100) NOT NULL,
   user_password varchar(200) NOT NULL,
   profile_picture text NOT NULL,
   last_update date DEFAULT NULL,
+  work_start_time varchar(10) DEFAULT '09:00',
+  work_end_time varchar(10) DEFAULT '17:00',
+  slot_duration_minutes int DEFAULT 30,
   PRIMARY KEY (user_id)
 );
 
@@ -36,8 +39,8 @@ INSERT INTO user_account (user_id, first_name, middle_name, last_name, search_na
 --
 CREATE TABLE appointment_details (
   appointment_id varchar(60) NOT NULL,
-  receiver_id varchar(20) NOT NULL,
-  sender_id varchar(20) NOT NULL,
+  receiver_id varchar(50) NOT NULL,
+  sender_id varchar(50) NOT NULL,
   appointment_date date NOT NULL,
   appointment_time varchar(50) NOT NULL DEFAULT '',
   event_name varchar(100) NOT NULL,

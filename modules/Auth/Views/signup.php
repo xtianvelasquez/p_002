@@ -25,7 +25,7 @@
                 <label for="contactNumber" class="form-label text-secondary small fw-semibold">Contact Number</label>
                 <div class="input-group">
                   <span class="input-group-text rounded-0">+63</span>
-                  <input type="text" name="contactNumber" id="contactNumber" pattern="\d{10}" minlength="10" maxlength="10" placeholder="9123456789" class="form-control rounded-0" required>
+                  <input type="text" name="contactNumber" id="contactNumber" pattern="\d{10,11}" minlength="10" maxlength="11" placeholder="9123456789" class="form-control rounded-0" required>
                 </div>
               </div>
               <div class="col-12">
@@ -37,8 +37,8 @@
                 <input type="password" name="password" id="password" minlength="6" class="form-control rounded-0" required>
               </div>
               <div class="col-12">
-                <label for="profilePicture" class="form-label text-secondary small fw-semibold">Profile Picture (JPG/PNG, max 10MB)</label>
-                <input type="file" name="profilePicture" id="profilePicture" accept="image/png, image/jpeg" class="form-control rounded-0" required>
+                <label for="profilePicture" class="form-label text-secondary small fw-semibold">Profile Picture (Optional, PNG/JPG max 10MB)</label>
+                <input type="file" name="profilePicture" id="profilePicture" accept="image/png, image/jpeg" class="form-control rounded-0">
               </div>
               <div class="col-12 mt-4">
                 <button type="submit" name="signup" class="btn btn-primary rounded-0 w-100 py-2">Create Account</button>

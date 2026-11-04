@@ -3,6 +3,7 @@ namespace App\Modules\Auth\Controllers;
 
 use App\Core\BaseController;
 use App\Modules\Auth\Models\UserModel;
+use Exception;
 
 class AuthController extends BaseController {
     private $userModel;
@@ -39,7 +40,7 @@ class AuthController extends BaseController {
             $this->redirect('/received');
         }
 
-        if (isset($_POST["login"])) {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->validateCsrf();
             $emailAddress = filter_var(trim($_POST["emailAddress"] ?? ''), FILTER_SANITIZE_EMAIL);
             $password = trim($_POST["password"] ?? '');
@@ -73,16 +74,21 @@ class AuthController extends BaseController {
             $this->redirect('/received');
         }
 
-        if (isset($_POST["signup"])) {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->validateCsrf();
             $userId = $this->generateUserId();
             $firstName = trim($_POST["firstName"] ?? '');
             $middleName = trim($_POST["middleName"] ?? '');
             $lastName = trim($_POST["lastName"] ?? '');
-            $searchName = strtoupper($firstName . " " . $lastName);
-            $contactNumber = trim($_POST["contactNumber"] ?? '');
+            $searchName = strtoupper(trim($firstName . " " . $lastName));
+            $rawContact = trim($_POST["contactNumber"] ?? '');
             $emailAddress = filter_var(trim($_POST["emailAddress"] ?? ''), FILTER_SANITIZE_EMAIL);
             $password = trim($_POST["password"] ?? '');
+
+            if (empty($firstName) || empty($lastName)) {
+                $this->setFlash('danger', 'First name and last name are required.');
+                $this->redirect('/signup');
+            }
 
             if (!filter_var($emailAddress, FILTER_VALIDATE_EMAIL)) {
                 $this->setFlash('danger', 'Invalid email address provided.');
@@ -93,6 +99,26 @@ class AuthController extends BaseController {
                 $this->setFlash('danger', 'Password must be at least 6 characters.');
                 $this->redirect('/signup');
             }
+
+            // Normalize contact number: extract digits, strip leading 0 if 11 digits
+            $contactNumber = preg_replace('/\D/', '', $rawContact);
+            if (strlen($contactNumber) === 11 && str_starts_with($contactNumber, '0')) {
+                $contactNumber = substr($contactNumber, 1);
+            }
+            if (strlen($contactNumber) < 7 || strlen($contactNumber) > 15) {
+                $this->setFlash('danger', 'Please provide a valid contact number (10 digits).');
+                $this->redirect('/signup');
+            }
+
+            // Check if user already exists
+            $existingUser = $this->userModel->getUserByEmailOrPhone($emailAddress, $contactNumber);
+            if ($existingUser) {
+                $this->setFlash('danger', 'The contact number or email address is already registered.');
+                $this->redirect('/signup');
+            }
+
+            // Handle Profile Picture (optional with default avatar)
+            $profilePictureRelativePath = 'images/logo.png';
 
             if (isset($_FILES["profilePicture"]) && $_FILES["profilePicture"]["error"] !== UPLOAD_ERR_NO_FILE) {
                 $profilePictureError = $_FILES["profilePicture"]["error"];
@@ -107,61 +133,50 @@ class AuthController extends BaseController {
                     $this->redirect('/signup');
                 }
 
-                $finfo = new \finfo(FILEINFO_MIME_TYPE);
-                $mimeType = $finfo->file($_FILES["profilePicture"]["tmp_name"]);
-                $allowedMimes = [
-                    'image/jpeg' => 'jpg',
-                    'image/png'  => 'png',
-                ];
-
-                if (!array_key_exists($mimeType, $allowedMimes)) {
+                $ext = validateUploadedImage($_FILES["profilePicture"]["tmp_name"], $_FILES["profilePicture"]["name"]);
+                if (!$ext) {
                     $this->setFlash('danger', 'Invalid file type. Only PNG, JPG, and JPEG images are allowed.');
                     $this->redirect('/signup');
                 }
 
-                $existingUser = $this->userModel->getUserByEmailOrPhone($emailAddress, $contactNumber);
-                if (!$existingUser) {
-                    $publicUploadsDir = dirname(__DIR__, 3) . '/public/uploads';
-                    if (!is_dir($publicUploadsDir)) {
-                        mkdir($publicUploadsDir, 0755, true);
-                    }
+                $publicUploadsDir = dirname(__DIR__, 3) . '/public/uploads';
+                if (!is_dir($publicUploadsDir)) {
+                    mkdir($publicUploadsDir, 0755, true);
+                }
 
-                    $ext = $allowedMimes[$mimeType];
-                    $fileName = bin2hex(random_bytes(16)) . '.' . $ext;
-                    $targetPath = $publicUploadsDir . '/' . $fileName;
+                $fileName = bin2hex(random_bytes(16)) . '.' . $ext;
+                $targetPath = $publicUploadsDir . '/' . $fileName;
 
-                    if (!move_uploaded_file($_FILES["profilePicture"]["tmp_name"], $targetPath)) {
-                        $this->setFlash('danger', 'Failed to store uploaded profile picture.');
-                        $this->redirect('/signup');
-                    }
-
-                    $profilePictureRelativePath = 'uploads/' . $fileName;
-
-                    $signupData = [
-                        'user_id' => $userId,
-                        'first_name' => $firstName,
-                        'middle_name' => $middleName,
-                        'last_name' => $lastName,
-                        'search_name' => $searchName,
-                        'contact_number' => $contactNumber,
-                        'email_address' => $emailAddress,
-                        'user_password' => password_hash($password, PASSWORD_DEFAULT),
-                        'profile_picture' => $profilePictureRelativePath
-                    ];
-
-                    if ($this->userModel->createUser($signupData)) {
-                        $this->setFlash('success', 'Signup successful! Please sign in with your credentials.');
-                        $this->redirect('/login');
-                    } else {
-                        $this->setFlash('danger', 'An error occurred during registration. Please try again.');
-                        $this->redirect('/signup');
-                    }
-                } else {
-                    $this->setFlash('danger', 'The contact number or email address is already registered.');
+                if (!move_uploaded_file($_FILES["profilePicture"]["tmp_name"], $targetPath)) {
+                    $this->setFlash('danger', 'Failed to store uploaded profile picture.');
                     $this->redirect('/signup');
                 }
-            } else {
-                $this->setFlash('danger', 'Please upload a profile picture.');
+
+                $profilePictureRelativePath = 'uploads/' . $fileName;
+            }
+
+            $signupData = [
+                'user_id' => $userId,
+                'first_name' => $firstName,
+                'middle_name' => $middleName,
+                'last_name' => $lastName,
+                'search_name' => $searchName,
+                'contact_number' => $contactNumber,
+                'email_address' => $emailAddress,
+                'user_password' => password_hash($password, PASSWORD_DEFAULT),
+                'profile_picture' => $profilePictureRelativePath
+            ];
+
+            try {
+                if ($this->userModel->createUser($signupData)) {
+                    $this->setFlash('success', 'Signup successful! Please sign in with your credentials.');
+                    $this->redirect('/login');
+                } else {
+                    $this->setFlash('danger', 'An error occurred during registration. Please try again.');
+                    $this->redirect('/signup');
+                }
+            } catch (Exception $e) {
+                $this->setFlash('danger', 'Database registration error: ' . $e->getMessage());
                 $this->redirect('/signup');
             }
         } else {

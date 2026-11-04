@@ -7,30 +7,32 @@ class Router {
     public function add($method, $path, $handler) {
         $this->routes[] = [
             'method' => strtoupper($method),
-            'path' => $path,
+            'path' => '/' . trim($path, '/'),
             'handler' => $handler
         ];
     }
 
     public function dispatch() {
-        $method = $_SERVER['REQUEST_METHOD'];
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
         
         $path = '/';
-        if (isset($_SERVER['PATH_INFO'])) {
+        if (!empty($_SERVER['PATH_INFO'])) {
             $path = $_SERVER['PATH_INFO'];
-        } elseif (isset($_GET['route'])) {
+        } elseif (!empty($_GET['route'])) {
             $path = $_GET['route'];
         } else {
-            $scriptName = $_SERVER['SCRIPT_NAME'];
-            $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-            if (strpos($requestUri, $scriptName) === 0) {
+            $scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
+            $requestUri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+            
+            if ($scriptName !== '' && strpos($requestUri, $scriptName) === 0) {
                 $path = substr($requestUri, strlen($scriptName));
             } else {
                 $scriptDir = dirname($scriptName);
                 $scriptDirNormalized = str_replace('\\', '/', $scriptDir);
-                $requestUriNormalized = str_replace('\\', '/', $requestUri);
-                if ($scriptDirNormalized !== '/' && strpos($requestUriNormalized, $scriptDirNormalized) === 0) {
-                    $path = substr($requestUri, strlen($scriptDir));
+                if ($scriptDirNormalized !== '/' && $scriptDirNormalized !== '.' && strpos($requestUri, $scriptDirNormalized) === 0) {
+                    $path = substr($requestUri, strlen($scriptDirNormalized));
+                } else {
+                    $path = $requestUri;
                 }
             }
         }
@@ -61,20 +63,15 @@ class Router {
 
         // If no route matches, redirect based on auth status
         if (isset($_SESSION['userId'])) {
-            header("Location: " . $this->baseUrl('/received'));
+            $this->redirectRoute('/received');
         } else {
-            header("Location: " . $this->baseUrl('/login'));
+            $this->redirectRoute('/login');
         }
         exit;
     }
 
-    private function baseUrl($path = '') {
-        $scriptName = $_SERVER['SCRIPT_NAME'];
-        $base = dirname($scriptName);
-        $base = str_replace('\\', '/', $base);
-        if ($base === '/') {
-            $base = '';
-        }
-        return $base . $path;
+    private function redirectRoute($path = '') {
+        header("Location: " . routeUrl($path));
+        exit;
     }
 }

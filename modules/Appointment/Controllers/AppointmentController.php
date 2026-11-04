@@ -87,16 +87,15 @@ class AppointmentController extends BaseController {
         $this->renderView('Appointment/Views/sent', ['appointments' => $enrichedAppointments]);
     }
 
-    public function bookForm($params) {
-        $this->requireAuth();
-        $id = $params["account"] ?? "";
+    public function bookForm($params = []) {
+        $id = $params["account"] ?? $params["id"] ?? $_GET["account"] ?? "";
 
         if (empty($id)) {
-            $this->setFlash('danger', 'Missing account ID.');
-            $this->redirect('/search');
+            $this->setFlash('danger', 'Missing account identifier.');
+            $this->redirect(isset($_SESSION['userId']) ? '/search' : '/login');
         }
 
-        if ($id === $_SESSION["userId"]) {
+        if (isset($_SESSION["userId"]) && $id === $_SESSION["userId"]) {
             $this->setFlash('warning', 'You cannot book an appointment with yourself.');
             $this->redirect('/search');
         }
@@ -104,8 +103,11 @@ class AppointmentController extends BaseController {
         $account = $this->appointmentModel->getUserDetails($id);
         if (!$account) {
             $this->setFlash('danger', 'Account not found.');
-            $this->redirect('/search');
+            $this->redirect(isset($_SESSION['userId']) ? '/search' : '/login');
         }
+
+        $initialDate = date('Y-m-d');
+        $initialSlots = $this->appointmentModel->generateAvailableSlots($id, $initialDate);
 
         $this->renderView('Appointment/Views/book', [
             'id' => $id,
@@ -114,7 +116,34 @@ class AppointmentController extends BaseController {
             'lastName' => $account['last_name'],
             'contactNumber' => $account['contact_number'],
             'emailAddress' => $account['email_address'],
-            'profilePicture' => $account['profile_picture']
+            'profilePicture' => $account['profile_picture'],
+            'workStartTime' => $account['work_start_time'] ?? '09:00',
+            'workEndTime' => $account['work_end_time'] ?? '17:00',
+            'slotDuration' => $account['slot_duration_minutes'] ?? 30,
+            'initialDate' => $initialDate,
+            'initialSlots' => $initialSlots,
+            'isAuthenticated' => isset($_SESSION['userId'])
+        ]);
+    }
+
+    public function apiSlots($params = []) {
+        $receiverId = trim($_GET["receiverId"] ?? $params["receiverId"] ?? "");
+        $date = trim($_GET["date"] ?? $params["date"] ?? date('Y-m-d'));
+
+        if (empty($receiverId)) {
+            return $this->jsonResponse(['error' => 'Receiver ID is required'], 400);
+        }
+
+        // Validate date format YYYY-MM-DD
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            return $this->jsonResponse(['error' => 'Invalid date format (expected YYYY-MM-DD)'], 400);
+        }
+
+        $slots = $this->appointmentModel->generateAvailableSlots($receiverId, $date);
+        return $this->jsonResponse([
+            'receiverId' => $receiverId,
+            'date' => $date,
+            'slots' => $slots
         ]);
     }
 
@@ -131,7 +160,7 @@ class AppointmentController extends BaseController {
             $location = trim($_POST["location"] ?? "");
 
             if (empty($receiverId) || empty($senderId) || empty($appointmentDate) || empty($appointmentTime) || empty($eventName) || empty($location)) {
-                $this->setFlash('danger', 'All fields are required to schedule an appointment.');
+                $this->setFlash('danger', 'All fields and an open time slot are required to schedule an appointment.');
                 $this->redirect('/appointment/book?account=' . $receiverId);
             }
 
@@ -147,7 +176,7 @@ class AppointmentController extends BaseController {
 
             // Conflict detection
             if ($this->appointmentModel->hasConflict($receiverId, $appointmentDate, $appointmentTime)) {
-                $this->setFlash('danger', 'The selected date and time is already booked. Please choose another slot.');
+                $this->setFlash('danger', 'The selected time slot (' . $appointmentTime . ') is already booked. Please choose an open slot.');
                 $this->redirect('/appointment/book?account=' . $receiverId);
             }
 

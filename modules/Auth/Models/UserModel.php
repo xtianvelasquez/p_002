@@ -44,7 +44,13 @@ class UserModel extends BaseModel {
     }
 
     public function createUser($data) {
-        $stmt = $this->db->prepare("INSERT INTO user_account (user_id, first_name, middle_name, last_name, search_name, contact_number, email_address, user_password, profile_picture) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $this->db->prepare("
+            INSERT INTO user_account (
+                user_id, first_name, middle_name, last_name, search_name, 
+                contact_number, email_address, user_password, profile_picture,
+                work_start_time, work_end_time, slot_duration_minutes
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
         return $stmt->execute([
             $data['user_id'],
             $data['first_name'],
@@ -54,12 +60,21 @@ class UserModel extends BaseModel {
             $data['contact_number'],
             $data['email_address'],
             $data['user_password'],
-            $data['profile_picture']
+            $data['profile_picture'],
+            $data['work_start_time'] ?? '09:00',
+            $data['work_end_time'] ?? '17:00',
+            $data['slot_duration_minutes'] ?? 30
         ]);
     }
 
     public function updateUser($id, $data) {
-        $stmt = $this->db->prepare("UPDATE user_account SET first_name = ?, middle_name = ?, last_name = ?, search_name = ?, contact_number = ?, email_address = ?, profile_picture = ?, last_update = ? WHERE user_id = ?");
+        $stmt = $this->db->prepare("
+            UPDATE user_account 
+            SET first_name = ?, middle_name = ?, last_name = ?, search_name = ?, 
+                contact_number = ?, email_address = ?, profile_picture = ?, last_update = ?,
+                work_start_time = ?, work_end_time = ?, slot_duration_minutes = ?
+            WHERE user_id = ?
+        ");
         return $stmt->execute([
             $data['first_name'],
             $data['middle_name'],
@@ -69,6 +84,9 @@ class UserModel extends BaseModel {
             $data['email_address'],
             $data['profile_picture'],
             $data['last_update'],
+            $data['work_start_time'] ?? '09:00',
+            $data['work_end_time'] ?? '17:00',
+            $data['slot_duration_minutes'] ?? 30,
             $id
         ]);
     }

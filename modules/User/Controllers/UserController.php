@@ -25,12 +25,17 @@ class UserController extends BaseController {
         
         if ($user) {
             $data = [
+                'userId' => $user["user_id"],
                 'firstName' => $user["first_name"],
                 'middleName' => $user["middle_name"],
                 'lastName' => $user["last_name"],
                 'contactNumber' => $user["contact_number"],
                 'emailAddress' => $user["email_address"],
-                'currentProfilePicture' => $user["profile_picture"]
+                'currentProfilePicture' => $user["profile_picture"],
+                'workStartTime' => $user["work_start_time"] ?? '09:00',
+                'workEndTime' => $user["work_end_time"] ?? '17:00',
+                'slotDuration' => $user["slot_duration_minutes"] ?? 30,
+                'shareableLink' => routeUrl('/u/' . $user["user_id"])
             ];
             $this->renderView('User/Views/profile', $data);
         } else {
@@ -47,10 +52,18 @@ class UserController extends BaseController {
             $firstName = trim($_POST["firstName"] ?? '');
             $middleName = trim($_POST["middleName"] ?? '');
             $lastName = trim($_POST["lastName"] ?? '');
-            $searchName = strtoupper($firstName . " " . $lastName);
+            $searchName = strtoupper(trim($firstName . " " . $lastName));
             $contactNumber = trim($_POST["contactNumber"] ?? '');
             $emailAddress = filter_var(trim($_POST["emailAddress"] ?? ''), FILTER_SANITIZE_EMAIL);
+            $workStartTime = trim($_POST["workStartTime"] ?? '09:00');
+            $workEndTime = trim($_POST["workEndTime"] ?? '17:00');
+            $slotDuration = max(15, min(120, (int)($_POST["slotDuration"] ?? 30)));
             $dateUpdate = date("Y-m-d");
+
+            if (empty($firstName) || empty($lastName)) {
+                $this->setFlash('danger', 'First name and last name are required.');
+                $this->redirect('/profile');
+            }
 
             if (!filter_var($emailAddress, FILTER_VALIDATE_EMAIL)) {
                 $this->setFlash('danger', 'Invalid email address provided.');
@@ -78,14 +91,8 @@ class UserController extends BaseController {
                     $this->redirect('/profile');
                 }
 
-                $finfo = new \finfo(FILEINFO_MIME_TYPE);
-                $mimeType = $finfo->file($_FILES["profilePicture"]["tmp_name"]);
-                $allowedMimes = [
-                    'image/jpeg' => 'jpg',
-                    'image/png'  => 'png',
-                ];
-
-                if (!array_key_exists($mimeType, $allowedMimes)) {
+                $ext = validateUploadedImage($_FILES["profilePicture"]["tmp_name"], $_FILES["profilePicture"]["name"]);
+                if (!$ext) {
                     $this->setFlash('danger', 'Invalid file type. Only PNG, JPG, and JPEG images are allowed.');
                     $this->redirect('/profile');
                 }
@@ -96,7 +103,6 @@ class UserController extends BaseController {
                     mkdir($uploadsDir, 0755, true);
                 }
 
-                $ext = $allowedMimes[$mimeType];
                 $newFileName = bin2hex(random_bytes(16)) . '.' . $ext;
                 $targetPath = $uploadsDir . '/' . $newFileName;
 
@@ -125,13 +131,16 @@ class UserController extends BaseController {
                 'contact_number' => $contactNumber,
                 'email_address' => $emailAddress,
                 'profile_picture' => $profilePicturePath,
-                'last_update' => $dateUpdate
+                'last_update' => $dateUpdate,
+                'work_start_time' => $workStartTime,
+                'work_end_time' => $workEndTime,
+                'slot_duration_minutes' => $slotDuration
             ];
 
             if ($this->userModel->updateUser($userId, $updateData)) {
                 $_SESSION['profilePicture'] = $profilePicturePath;
                 $_SESSION['searchName'] = $searchName;
-                $this->setFlash('success', 'Profile updated successfully!');
+                $this->setFlash('success', 'Profile and availability settings updated successfully!');
                 $this->redirect('/profile');
             } else {
                 $this->setFlash('danger', 'An error occurred while updating your profile.');

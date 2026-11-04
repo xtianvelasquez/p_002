@@ -23,9 +23,9 @@ if (file_exists($envFile)) {
 
 return [
     'host' => getenv('DB_HOST') ?: 'localhost',
-    'port' => getenv('DB_PORT') ?: '5433',
-    'dbname' => getenv('DB_NAME') ?: 'calenday',
+    'port' => getenv('DB_PORT') ?: '5432',
+    'dbname' => getenv('DB_NAME') ?: 'blue',
     'user' => getenv('DB_USER') ?: 'postgres',
-    'password' => getenv('DB_PASSWORD') ?: '',
+    'password' => getenv('DB_PASSWORD') ?: 'admin123',
     'app_env' => getenv('APP_ENV') ?: 'development',
 ];

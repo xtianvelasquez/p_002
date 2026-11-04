@@ -56,8 +56,10 @@ This project incorporates web application security best practices:
 ## Features
 
 - **Authentication & Profiles**: Secure sign-up, login, and profile editing with image upload validation.
+- **Configurable Availability**: Users define their working start/end times and slot durations (15, 30, 45, 60 minutes) in their profile.
+- **Public Shareable Booking Link**: Each user has a unique shareable profile link (`/u/{id}`) for direct booking without logging into the search dashboard first.
+- **Interactive Slot Selector**: Dynamic, conflict-aware slot generation via REST API (`/api/appointment/slots`), showing clickable open slots and disabling booked times.
 - **Fuzzy User Search**: Partial, case-insensitive user search powered by PostgreSQL `ILIKE` indexing.
-- **Appointment Booking**: Schedule appointments with automatic slot conflict detection and prevention of past-date / self-bookings.
 - **Received & Sent Panels**: Single-query `JOIN` views for appointments you have received from others and appointments you have sent out.
 - **Appointment Status Workflow**: Receivers can approve or deny requests; either party can cancel appointments.
 
@@ -83,10 +85,10 @@ cp .env.example .env
 Update `.env` with your PostgreSQL database credentials:
 ```env
 DB_HOST=localhost
-DB_PORT=5433
-DB_NAME=calenday
+DB_PORT=5432
+DB_NAME=blue
 DB_USER=postgres
-DB_PASSWORD=your_password
+DB_PASSWORD=admin123
 ```
 
 ### 4. Database Setup
@@ -119,6 +121,10 @@ Test cases verify:
 5. Insecure Direct Object Reference (IDOR) access prevention.
 6. Session flash message persistence and automatic clearance upon consumption.
 7. Master layout encapsulation and unified view rendering.
+8. End-to-end user registration and database persistence.
+9. Dynamic working-hour slot generation (`generateAvailableSlots`).
+10. Automatic detection and flagging of booked time slots.
+11. Multi-slot future schedule calculation.
 
 ---
 
