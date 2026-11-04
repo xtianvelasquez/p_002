@@ -1,0 +1,22 @@
+{
+    "name": "xtianvelasquez/one-calenday",
+    "description": "One Calenday - Decoupled Modular MVC Appointment & Scheduling System in PHP & PostgreSQL",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Christian E. Velasquez"
+        }
+    ],
+    "require": {
+        "php": ">=8.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": ""
+        }
+    },
+    "scripts": {
+        "test": "php test_security.php"
+    }
+}

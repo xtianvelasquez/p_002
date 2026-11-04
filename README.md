@@ -1,85 +1,126 @@
-# One Calenday Appointment System
+# One Calenday Appointment & Scheduling System
 
-## Description
+[![PHP Version](https://img.shields.io/badge/PHP-8.1%2B-777BB4?logo=php&logoColor=white)](https://www.php.net/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Bootstrap](https://img.shields.io/badge/Bootstrap-v5.3-7952B3?logo=bootstrap&logoColor=white)](https://getbootstrap.com/)
+[![Security](https://img.shields.io/badge/Security-Bcrypt%20%7C%20CSRF%20%7C%20IDOR--Protected-green)](#security-features)
 
-One Calenday is an appointment system that enables users to schedule appointments on their preferred dates and times. Users can provide the event name and location during the booking process. A login system is implemented for the user panel, allowing users to view all individuals who have booked their time, along with the event name and location. The system also includes a "Sent" panel that displays all the appointments the user has sent to others.
+**One Calenday** is a modular PHP and PostgreSQL appointment management web application. It features a custom modular MVC architecture, custom router, relational database design with prepared queries, conflict-aware appointment scheduling, and strong security practices.
 
-The system incorporates a registration and authentication process to enable users to access their appointment details. Upon logging into their account, users can view their scheduled appointments, including the name of the user who booked the appointment, the date, event name, and location. Users can utilize the search bar to find the account of the person with whom they wish to book an appointment. If the account is found, users can then schedule an appointment by specifying the desired date and time of appointment.
+---
 
-**Features:**
-- **User Interface:** Built with HTML, CSS, and Bootstrap v5.3 for a responsive, minimalist, and interactive design.
-- **Backend:** Decoupled Modular MVC framework written in PHP with a custom URL Router.
-- **Database:** PostgreSQL for robust and secure data handling using PDO prepared statements.
+## Architecture Overview
+
+The system uses a decoupled **Modular Model-View-Controller (MVC)** design pattern:
+
+```text
+/
+├── config/              # Environment-based configuration (.env support)
+├── core/                # System engine (Router, Database Singleton, Base Controller & Model, Helpers)
+├── modules/             # Domain modules & Presentation
+│   ├── Layout/          # Master layout wrapper (Responsive Navbar, Flash alerts, Sticky footer)
+│   ├── Auth/            # Authentication (Signup, Bcrypt Login, Session lifecycle)
+│   ├── User/            # User profile management & Case-insensitive search
+│   └── Appointment/     # Booking, Conflict detection, Received & Sent appointment tracking
+├── public/              # Web document root (index.php, CSS, JS, secure upload storage)
+└── test_security.php    # Automated unit and integration test suite
+```
+
+### Request Flow
+```mermaid
+flowchart LR
+    Client([HTTP Request]) --> Router[App/Core/Router]
+    Router --> Controller[Module Controller]
+    Controller --> Model[Module Model]
+    Model --> DB[(PostgreSQL Database)]
+    Model --> Controller
+    Controller --> View[Server-rendered View]
+    View --> Client
+```
+
+---
+
+## Security Features
+
+This project incorporates web application security best practices:
+
+- **Bcrypt Password Hashing**: Passwords are authenticated and salted via `password_hash()` and `password_verify()` with automatic legacy rehash upgrading.
+- **CSRF Defense**: All state-modifying requests (Profile updates, appointment status changes, bookings, and deletions) require cryptographic CSRF tokens (`_csrf`).
+- **Authorization & IDOR Protection**: Direct object reference vulnerabilities are blocked by enforcing strict ownership checks (`receiver_id` or `sender_id`) at the database query layer.
+- **Path-Traversal Proof Uploads**: File uploads validate genuine MIME types (`finfo_file`), generate cryptographically random filenames, and enforce directory containment to prevent arbitrary file deletion.
+- **SQL Injection Prevention**: All queries run through PDO prepared statements with strict parameter binding.
+- **RESTful HTTP Semantics**: Destructive actions and status changes run over `POST` instead of unsafe `GET` requests.
+
+---
+
+## Features
+
+- **Authentication & Profiles**: Secure sign-up, login, and profile editing with image upload validation.
+- **Fuzzy User Search**: Partial, case-insensitive user search powered by PostgreSQL `ILIKE` indexing.
+- **Appointment Booking**: Schedule appointments with automatic slot conflict detection and prevention of past-date / self-bookings.
+- **Received & Sent Panels**: Single-query `JOIN` views for appointments you have received from others and appointments you have sent out.
+- **Appointment Status Workflow**: Receivers can approve or deny requests; either party can cancel appointments.
 
 ---
 
 ## Installation & Setup
 
-To set up the One Calenday system on your local machine, follow these steps:
+### 1. Requirements
+- PHP 8.1 or higher (with `pdo_pgsql` extension enabled)
+- PostgreSQL 13 or higher
 
-### 1. Clone the Repository:
+### 2. Clone Repository
 ```bash
 git clone https://github.com/xtianvelasquez/p_002.git
 cd p_002
 ```
 
-### 2. Configure the Database Connection:
-Ensure PostgreSQL is running on port `5433` (or update it in `config/config.php` to your local port). The database credentials are configured in [config/config.php](file:///c:/p_002/config/config.php):
-```php
-return [
-    'host' => 'localhost',
-    'port' => '5433', // PostgreSQL port
-    'dbname' => 'calenday',
-    'user' => 'postgres',
-    'password' => 'admin123'
-];
+### 3. Environment Configuration
+Copy the example environment configuration:
+```bash
+cp .env.example .env
+```
+Update `.env` with your PostgreSQL database credentials:
+```env
+DB_HOST=localhost
+DB_PORT=5433
+DB_NAME=calenday
+DB_USER=postgres
+DB_PASSWORD=your_password
 ```
 
-### 3. Create and Import the PostgreSQL Database:
-1. Create a database named `calenday` in your PostgreSQL instance.
-2. Import the [p_002_postgres.sql](file:///c:/p_002/p_002_postgres.sql) schema and data dump file.
-   - Using command line:
-     ```bash
-     psql -h localhost -p 5433 -U postgres -d calenday -f p_002_postgres.sql
-     ```
-   - Alternatively, copy-paste the SQL contents from `p_002_postgres.sql` and run them inside pgAdmin, DBeaver, or your database management utility.
-
-### 4. Start the Local Server:
-Navigate to the `public` directory and start a local PHP development server:
-```powershell
-cd public
-php -S localhost:8000
+### 4. Database Setup
+Run the database importer script:
+```bash
+php import_db.php
 ```
+*(Or import [p_002_postgres.sql](file:///c:/p_002/p_002_postgres.sql) directly via `psql` or pgAdmin).*
 
-### 5. Access the Application:
-Open a web browser and navigate to `http://localhost:8000` to view the application.
-
----
-
-## Functionalities
-
-1. **Signup and Login**
-   - Users must create an account to access the system's features. Once registered, users can log in to their panel to view and manage their appointments.
-
-2. **Appointment Booking**
-   - Users can search for another user's account and schedule an appointment by selecting a preferred date and specifying the time of appointment in the search bar.
-   - The received bar displays all booked appointments, including details such as the name of the user who booked the appointment, the date, event name/description, and location.
-   - Users can view the appointments they have requested with other users in the "Sent" panel, with the option to delete those appointments.
-
-3. **Appointment Management**
-   - An action button within the appointment details allows users to view detailed info, edit the appointment status (approved, denied, canceled), or delete the appointment.
+### 5. Run the Local Server
+Serve from the `public` directory:
+```bash
+php -S localhost:8000 -t public
+```
+Visit `http://localhost:8000` in your web browser.
 
 ---
 
-## Limitations
+## Running Automated Tests
 
-- The system only supports one-day schedules for specific times. The functionality allows users to determine whether a date and time are already booked, but other users can still book the same day. Users can cancel or deny appointments based on their schedules.
+To run the built-in unit and security regression test suite:
+```bash
+php test_security.php
+```
+Test cases verify:
+1. Bcrypt password verification & wrong password rejection.
+2. Partial case-insensitive user search (`ILIKE`).
+3. Single-query joined appointment fetching (N+1 query prevention).
+4. Time slot conflict detection.
+5. Insecure Direct Object Reference (IDOR) access prevention.
+6. Session flash message persistence and automatic clearance upon consumption.
+7. Master layout encapsulation and unified view rendering.
 
 ---
 
-## Project Structure
-
-- **`/core`**: Router, Database interface, Base Controller, and Model.
-- **`/config`**: Configuration settings (e.g. database credentials).
-- **`/modules`**: Separated domain modules (**Auth**, **User**, **Appointment**).
-- **`/public`**: Application entry point (`index.php`), Bootstrap resources, images, and user profile picture uploads.
+## License
+MIT License. Developed by [Christian E. Velasquez](https://github.com/xtianvelasquez).

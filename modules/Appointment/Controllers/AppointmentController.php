@@ -41,8 +41,10 @@ class AppointmentController extends BaseController {
         
         $enrichedAppointments = [];
         foreach ($appointments as $appt) {
-            $sender = $this->appointmentModel->getUserDetails($appt["sender_id"]);
-            $fullName = $sender ? strtoupper($sender["first_name"] . " " . $sender["last_name"]) : "UNKNOWN";
+            $fullName = strtoupper(trim(($appt["first_name"] ?? '') . " " . ($appt["last_name"] ?? '')));
+            if (empty($fullName)) {
+                $fullName = "UNKNOWN";
+            }
             
             $enrichedAppointments[] = [
                 'appointment_id' => $appt['appointment_id'],
@@ -66,8 +68,10 @@ class AppointmentController extends BaseController {
         
         $enrichedAppointments = [];
         foreach ($appointments as $appt) {
-            $receiver = $this->appointmentModel->getUserDetails($appt["receiver_id"]);
-            $fullName = $receiver ? strtoupper($receiver["first_name"] . " " . $receiver["last_name"]) : "UNKNOWN";
+            $fullName = strtoupper(trim(($appt["first_name"] ?? '') . " " . ($appt["last_name"] ?? '')));
+            if (empty($fullName)) {
+                $fullName = "UNKNOWN";
+            }
             
             $enrichedAppointments[] = [
                 'appointment_id' => $appt['appointment_id'],
@@ -88,14 +92,19 @@ class AppointmentController extends BaseController {
         $id = $params["account"] ?? "";
 
         if (empty($id)) {
-            $error = urlencode("Missing account ID.");
-            $this->redirect('/feedbacks?accounterror=' . $error);
+            $this->setFlash('danger', 'Missing account ID.');
+            $this->redirect('/search');
+        }
+
+        if ($id === $_SESSION["userId"]) {
+            $this->setFlash('warning', 'You cannot book an appointment with yourself.');
+            $this->redirect('/search');
         }
 
         $account = $this->appointmentModel->getUserDetails($id);
         if (!$account) {
-            $error = urlencode("Account not found.");
-            $this->redirect('/feedbacks?accounterror=' . $error);
+            $this->setFlash('danger', 'Account not found.');
+            $this->redirect('/search');
         }
 
         $this->renderView('Appointment/Views/book', [
@@ -113,16 +122,33 @@ class AppointmentController extends BaseController {
         $this->requireAuth();
         
         if (isset($_POST["submit"])) {
-            $receiverId = $_POST["receiverId"] ?? "";
+            $this->validateCsrf();
+            $receiverId = trim($_POST["receiverId"] ?? "");
             $senderId = $_SESSION["userId"] ?? "";
-            $appointmentDate = $_POST["appointmentDate"] ?? "";
-            $appointmentTime = $_POST["appointmentTime"] ?? "";
-            $eventName = $_POST["eventName"] ?? "";
-            $location = $_POST["location"] ?? "";
+            $appointmentDate = trim($_POST["appointmentDate"] ?? "");
+            $appointmentTime = trim($_POST["appointmentTime"] ?? "");
+            $eventName = trim($_POST["eventName"] ?? "");
+            $location = trim($_POST["location"] ?? "");
 
             if (empty($receiverId) || empty($senderId) || empty($appointmentDate) || empty($appointmentTime) || empty($eventName) || empty($location)) {
-                $error = urlencode("All fields are required.");
-                $this->redirect('/feedbacks?appointmenterror=' . $error);
+                $this->setFlash('danger', 'All fields are required to schedule an appointment.');
+                $this->redirect('/appointment/book?account=' . $receiverId);
+            }
+
+            if ($receiverId === $senderId) {
+                $this->setFlash('warning', 'You cannot book an appointment with yourself.');
+                $this->redirect('/search');
+            }
+
+            if ($appointmentDate < date('Y-m-d')) {
+                $this->setFlash('danger', 'Cannot schedule appointments in the past.');
+                $this->redirect('/appointment/book?account=' . $receiverId);
+            }
+
+            // Conflict detection
+            if ($this->appointmentModel->hasConflict($receiverId, $appointmentDate, $appointmentTime)) {
+                $this->setFlash('danger', 'The selected date and time is already booked. Please choose another slot.');
+                $this->redirect('/appointment/book?account=' . $receiverId);
             }
 
             $appointmentId = $this->generateAppointmentId($receiverId, $senderId);
@@ -140,10 +166,11 @@ class AppointmentController extends BaseController {
             ];
 
             if ($this->appointmentModel->createAppointment($data)) {
-                $this->redirect('/search');
+                $this->setFlash('success', 'Appointment scheduled successfully! You can track it here.');
+                $this->redirect('/sent');
             } else {
-                $error = urlencode("We're currently experiencing some technical difficulties. Please try again later.");
-                $this->redirect('/feedbacks?appointmenterror=' . $error);
+                $this->setFlash('danger', 'An error occurred while creating the appointment. Please try again.');
+                $this->redirect('/appointment/book?account=' . $receiverId);
             }
         } else {
             $this->redirect('/search');
@@ -153,27 +180,30 @@ class AppointmentController extends BaseController {
     public function view($params) {
         $this->requireAuth();
         $id = $params["id"] ?? "";
+        $userId = $_SESSION["userId"];
 
         if (empty($id)) {
             $this->redirect('/received');
         }
 
-        $appt = $this->appointmentModel->getAppointmentById($id);
+        $appt = $this->appointmentModel->getAppointmentForUser($id, $userId);
         if (!$appt) {
-            $error = urlencode("No further informations found.");
-            $this->redirect('/feedbacks?actionerror=' . $error);
+            $this->setFlash('danger', 'Appointment not found or unauthorized access.');
+            $this->redirect('/received');
         }
 
-        $sender = $this->appointmentModel->getUserDetails($appt["sender_id"]);
-        $fullName = $sender ? strtoupper($sender["first_name"] . " " . $sender["last_name"]) : "UNKNOWN";
-        $contactNumber = $sender ? "+63" . $sender["contact_number"] : "";
-        $emailAddress = $sender ? $sender["email_address"] : "";
+        $isSender = ($appt['sender_id'] === $userId);
+        $displayName = $isSender 
+            ? strtoupper(($appt['receiver_first_name'] ?? '') . ' ' . ($appt['receiver_last_name'] ?? ''))
+            : strtoupper(($appt['sender_first_name'] ?? '') . ' ' . ($appt['sender_last_name'] ?? ''));
+        $displayContact = $isSender ? ($appt['receiver_contact'] ?? '') : ($appt['sender_contact'] ?? '');
+        $displayEmail = $isSender ? ($appt['receiver_email'] ?? '') : ($appt['sender_email'] ?? '');
 
         $this->renderView('Appointment/Views/view', [
             'appointmentId' => $appt['appointment_id'],
-            'fullName' => $fullName,
-            'contactNumber' => $contactNumber,
-            'emailAddress' => $emailAddress,
+            'fullName' => $displayName,
+            'contactNumber' => !empty($displayContact) ? "+63" . $displayContact : "",
+            'emailAddress' => $displayEmail,
             'appointment_date' => $appt['appointment_date'],
             'appointment_time' => $appt['appointment_time'],
             'event_name' => $appt['event_name'],
@@ -185,94 +215,120 @@ class AppointmentController extends BaseController {
     public function edit($params) {
         $this->requireAuth();
         $id = $params["id"] ?? "";
+        $userId = $_SESSION["userId"];
 
         if (empty($id)) {
             $this->redirect('/received');
         }
 
-        $this->renderView('Appointment/Views/edit', ['appointmentId' => $id]);
+        $appt = $this->appointmentModel->getAppointmentForUser($id, $userId);
+        if (!$appt) {
+            $this->setFlash('danger', 'Appointment not found or unauthorized access.');
+            $this->redirect('/received');
+        }
+
+        $this->renderView('Appointment/Views/edit', [
+            'appointmentId' => $id,
+            'appointment' => $appt,
+            'isReceiver' => ($appt['receiver_id'] === $userId)
+        ]);
     }
 
-    public function updateStatus($params) {
+    public function updateStatus() {
         $this->requireAuth();
-        
-        $id = "";
-        $status = "";
-        
-        if (isset($params["approved"])) {
-            $id = $params["approved"];
-            $status = "approved";
-        } elseif (isset($params["denied"])) {
-            $id = $params["denied"];
-            $status = "denied";
-        } elseif (isset($params["cancel"])) {
-            $id = $params["cancel"];
-            $status = "cancel";
-        }
+        $this->validateCsrf();
+        $userId = $_SESSION["userId"];
 
-        if (empty($id) || empty($status)) {
+        $id = trim($_POST["id"] ?? "");
+        $status = trim($_POST["status"] ?? "");
+
+        $allowedStatuses = ["approved", "denied", "cancel"];
+        if (empty($id) || !in_array($status, $allowedStatuses, true)) {
             $this->redirect('/received');
         }
 
-        if ($this->appointmentModel->updateAppointmentStatus($id, $status)) {
+        if ($this->appointmentModel->updateAppointmentStatusForUser($id, $status, $userId)) {
+            $this->setFlash('success', 'Appointment status updated to ' . ucfirst($status) . '.');
             $this->redirect('/received');
         } else {
-            $error = urlencode("We're currently experiencing some technical difficulties. Please try again later.");
-            $this->redirect('/feedbacks?actionerror=' . $error);
+            $this->setFlash('danger', 'Unable to update appointment status.');
+            $this->redirect('/received');
         }
     }
 
     public function deleteForm($params) {
         $this->requireAuth();
         $id = $params["id"] ?? "";
+        $userId = $_SESSION["userId"];
 
         if (empty($id)) {
+            $this->redirect('/received');
+        }
+
+        $appt = $this->appointmentModel->getAppointmentForUser($id, $userId);
+        if (!$appt || $appt['receiver_id'] !== $userId) {
+            $this->setFlash('danger', 'Appointment not found or unauthorized access.');
             $this->redirect('/received');
         }
 
         $this->renderView('Appointment/Views/delete', ['appointmentId' => $id]);
     }
 
-    public function deleteConfirm($params) {
+    public function deleteConfirm() {
         $this->requireAuth();
-        $id = $params["yes"] ?? "";
+        $this->validateCsrf();
+        $userId = $_SESSION["userId"];
+
+        $id = trim($_POST["id"] ?? "");
 
         if (empty($id)) {
             $this->redirect('/received');
         }
 
-        if ($this->appointmentModel->deleteAppointment($id)) {
+        if ($this->appointmentModel->deleteReceivedAppointment($id, $userId)) {
+            $this->setFlash('success', 'Received appointment was successfully deleted.');
             $this->redirect('/received');
         } else {
-            $error = urlencode("We're currently experiencing some technical difficulties. Please try again later.");
-            $this->redirect('/feedbacks?actionerror=' . $error);
+            $this->setFlash('danger', 'Unable to delete appointment.');
+            $this->redirect('/received');
         }
     }
 
     public function deleteSentForm($params) {
         $this->requireAuth();
         $id = $params["id"] ?? "";
+        $userId = $_SESSION["userId"];
 
         if (empty($id)) {
+            $this->redirect('/sent');
+        }
+
+        $appt = $this->appointmentModel->getAppointmentForUser($id, $userId);
+        if (!$appt || $appt['sender_id'] !== $userId) {
+            $this->setFlash('danger', 'Appointment not found or unauthorized access.');
             $this->redirect('/sent');
         }
 
         $this->renderView('Appointment/Views/delete-sent', ['appointmentId' => $id]);
     }
 
-    public function deleteSentConfirm($params) {
+    public function deleteSentConfirm() {
         $this->requireAuth();
-        $id = $params["yes"] ?? "";
+        $this->validateCsrf();
+        $userId = $_SESSION["userId"];
+
+        $id = trim($_POST["id"] ?? "");
 
         if (empty($id)) {
             $this->redirect('/sent');
         }
 
-        if ($this->appointmentModel->deleteAppointment($id)) {
+        if ($this->appointmentModel->deleteSentAppointment($id, $userId)) {
+            $this->setFlash('success', 'Sent appointment was successfully deleted.');
             $this->redirect('/sent');
         } else {
-            $error = urlencode("We're currently experiencing some technical difficulties. Please try again later.");
-            $this->redirect('/feedbacks?actionerror=' . $error);
+            $this->setFlash('danger', 'Unable to delete appointment.');
+            $this->redirect('/sent');
         }
     }
 }

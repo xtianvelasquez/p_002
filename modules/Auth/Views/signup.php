@@ -1,105 +1,56 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link class="stylesheet" href="<?= assetUrl('bootstrap/css/bootstrap.min.css?v=5.3') ?>">
-  <!-- Wait! The original code used <link rel="stylesheet"... let's make sure it is correct -->
-  <link rel="stylesheet" href="<?= assetUrl('bootstrap/css/bootstrap.min.css?v=5.3') ?>">
-  <title>One Calenday</title>
-  <style>
-    html,
-    body {
-      background-color: #F8F9FA;
-    }
-  </style>
-</head>
-
-<body>
-
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-md py-3 px-3">
-    <a href="<?= routeUrl('/') ?>" class="navbar-brand fw-bold">
-      <img src="<?= assetUrl('images/logo.png') ?>" alt="one calenday logo" class="align-middle" height="30" width="60">
-      ONE CALENDAY
-    </a>
-    <button type="button" class="navbar-toggler" data-bs-target="#ourDashboard" data-bs-toggle="collapse">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="ourDashboard">
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-          <a class="nav-link" href="<?= routeUrl('/login') ?>">login</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link active" href="<?= routeUrl('/signup') ?>">signup</a>
-        </li>
-      </ul>
-    </div>
-  </nav>
-
-  <div class="container-xl mt-3 mb-5">
-    <div class="row justify-content-center">
-
-      <div class="col-10 col-md-6">
-        <div class="card rounded-0">
-
-          <div class="card-header">signup</div>
-          <div class="card-body pt-3">
-            <form action="<?= routeUrl('/signup') ?>" method="post" enctype="multipart/form-data">
-              <div class="row">
-                <div class="col-12 mb-3">
-                  <label for="firstName" class="mb-1">First Name</label>
-                  <input type="text" name="firstName" id="firstName" class="form-control rounded-0" required>
-                </div>
-                <div class="col-12 mb-3">
-                  <label for="middleName" class="mb-1">Middle Name</label>
-                  <input type="text" name="middleName" id="middleName" class="form-control rounded-0">
-                </div>
-                <div class="col-12 mb-3">
-                  <label for="lastName" class="mb-1">Last Name</label>
-                  <input type="text" name="lastName" id="lastName" class="form-control rounded-0" required>
-                </div>
-                <div class="col-12 mb-3">
-                  <label for="contactNumber" class="mb-1">Contact Number</label>
-                  <div class="input-group">
-                    <span class="input-group-text rounded-0">+63</span>
-                    <input type="text" name="contactNumber" id="contactNumber" pattern="\d{10}" minlength="10" maxlength="10" class="form-control rounded-0" required>
-                  </div>
-                </div>
-                <div class="col-12 mb-3">
-                  <label for="emailAddress" class="mb-1">Email</label>
-                  <input type="email" name="emailAddress" id="emailAddress" class="form-control rounded-0" required>
-                </div>
-                <div class="col-12 mb-3">
-                  <label for="password" class="mb-1">Password</label>
-                  <input type="password" name="password" id="password" class="form-control rounded-0" required>
-                </div>
-                <div class="col-12 mb-3">
-                  <label for="profilePicture" class="mb-1">Please attach your profile picture here:</label>
-                  <input type="file" name="profilePicture" id="profilePicture" class="form-control rounded-0" required>
-                  <p class="form-text">Please ensure that you provide a clearer image. Below 10 MB in size. With only png, jpg or jpeg file extension.</p>
-                </div>
-                <div class="text-center">
-                  <input type="submit" name="signup" value="Signup" class="col-12 btn btn-outline-primary rounded-0">
+<div class="container-xl my-5">
+  <div class="row justify-content-center">
+    <div class="col-11 col-sm-10 col-md-8 col-lg-6">
+      <div class="card rounded-0 shadow-sm border-0">
+        <div class="card-header bg-white py-3 border-bottom">
+          <h5 class="card-title mb-0 fw-bold text-center text-dark">Create Your Account</h5>
+        </div>
+        <div class="card-body p-4">
+          <form action="<?= routeUrl('/signup') ?>" method="post" enctype="multipart/form-data">
+            <?= csrfField() ?>
+            <div class="row g-3">
+              <div class="col-12 col-sm-6">
+                <label for="firstName" class="form-label text-secondary small fw-semibold">First Name</label>
+                <input type="text" name="firstName" id="firstName" class="form-control rounded-0" required autofocus>
+              </div>
+              <div class="col-12 col-sm-6">
+                <label for="middleName" class="form-label text-secondary small fw-semibold">Middle Name</label>
+                <input type="text" name="middleName" id="middleName" class="form-control rounded-0">
+              </div>
+              <div class="col-12">
+                <label for="lastName" class="form-label text-secondary small fw-semibold">Last Name</label>
+                <input type="text" name="lastName" id="lastName" class="form-control rounded-0" required>
+              </div>
+              <div class="col-12">
+                <label for="contactNumber" class="form-label text-secondary small fw-semibold">Contact Number</label>
+                <div class="input-group">
+                  <span class="input-group-text rounded-0">+63</span>
+                  <input type="text" name="contactNumber" id="contactNumber" pattern="\d{10}" minlength="10" maxlength="10" placeholder="9123456789" class="form-control rounded-0" required>
                 </div>
               </div>
-            </form>
-          </div>
+              <div class="col-12">
+                <label for="emailAddress" class="form-label text-secondary small fw-semibold">Email Address</label>
+                <input type="email" name="emailAddress" id="emailAddress" class="form-control rounded-0" placeholder="name@example.com" required>
+              </div>
+              <div class="col-12">
+                <label for="password" class="form-label text-secondary small fw-semibold">Password (min 6 characters)</label>
+                <input type="password" name="password" id="password" minlength="6" class="form-control rounded-0" required>
+              </div>
+              <div class="col-12">
+                <label for="profilePicture" class="form-label text-secondary small fw-semibold">Profile Picture (JPG/PNG, max 10MB)</label>
+                <input type="file" name="profilePicture" id="profilePicture" accept="image/png, image/jpeg" class="form-control rounded-0" required>
+              </div>
+              <div class="col-12 mt-4">
+                <button type="submit" name="signup" class="btn btn-primary rounded-0 w-100 py-2">Create Account</button>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="card-footer bg-light text-center py-3 border-0">
+          <span class="text-muted small">Already have an account? </span>
+          <a href="<?= routeUrl('/login') ?>" class="text-decoration-none small fw-semibold">Sign In</a>
         </div>
       </div>
-
     </div>
   </div>
-
-  <!-- Copyright -->
-  <div class="container-fluid bg-secondary py-3 text-center text-white">
-    <p>&copy; 2024 Christian E. Velasquez. All rights reserved.</p>
-  </div>
-
-  <script src="<?= assetUrl('bootstrap/js/bootstrap.min.js?v=5.3') ?>"></script>
-</body>
-
-</html>
+</div>

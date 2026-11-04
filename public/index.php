@@ -1,5 +1,9 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once dirname(__DIR__) . '/core/helpers.php';
 
 spl_autoload_register(function ($class) {
     $prefix = 'App\\';
@@ -17,22 +21,6 @@ spl_autoload_register(function ($class) {
         require $file;
     }
 });
-
-function routeUrl($path = '') {
-    $scriptName = $_SERVER['SCRIPT_NAME'];
-    $path = '/' . ltrim($path, '/');
-    return $scriptName . $path;
-}
-
-function assetUrl($path = '') {
-    $scriptName = $_SERVER['SCRIPT_NAME'];
-    $base = dirname($scriptName);
-    $base = str_replace('\\', '/', $base);
-    if ($base === '/') {
-        $base = '';
-    }
-    return $base . '/' . ltrim($path, '/');
-}
 
 use App\Core\Router;
 
@@ -61,10 +49,10 @@ $router->add('GET', '/appointment/book', 'Appointment\Controllers\AppointmentCon
 $router->add('POST', '/appointment/book', 'Appointment\Controllers\AppointmentController@book');
 $router->add('GET', '/appointment/view', 'Appointment\Controllers\AppointmentController@view');
 $router->add('GET', '/appointment/edit', 'Appointment\Controllers\AppointmentController@edit');
-$router->add('GET', '/appointment/status', 'Appointment\Controllers\AppointmentController@updateStatus');
+$router->add('POST', '/appointment/status', 'Appointment\Controllers\AppointmentController@updateStatus');
 $router->add('GET', '/appointment/delete', 'Appointment\Controllers\AppointmentController@deleteForm');
-$router->add('GET', '/appointment/delete/confirm', 'Appointment\Controllers\AppointmentController@deleteConfirm');
+$router->add('POST', '/appointment/delete', 'Appointment\Controllers\AppointmentController@deleteConfirm');
 $router->add('GET', '/appointment/delete-sent', 'Appointment\Controllers\AppointmentController@deleteSentForm');
-$router->add('GET', '/appointment/delete-sent/confirm', 'Appointment\Controllers\AppointmentController@deleteSentConfirm');
+$router->add('POST', '/appointment/delete-sent', 'Appointment\Controllers\AppointmentController@deleteSentConfirm');
 
 $router->dispatch();

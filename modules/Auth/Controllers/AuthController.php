@@ -40,8 +40,9 @@ class AuthController extends BaseController {
         }
 
         if (isset($_POST["login"])) {
-            $emailAddress = filter_var(trim($_POST["emailAddress"]), FILTER_SANITIZE_EMAIL);
-            $password = trim($_POST["password"]);
+            $this->validateCsrf();
+            $emailAddress = filter_var(trim($_POST["emailAddress"] ?? ''), FILTER_SANITIZE_EMAIL);
+            $password = trim($_POST["password"] ?? '');
 
             $user = $this->userModel->getUserByEmailAndPassword($emailAddress, $password);
             if ($user) {
@@ -49,10 +50,11 @@ class AuthController extends BaseController {
                 $_SESSION["searchName"] = $user["search_name"];
                 $_SESSION["emailAddress"] = $user["email_address"];
                 $_SESSION["userId"] = $user["user_id"];
+                $this->setFlash('success', 'Welcome back, ' . $user['first_name'] . '!');
                 $this->redirect('/received');
             } else {
-                $error = urlencode("The email or password you entered is incorrect. Please try again.");
-                $this->redirect('/zone?loginerror=' . $error);
+                $this->setFlash('danger', 'The email or password you entered is incorrect. Please try again.');
+                $this->redirect('/login');
             }
         } else {
             $this->redirect('/login');
@@ -72,53 +74,68 @@ class AuthController extends BaseController {
         }
 
         if (isset($_POST["signup"])) {
+            $this->validateCsrf();
             $userId = $this->generateUserId();
-            $firstName = trim($_POST["firstName"]);
-            $middleName = trim($_POST["middleName"]);
-            $lastName = trim($_POST["lastName"]);
+            $firstName = trim($_POST["firstName"] ?? '');
+            $middleName = trim($_POST["middleName"] ?? '');
+            $lastName = trim($_POST["lastName"] ?? '');
             $searchName = strtoupper($firstName . " " . $lastName);
-            $contactNumber = trim($_POST["contactNumber"]);
-            $emailAddress = filter_var(trim($_POST["emailAddress"]), FILTER_SANITIZE_EMAIL);
-            $password = trim($_POST["password"]);
+            $contactNumber = trim($_POST["contactNumber"] ?? '');
+            $emailAddress = filter_var(trim($_POST["emailAddress"] ?? ''), FILTER_SANITIZE_EMAIL);
+            $password = trim($_POST["password"] ?? '');
 
             if (!filter_var($emailAddress, FILTER_VALIDATE_EMAIL)) {
-                $error = urlencode("Invalid email address.");
-                $this->redirect('/zone?signuperror=' . $error);
+                $this->setFlash('danger', 'Invalid email address provided.');
+                $this->redirect('/signup');
             }
 
-            if (isset($_FILES["profilePicture"])) {
+            if (strlen($password) < 6) {
+                $this->setFlash('danger', 'Password must be at least 6 characters.');
+                $this->redirect('/signup');
+            }
+
+            if (isset($_FILES["profilePicture"]) && $_FILES["profilePicture"]["error"] !== UPLOAD_ERR_NO_FILE) {
                 $profilePictureError = $_FILES["profilePicture"]["error"];
                 if ($profilePictureError !== UPLOAD_ERR_OK) {
-                    $error = urlencode("Error uploading files. Please try again later.");
-                    $this->redirect('/zone?signuperror=' . $error);
-                }
-
-                $allowedExtensions = array("png", "jpg", "jpeg");
-                $profilePictureName = basename($_FILES["profilePicture"]["name"]);
-                $profilePictureExtension = strtolower(pathinfo($profilePictureName, PATHINFO_EXTENSION));
-                if (!in_array($profilePictureExtension, $allowedExtensions)) {
-                    $error = urlencode("Invalid file type. Only PNG, JPG, and JPEG files are allowed.");
-                    $this->redirect('/zone?signuperror=' . $error);
+                    $this->setFlash('danger', 'Error uploading profile image. Please try again.');
+                    $this->redirect('/signup');
                 }
 
                 $profilePictureSize = $_FILES["profilePicture"]["size"];
                 if ($profilePictureSize >= 10000000) {
-                    $error = urlencode("File size too large. Maximum size allowed is 10MB.");
-                    $this->redirect('/zone?signuperror=' . $error);
+                    $this->setFlash('danger', 'File size exceeds 10MB limit.');
+                    $this->redirect('/signup');
+                }
+
+                $finfo = new \finfo(FILEINFO_MIME_TYPE);
+                $mimeType = $finfo->file($_FILES["profilePicture"]["tmp_name"]);
+                $allowedMimes = [
+                    'image/jpeg' => 'jpg',
+                    'image/png'  => 'png',
+                ];
+
+                if (!array_key_exists($mimeType, $allowedMimes)) {
+                    $this->setFlash('danger', 'Invalid file type. Only PNG, JPG, and JPEG images are allowed.');
+                    $this->redirect('/signup');
                 }
 
                 $existingUser = $this->userModel->getUserByEmailOrPhone($emailAddress, $contactNumber);
                 if (!$existingUser) {
-                    $targetDirectory = 'uploads/';
-                    if (!is_dir($targetDirectory)) {
-                        mkdir($targetDirectory, 0755, true);
+                    $publicUploadsDir = dirname(__DIR__, 3) . '/public/uploads';
+                    if (!is_dir($publicUploadsDir)) {
+                        mkdir($publicUploadsDir, 0755, true);
                     }
 
-                    $profilePicturePath = $targetDirectory . uniqid() . '.' . $profilePictureExtension;
-                    if (!move_uploaded_file($_FILES["profilePicture"]["tmp_name"], $profilePicturePath)) {
-                        $error = urlencode("Error moving uploaded files. Please try again later.");
-                        $this->redirect('/zone?signuperror=' . $error);
+                    $ext = $allowedMimes[$mimeType];
+                    $fileName = bin2hex(random_bytes(16)) . '.' . $ext;
+                    $targetPath = $publicUploadsDir . '/' . $fileName;
+
+                    if (!move_uploaded_file($_FILES["profilePicture"]["tmp_name"], $targetPath)) {
+                        $this->setFlash('danger', 'Failed to store uploaded profile picture.');
+                        $this->redirect('/signup');
                     }
+
+                    $profilePictureRelativePath = 'uploads/' . $fileName;
 
                     $signupData = [
                         'user_id' => $userId,
@@ -128,21 +145,24 @@ class AuthController extends BaseController {
                         'search_name' => $searchName,
                         'contact_number' => $contactNumber,
                         'email_address' => $emailAddress,
-                        'user_password' => $password,
-                        'profile_picture' => $profilePicturePath
+                        'user_password' => password_hash($password, PASSWORD_DEFAULT),
+                        'profile_picture' => $profilePictureRelativePath
                     ];
 
                     if ($this->userModel->createUser($signupData)) {
-                        $success = urlencode("Signup successful!");
-                        $this->redirect('/zone?signupsuccess=' . $success);
+                        $this->setFlash('success', 'Signup successful! Please sign in with your credentials.');
+                        $this->redirect('/login');
                     } else {
-                        $error = urlencode("We're currently experiencing some technical difficulties. Please try again later.");
-                        $this->redirect('/zone?signuperror=' . $error);
+                        $this->setFlash('danger', 'An error occurred during registration. Please try again.');
+                        $this->redirect('/signup');
                     }
                 } else {
-                    $error = urlencode("Email or contact number already exists.");
-                    $this->redirect('/zone?signuperror=' . $error);
+                    $this->setFlash('danger', 'The contact number or email address is already registered.');
+                    $this->redirect('/signup');
                 }
+            } else {
+                $this->setFlash('danger', 'Please upload a profile picture.');
+                $this->redirect('/signup');
             }
         } else {
             $this->redirect('/signup');
@@ -150,16 +170,9 @@ class AuthController extends BaseController {
     }
 
     public function logout() {
-        $_SESSION = [];
-        if (ini_get("session.use_cookies")) {
-            $params = session_get_cookie_params();
-            setcookie(session_name(), '', time() - 42000,
-                $params["path"], $params["domain"],
-                $params["secure"], $params["httponly"]
-            );
-        }
+        session_unset();
         session_destroy();
-        $this->redirect('/');
+        $this->redirect('/login');
     }
 
     public function zone() {

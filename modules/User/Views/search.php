@@ -1,102 +1,55 @@
-<!DOCTYPE html>
-<html lang="en">
+<div class="container-xl my-5">
+  <div class="row justify-content-center">
+    <div class="col-11 col-sm-9 col-md-7 col-lg-6">
+      <div class="card rounded-0 shadow-sm border-0">
+        <div class="card-header bg-white py-3 border-bottom">
+          <h5 class="card-title mb-0 fw-bold text-dark">Search Users</h5>
+        </div>
+        <div class="card-body p-4">
+          <form action="<?= routeUrl('/search') ?>" method="get">
+            <div class="input-group">
+              <input type="text" name="name" id="name" class="form-control rounded-0" placeholder="Type a name to search (e.g. Stacy)..." value="<?= htmlspecialchars($searchTerm ?? '', ENT_QUOTES, 'UTF-8') ?>" required autofocus>
+              <button type="submit" class="btn btn-primary rounded-0 px-4">Search</button>
+            </div>
+          </form>
 
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="<?= assetUrl('bootstrap/css/bootstrap.min.css?v=5.3') ?>">
-  <title>One Calenday</title>
-  <style>
-    html,
-    body {
-      background-color: #F8F9FA;
-    }
-  </style>
-</head>
-
-<body>
-
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-md py-3 px-3">
-    <a href="<?= routeUrl('/profile') ?>" class="navbar-brand fw-bold">
-      <img src="<?= assetUrl($_SESSION["profilePicture"]) ?>" alt="your profile picture" class="align-middle rounded-5" height="40" width="40">
-      <?= htmlspecialchars($_SESSION["searchName"], ENT_QUOTES, 'UTF-8'); ?>
-    </a>
-    <button type="button" class="navbar-toggler" data-bs-target="#ourDashboard" data-bs-toggle="collapse">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="ourDashboard">
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-          <a class="nav-link" href="<?= routeUrl('/received') ?>">received</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="<?= routeUrl('/sent') ?>">sent</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link active" href="<?= routeUrl('/search') ?>">search</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="<?= routeUrl('/logout') ?>">logout</a>
-        </li>
-      </ul>
-    </div>
-  </nav>
-
-  <div class="container-xl mt-3 mb-5">
-    <div class="row justify-content-center">
-
-      <div class="col-10 col-md-6">
-        <div class="card rounded-0">
-          <div class="card-header">
-            <p class="card-title h5 text-dark">search</p>
-          </div>
-          <div class="card-body px-3">
-            <form action="<?= routeUrl('/search') ?>" method="post">
-              <div class="row">
-                <div class="col-12 mb-2">
-                  <input type="text" name="name" id="name" class="container-fluid form-control rounded-0" placeholder="Name" required>
+          <?php if ($searched && $searchResults !== null): ?>
+            <div class="mt-4">
+              <h6 class="text-secondary small fw-semibold mb-3">Search Results (<?= count($searchResults) ?>)</h6>
+              <?php if (count($searchResults) > 0): ?>
+                <div class="list-group rounded-0">
+                  <?php foreach ($searchResults as $user): ?>
+                    <?php 
+                      $uid = htmlspecialchars($user['user_id'], ENT_QUOTES, 'UTF-8');
+                      $pic = htmlspecialchars($user['profile_picture'] ?? 'images/logo.png', ENT_QUOTES, 'UTF-8');
+                      $name = htmlspecialchars(trim($user['first_name'] . ' ' . $user['last_name']), ENT_QUOTES, 'UTF-8');
+                      $isSelf = ($user['user_id'] === $_SESSION['userId']);
+                    ?>
+                    <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3">
+                      <div class="d-flex align-items-center gap-3">
+                        <img src="<?= assetUrl($pic) ?>" alt="<?= $name ?>" class="rounded-circle border" style="width: 44px; height: 44px; object-fit: cover;">
+                        <div>
+                          <span class="fw-semibold text-dark d-block"><?= $name ?></span>
+                          <?php if ($isSelf): ?>
+                            <small class="badge bg-secondary rounded-0">You</small>
+                          <?php endif; ?>
+                        </div>
+                      </div>
+                      <?php if (!$isSelf): ?>
+                        <a href="<?= routeUrl('/appointment/book?account=' . $uid) ?>" class="btn btn-outline-primary btn-sm rounded-0 px-3">Book Appointment</a>
+                      <?php endif; ?>
+                    </div>
+                  <?php endforeach; ?>
                 </div>
-                <div class="text-center">
-                  <input type="submit" name="search" value="Search" class="col-12 btn btn-outline-primary rounded-0">
+              <?php else: ?>
+                <div class="alert alert-light border rounded-0 text-center py-4 mb-0">
+                  <p class="text-muted mb-0">No users found matching "<strong><?= htmlspecialchars($searchTerm ?? '', ENT_QUOTES, 'UTF-8') ?></strong>".</p>
                 </div>
-              </div>
-            </form>
-            <table class="table table-hover mt-5">
-              <?php
-              if ($searched && $searchResults !== null) {
-                if (count($searchResults) > 0) {
-                  foreach ($searchResults as $searchUserRow) {
-                    $id = htmlspecialchars($searchUserRow["user_id"], ENT_QUOTES, "UTF-8");
-                    $picture = htmlspecialchars($searchUserRow["profile_picture"], ENT_QUOTES, "UTF-8");
-                    $fullName = htmlspecialchars($searchUserRow["first_name"] . " " . $searchUserRow["last_name"], ENT_QUOTES, "UTF-8");
-
-                    echo "<tr>";
-                    echo "<td><a href='" . routeUrl('/appointment/book?account=' . $id) . "' class='text-dark text-decoration-none'><img src='" . assetUrl($picture) . "' class='align-middle rounded-5 me-2' height='30' width='30'>{$fullName}</a></td>";
-                    echo "</tr>";
-                  }
-                } else {
-                  echo "<tr>";
-                  echo "<td>No user found.</td>";
-                  echo "</tr>";
-                }
-              }
-              ?>
-            </table>
-          </div>
+              <?php endif; ?>
+            </div>
+          <?php endif; ?>
         </div>
       </div>
-
     </div>
   </div>
-
-  <!-- Copyright -->
-  <div class="container-fluid bg-secondary py-3 text-center text-white">
-    <p>&copy; 2024 Christian E. Velasquez. All rights reserved.</p>
-  </div>
-
-  <script src="<?= assetUrl('bootstrap/js/bootstrap.min.js?v=5.3') ?>"></script>
-</body>
-
-</html>
+</div>

@@ -42,112 +42,127 @@ class UserController extends BaseController {
         $this->requireAuth();
         
         if (isset($_POST["update"])) {
+            $this->validateCsrf();
             $userId = $_SESSION["userId"];
-            $firstName = trim($_POST["firstName"]);
-            $middleName = trim($_POST["middleName"]);
-            $lastName = trim($_POST["lastName"]);
+            $firstName = trim($_POST["firstName"] ?? '');
+            $middleName = trim($_POST["middleName"] ?? '');
+            $lastName = trim($_POST["lastName"] ?? '');
             $searchName = strtoupper($firstName . " " . $lastName);
-            $contactNumber = trim($_POST["contactNumber"]);
-            $emailAddress = filter_var(trim($_POST["emailAddress"]), FILTER_SANITIZE_EMAIL);
-            $currentProfilePicture = $_POST["currentProfilePicture"];
+            $contactNumber = trim($_POST["contactNumber"] ?? '');
+            $emailAddress = filter_var(trim($_POST["emailAddress"] ?? ''), FILTER_SANITIZE_EMAIL);
             $dateUpdate = date("Y-m-d");
 
             if (!filter_var($emailAddress, FILTER_VALIDATE_EMAIL)) {
-                $error = urlencode("Invalid email address.");
-                $this->redirect('/feedbacks?profileerror=' . $error);
+                $this->setFlash('danger', 'Invalid email address provided.');
+                $this->redirect('/profile');
             }
 
             $user = $this->userModel->getUserById($userId);
-            if ($user) {
-                $lastDateUpdate = $user["last_update"];
-                if ($lastDateUpdate === $dateUpdate) {
-                    $error = urlencode("Updating is done once a day only.");
-                    $this->redirect('/feedbacks?profileerror=' . $error);
-                }
+            if (!$user) {
+                $this->redirect('/login');
             }
 
-            if (isset($_FILES["profilePicture"])) {
+            $profilePicturePath = $user['profile_picture'];
+
+            // Check if a new file is uploaded
+            if (isset($_FILES["profilePicture"]) && $_FILES["profilePicture"]["error"] !== UPLOAD_ERR_NO_FILE) {
                 $profilePictureError = $_FILES["profilePicture"]["error"];
                 if ($profilePictureError !== UPLOAD_ERR_OK) {
-                    $error = urlencode("Error uploading files. Please try again later.");
-                    $this->redirect('/feedbacks?profileerror=' . $error);
-                }
-
-                $allowedExtensions = array("png", "jpg", "jpeg");
-                $profilePictureName = basename($_FILES["profilePicture"]["name"]);
-                $profilePictureExtension = strtolower(pathinfo($profilePictureName, PATHINFO_EXTENSION));
-                if (!in_array($profilePictureExtension, $allowedExtensions)) {
-                    $error = urlencode("Invalid file type. Only PNG, JPG, and JPEG files are allowed.");
-                    $this->redirect('/feedbacks?profileerror=' . $error);
+                    $this->setFlash('danger', 'Error uploading profile image. Please try again.');
+                    $this->redirect('/profile');
                 }
 
                 $profilePictureSize = $_FILES["profilePicture"]["size"];
                 if ($profilePictureSize >= 10000000) {
-                    $error = urlencode("File size too large. Maximum size allowed is 10MB.");
-                    $this->redirect('/feedbacks?profileerror=' . $error);
+                    $this->setFlash('danger', 'File size exceeds 10MB limit.');
+                    $this->redirect('/profile');
                 }
 
-                $targetDirectory = "uploads/";
-                if (!is_dir($targetDirectory)) {
-                    mkdir($targetDirectory, 0755, true);
-                }
-
-                $profilePicturePath = $targetDirectory . uniqid() . '.' . $profilePictureExtension;
-                if (!move_uploaded_file($_FILES["profilePicture"]["tmp_name"], $profilePicturePath)) {
-                    $error = urlencode("Failed to move uploaded files to the target directory. Please try again later.");
-                    $this->redirect('/feedbacks?profileerror=' . $error);
-                }
-
-                // Delete old picture
-                if (!empty($currentProfilePicture) && file_exists($currentProfilePicture)) {
-                    unlink($currentProfilePicture);
-                }
-
-                $updateData = [
-                    'first_name' => $firstName,
-                    'middle_name' => $middleName,
-                    'last_name' => $lastName,
-                    'search_name' => $searchName,
-                    'contact_number' => $contactNumber,
-                    'email_address' => $emailAddress,
-                    'profile_picture' => $profilePicturePath,
-                    'last_update' => $dateUpdate
+                $finfo = new \finfo(FILEINFO_MIME_TYPE);
+                $mimeType = $finfo->file($_FILES["profilePicture"]["tmp_name"]);
+                $allowedMimes = [
+                    'image/jpeg' => 'jpg',
+                    'image/png'  => 'png',
                 ];
 
-                if ($this->userModel->updateUser($userId, $updateData)) {
-                    $_SESSION['profilePicture'] = $profilePicturePath;
-                    $_SESSION['searchName'] = $searchName;
+                if (!array_key_exists($mimeType, $allowedMimes)) {
+                    $this->setFlash('danger', 'Invalid file type. Only PNG, JPG, and JPEG images are allowed.');
                     $this->redirect('/profile');
-                } else {
-                    $error = urlencode("We're currently experiencing some technical difficulties. Please try again later.");
-                    $this->redirect('/feedbacks?profileerror=' . $error);
                 }
+
+                $publicDir = dirname(__DIR__, 3) . '/public';
+                $uploadsDir = $publicDir . '/uploads';
+                if (!is_dir($uploadsDir)) {
+                    mkdir($uploadsDir, 0755, true);
+                }
+
+                $ext = $allowedMimes[$mimeType];
+                $newFileName = bin2hex(random_bytes(16)) . '.' . $ext;
+                $targetPath = $uploadsDir . '/' . $newFileName;
+
+                if (!move_uploaded_file($_FILES["profilePicture"]["tmp_name"], $targetPath)) {
+                    $this->setFlash('danger', 'Failed to store uploaded file.');
+                    $this->redirect('/profile');
+                }
+
+                // Safely delete old picture from disk if it was an uploaded file
+                $realUploadsDir = realpath($uploadsDir);
+                if (!empty($user['profile_picture'])) {
+                    $oldFilePath = realpath($publicDir . '/' . ltrim($user['profile_picture'], '/'));
+                    if ($oldFilePath && $realUploadsDir && str_starts_with($oldFilePath, $realUploadsDir) && file_exists($oldFilePath)) {
+                        @unlink($oldFilePath);
+                    }
+                }
+
+                $profilePicturePath = 'uploads/' . $newFileName;
+            }
+
+            $updateData = [
+                'first_name' => $firstName,
+                'middle_name' => $middleName,
+                'last_name' => $lastName,
+                'search_name' => $searchName,
+                'contact_number' => $contactNumber,
+                'email_address' => $emailAddress,
+                'profile_picture' => $profilePicturePath,
+                'last_update' => $dateUpdate
+            ];
+
+            if ($this->userModel->updateUser($userId, $updateData)) {
+                $_SESSION['profilePicture'] = $profilePicturePath;
+                $_SESSION['searchName'] = $searchName;
+                $this->setFlash('success', 'Profile updated successfully!');
+                $this->redirect('/profile');
+            } else {
+                $this->setFlash('danger', 'An error occurred while updating your profile.');
+                $this->redirect('/profile');
             }
         } else {
             $this->redirect('/profile');
         }
     }
 
-    public function search() {
-        $this->requireAuth();
-        $this->renderView('User/Views/search', ['searchResults' => null, 'searched' => false]);
-    }
-
-    public function searchSubmit() {
+    public function search($params = []) {
         $this->requireAuth();
         
-        $searchResults = [];
+        $name = trim($params["name"] ?? $_GET["name"] ?? $_POST["name"] ?? "");
+        $searchResults = null;
         $searched = false;
-        if (isset($_POST["search"])) {
-            $name = strtoupper($_POST["name"]);
+
+        if ($name !== '') {
             $searchResults = $this->userModel->searchUsers($name);
             $searched = true;
         }
-        
+
         $this->renderView('User/Views/search', [
+            'searchTerm' => $name,
             'searchResults' => $searchResults,
             'searched' => $searched
         ]);
+    }
+
+    public function searchSubmit($params = []) {
+        $this->search($params);
     }
 
     public function feedbacks() {

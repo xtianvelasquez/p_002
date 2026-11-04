@@ -11,9 +11,15 @@ The system utilizes a hybrid approach:
 ## 2. Directory Structure
 ```text
 /
-├── core/                # Core system files (Router, Database, Base Controller/Model)
-├── config/              # Configuration files (Database settings)
-├── modules/             # Business logic modules
+├── core/                # Core system files (Router, Database, Base Controller/Model, Helpers)
+│   ├── BaseController.php
+│   ├── BaseModel.php
+│   ├── Database.php
+│   ├── helpers.php
+│   └── Router.php
+├── config/              # Configuration files (Database settings, .env support)
+├── modules/             # Business logic modules & Shared Layouts
+│   ├── Layout/          # Master layout wrapper (Navbar, Flash alerts, Footer)
 │   ├── Auth/            # Sign up, Login, Logout modules
 │   │   ├── Controllers/
 │   │   ├── Models/

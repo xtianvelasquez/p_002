@@ -24,12 +24,12 @@ CREATE TABLE user_account (
 -- Dumping data for table user_account
 --
 INSERT INTO user_account (user_id, first_name, middle_name, last_name, search_name, contact_number, email_address, user_password, profile_picture, last_update) VALUES
-('10BwghsSz2BD8L7Htdfd', 'Stacy', 'Smith', 'Baluyot', 'STACY BALUYOT', '9647023773', 'stacybaluyot@example.com', 'stacybaluyot', 'uploads/66d1455b0f4c7.png', NULL),
-('aVpQWBEhr40pNnGFPjCK', 'Rome', 'Manlangit', 'Montecillo', 'ROME MONTECILLO', '9848282983', 'romentecillo.mantlangit@example.com', 'romeanlangit', 'uploads/66d146189067b.png', NULL),
-('iwpmNfR1NzAxZ030or59', 'Mabeth', 'Rosalia', 'Ramos', 'MABETH RAMOS', '9731676318', 'rosaliaramos@example.com', 'rosaliaramos', 'uploads/66d144e10f9dc.png', NULL),
-('m3MQ8peXehSvz6Ad4nrS', 'Joe', 'Maiden', 'Mateo', 'JOE MATEO', '9738383882', 'joemateo@example.com', 'joemateo', 'uploads/66d1459a3bf2a.png', NULL),
-('XoW6v4698ZkoVomfMYhO', 'Amber', 'Mobito', 'Cruz', 'AMBER CRUZ', '9646367228', 'ambermobito.cruz@example.com', 'ambermobito', 'uploads/66d1451c352eb.png', NULL),
-('Z4whw2o3jDnHkyQA7tIR', 'Luicito', 'Santos', 'Materan', 'LUICITO MATERAN', '9377337338', 'luisito_materan.santos@example.com', 'materanluisito', 'uploads/66d1456d8eccd8.png', NULL);
+('10BwghsSz2BD8L7Htdfd', 'Stacy', 'Smith', 'Baluyot', 'STACY BALUYOT', '9647023773', 'stacybaluyot@example.com', '$2y$12$Zw9g9FXk8gHWLq61b8KEUeAAc3dxsid323dFVy7Pt7CXB7eYYvXVa', 'uploads/66d1455b0f4c7.png', NULL),
+('aVpQWBEhr40pNnGFPjCK', 'Rome', 'Manlangit', 'Montecillo', 'ROME MONTECILLO', '9848282983', 'romentecillo.mantlangit@example.com', '$2y$12$q5A4KuZ/bpXKhrdPc6gznu1uGd5Oj81DJ43i.h9rv8xPVYIwyZdkG', 'uploads/66d146189067b.png', NULL),
+('iwpmNfR1NzAxZ030or59', 'Mabeth', 'Rosalia', 'Ramos', 'MABETH RAMOS', '9731676318', 'rosaliaramos@example.com', '$2y$12$cGdySWLzidiDJYuKvYo/2uYCTei2ZasQwtT5Dp0gHCcwE0GiMSSvK', 'uploads/66d144e10f9dc.png', NULL),
+('m3MQ8peXehSvz6Ad4nrS', 'Joe', 'Maiden', 'Mateo', 'JOE MATEO', '9738383882', 'joemateo@example.com', '$2y$12$BlzUdSMoXmP5GNECKvq7a.31AfeNwwrBmIkbYGNjYcaJ506NpnLb6', 'uploads/66d1459a3bf2a.png', NULL),
+('XoW6v4698ZkoVomfMYhO', 'Amber', 'Mobito', 'Cruz', 'AMBER CRUZ', '9646367228', 'ambermobito.cruz@example.com', '$2y$12$Q3rIp98ZLSiXVszQ9mQ66uePFkAUwl.96y1oud3RngVJPwe1hnrwG', 'uploads/66d1451c352eb.png', NULL),
+('Z4whw2o3jDnHkyQA7tIR', 'Luicito', 'Santos', 'Materan', 'LUICITO MATERAN', '9377337338', 'luisito_materan.santos@example.com', '$2y$12$972b9KVDBiUTobyv3m63n.NOb4vpAntLeVMfY4pYzM/Iql/yfJKsu', 'uploads/66d1456d8eccd8.png', NULL);
 
 --
 -- Table structure for table appointment_details

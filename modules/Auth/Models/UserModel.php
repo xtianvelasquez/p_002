@@ -17,10 +17,30 @@ class UserModel extends BaseModel {
         return $stmt->fetch();
     }
 
-    public function getUserByEmailAndPassword($email, $password) {
-        $stmt = $this->db->prepare("SELECT * FROM user_account WHERE email_address = ? AND user_password = ? LIMIT 1");
-        $stmt->execute([$email, $password]);
+    public function getUserByEmail($email) {
+        $stmt = $this->db->prepare("SELECT * FROM user_account WHERE email_address = ? LIMIT 1");
+        $stmt->execute([$email]);
         return $stmt->fetch();
+    }
+
+    public function getUserByEmailAndPassword($email, $password) {
+        $user = $this->getUserByEmail($email);
+        if ($user) {
+            if (password_verify($password, $user['user_password'])) {
+                return $user;
+            }
+            if ($user['user_password'] === $password) {
+                // Legacy plain text match - rehash
+                $this->updatePassword($user['user_id'], password_hash($password, PASSWORD_DEFAULT));
+                return $user;
+            }
+        }
+        return false;
+    }
+
+    public function updatePassword($id, $hashedPassword) {
+        $stmt = $this->db->prepare("UPDATE user_account SET user_password = ? WHERE user_id = ?");
+        return $stmt->execute([$hashedPassword, $id]);
     }
 
     public function createUser($data) {
@@ -54,8 +74,9 @@ class UserModel extends BaseModel {
     }
 
     public function searchUsers($name) {
-        $stmt = $this->db->prepare("SELECT user_id, first_name, last_name, profile_picture FROM user_account WHERE first_name = ? OR last_name = ? OR search_name = ?");
-        $stmt->execute([$name, $name, $name]);
+        $searchTerm = '%' . trim($name) . '%';
+        $stmt = $this->db->prepare("SELECT user_id, first_name, last_name, profile_picture FROM user_account WHERE first_name ILIKE ? OR last_name ILIKE ? OR search_name ILIKE ?");
+        $stmt->execute([$searchTerm, $searchTerm, $searchTerm]);
         return $stmt->fetchAll();
     }
 }

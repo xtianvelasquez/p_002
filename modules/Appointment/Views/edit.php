@@ -1,70 +1,41 @@
-<!DOCTYPE html>
-<html lang="en">
+<div class="container-xl my-5">
+  <div class="row justify-content-center">
+    <div class="col-11 col-sm-9 col-md-7 col-lg-5">
+      <div class="card rounded-0 shadow-sm border-0 text-center">
+        <div class="card-header bg-white py-3 border-bottom">
+          <h5 class="card-title mb-0 fw-bold text-dark">Update Appointment Status</h5>
+        </div>
+        <div class="card-body p-4">
+          <p class="text-secondary small mb-4">Select the action you wish to take on this appointment:</p>
+          <div class="d-flex flex-column gap-2">
+            <?php if (!empty($isReceiver)): ?>
+              <form action="<?= routeUrl('/appointment/status') ?>" method="post">
+                <?= csrfField() ?>
+                <input type="hidden" name="id" value="<?= htmlspecialchars($appointmentId, ENT_QUOTES, 'UTF-8') ?>">
+                <input type="hidden" name="status" value="approved">
+                <button type="submit" class="btn btn-success rounded-0 w-100 py-2">Approve Appointment</button>
+              </form>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="<?= assetUrl('bootstrap/css/bootstrap.min.css?v=5.3') ?>">
-  <title>One Calenday</title>
-  <style>
-    html,
-    body {
-      background-color: #F8F9FA;
-    }
-  </style>
-</head>
+              <form action="<?= routeUrl('/appointment/status') ?>" method="post">
+                <?= csrfField() ?>
+                <input type="hidden" name="id" value="<?= htmlspecialchars($appointmentId, ENT_QUOTES, 'UTF-8') ?>">
+                <input type="hidden" name="status" value="denied">
+                <button type="submit" class="btn btn-warning rounded-0 w-100 py-2">Deny Appointment</button>
+              </form>
+            <?php endif; ?>
 
-<body>
-
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-md py-3 px-3">
-    <a href="<?= routeUrl('/profile') ?>" class="navbar-brand fw-bold">
-      <img src="<?= assetUrl($_SESSION["profilePicture"]) ?>" alt="your profile picture" class="align-middle rounded-5" height="40" width="40">
-      <?= htmlspecialchars($_SESSION['searchName'], ENT_QUOTES, 'UTF-8'); ?>
-    </a>
-    <button type="button" class="navbar-toggler" data-bs-target="#ourDashboard" data-bs-toggle="collapse">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="ourDashboard">
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-          <a class="nav-link" href="<?= routeUrl('/received') ?>">received</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="<?= routeUrl('/sent') ?>">sent</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="<?= routeUrl('/search') ?>">search</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="<?= routeUrl('/logout') ?>">logout</a>
-        </li>
-      </ul>
-    </div>
-  </nav>
-
-  <div class="container-xl mt-3 mb-5">
-    <div class="row justify-content-center">
-      <div class="col-10 col-md-8">
-        <div class="card rounded-0">
-          <div class="card-body text-center">
-            <p>Changing the status of this appointment.</p>
-            <a href='<?= routeUrl("/appointment/status?approved=" . $appointmentId) ?>' class='btn btn-secondary btn-sm rounded-0 px-3 m-1'>approved</a>
-            <a href='<?= routeUrl("/appointment/status?denied=" . $appointmentId) ?>' class='btn btn-secondary btn-sm rounded-0 px-3'>denied</a>
-            <a href='<?= routeUrl("/appointment/status?cancel=" . $appointmentId) ?>' class='btn btn-secondary btn-sm rounded-0 px-3 m-1'>cancel</a>
-            <a href='<?= routeUrl("/received") ?>' class='btn btn-secondary btn-sm rounded-0 px-3'>back</a>
+            <form action="<?= routeUrl('/appointment/status') ?>" method="post">
+              <?= csrfField() ?>
+              <input type="hidden" name="id" value="<?= htmlspecialchars($appointmentId, ENT_QUOTES, 'UTF-8') ?>">
+              <input type="hidden" name="status" value="cancel">
+              <button type="submit" class="btn btn-outline-danger rounded-0 w-100 py-2">Cancel Appointment</button>
+            </form>
           </div>
+        </div>
+        <div class="card-footer bg-light py-3 border-0">
+          <a href="<?= routeUrl('/received') ?>" class="text-decoration-none small text-secondary">&larr; Back to Appointments</a>
         </div>
       </div>
     </div>
   </div>
-
-  <!-- Copyright -->
-  <div class="container-fluid bg-secondary py-3 text-center text-white">
-    <p>&copy; 2024 Christian E. Velasquez. All rights reserved.</p>
-  </div>
-
-  <script src="<?= assetUrl('bootstrap/js/bootstrap.min.js?v=5.3') ?>"></script>
-</body>
-
-</html>
+</div>

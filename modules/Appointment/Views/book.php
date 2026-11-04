@@ -1,106 +1,61 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="<?= assetUrl('bootstrap/css/bootstrap.min.css?v=5.3') ?>">
-  <title>One Calendar</title>
-  <style>
-    html,
-    body {
-      background-color: #F8F9FA;
-    }
-  </style>
-</head>
-
-<body>
-
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-md py-3 px-3">
-    <a href="<?= routeUrl('/profile') ?>" class="navbar-brand fw-bold">
-      <img src="<?= assetUrl($_SESSION["profilePicture"]) ?>" alt="your profile picture" class="align-middle rounded-5" height="40" width="40">
-      <?= htmlspecialchars($_SESSION["searchName"], ENT_QUOTES, "UTF-8"); ?>
-    </a>
-    <button type="button" class="navbar-toggler" data-bs-target="#ourDashboard" data-bs-toggle="collapse">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="ourDashboard">
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-          <a class="nav-link" href="<?= routeUrl('/received') ?>">received</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="<?= routeUrl('/sent') ?>">sent</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link active" href="<?= routeUrl('/search') ?>">search</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="<?= routeUrl('/logout') ?>">logout</a>
-        </li>
-      </ul>
-    </div>
-  </nav>
-
-  <div class="container-xl mt-3 mb-5">
-    <div class="row justify-content-center align-items-top">
-      <div class="col-10 col-sm-3">
-        <img src="<?= assetUrl($profilePicture) ?>" alt="Profile Picture" class="img-fluid mb-1">
-        <p class="mb-1">First Name: <?= htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8') ?></p>
-        <p class="mb-1">Middle Name: <?= htmlspecialchars($middleName, ENT_QUOTES, 'UTF-8') ?></p>
-        <p class="mb-1">Last Name: <?= htmlspecialchars($lastName, ENT_QUOTES, 'UTF-8') ?></p>
-        <p class="mb-1">Contact Number: <?= htmlspecialchars($contactNumber, ENT_QUOTES, 'UTF-8') ?></p>
-        <p class="mb-1">Email Address: <?= htmlspecialchars($emailAddress, ENT_QUOTES, 'UTF-8') ?></p>
+<div class="container-xl my-4">
+  <div class="row justify-content-center align-items-start g-4">
+    <!-- User Card -->
+    <div class="col-11 col-md-4 col-lg-3">
+      <div class="card rounded-0 shadow-sm border-0 text-center p-3">
+        <img src="<?= assetUrl($profilePicture) ?>" alt="Profile Picture" class="img-fluid rounded mx-auto mb-3" style="max-height: 160px; object-fit: cover;">
+        <h5 class="fw-bold mb-1"><?= htmlspecialchars(trim($firstName . ' ' . $lastName), ENT_QUOTES, 'UTF-8') ?></h5>
+        <?php if (!empty($middleName)): ?>
+          <p class="text-muted small mb-2"><?= htmlspecialchars($middleName, ENT_QUOTES, 'UTF-8') ?></p>
+        <?php endif; ?>
+        <hr class="my-2">
+        <div class="text-start small text-secondary">
+          <p class="mb-1"><strong>Phone:</strong> +63 <?= htmlspecialchars($contactNumber, ENT_QUOTES, 'UTF-8') ?></p>
+          <p class="mb-0"><strong>Email:</strong> <?= htmlspecialchars($emailAddress, ENT_QUOTES, 'UTF-8') ?></p>
+        </div>
       </div>
+    </div>
 
-      <div class="col-10 col-sm-6">
-        <div class="card p-0 rounded-0">
-          <div class="card-header">Make an Appointment</div>
-          <div class="card-body pt-3">
-            <form action="<?= routeUrl('/appointment/book') ?>" method="post">
-              <input type="hidden" name="receiverId" id="receiverId" value="<?= htmlspecialchars($id, ENT_QUOTES, 'UTF-8') ?>">
-              <input type="hidden" name="senderId" id="senderId" value="<?= htmlspecialchars($_SESSION['userId'], ENT_QUOTES, 'UTF-8') ?>">
+    <!-- Booking Form Card -->
+    <div class="col-11 col-md-8 col-lg-6">
+      <div class="card rounded-0 shadow-sm border-0">
+        <div class="card-header bg-white py-3 border-bottom">
+          <h5 class="card-title mb-0 fw-bold text-dark">Schedule an Appointment</h5>
+        </div>
+        <div class="card-body p-4">
+          <form action="<?= routeUrl('/appointment/book') ?>" method="post">
+            <?= csrfField() ?>
+            <input type="hidden" name="receiverId" value="<?= htmlspecialchars($id, ENT_QUOTES, 'UTF-8') ?>">
 
-              <div class="row">
-                <div class="col-12 col-sm-6 mb-3">
-                  <label for="appointmentDate" class="mb-1">Date</label>
-                  <input type="date" name="appointmentDate" id="appointmentDate" class="form-control rounded-0" required>
-                </div>
-
-                <div class="col-12 col-sm-6 mb-3">
-                  <label for="appointmentTime" class="mb-1">Time</label>
-                  <input type="time" name="appointmentTime" id="appointmentTime" class="form-control rounded-0" required>
-                </div>
-
-                <div class="col-12 col-sm-6 mb-3">
-                  <label for="eventName" class="mb-1">Event Name</label>
-                  <input type="text" name="eventName" id="eventName" class="form-control rounded-0" required>
-                </div>
-
-                <div class="col-12 col-sm-6 mb-3">
-                  <label for="location" class="mb-1">Location</label>
-                  <input type="text" name="location" id="location" class="form-control rounded-0" required>
-                </div>
-
-                <div class="text-center">
-                  <input type="submit" name="submit" value="Submit" class="col-12 btn btn-outline-primary rounded-0">
-                </div>
+            <div class="row g-3">
+              <div class="col-12 col-sm-6">
+                <label for="appointmentDate" class="form-label text-secondary small fw-semibold">Date</label>
+                <input type="date" name="appointmentDate" id="appointmentDate" min="<?= date('Y-m-d') ?>" class="form-control rounded-0" required>
               </div>
-            </form>
-          </div>
+
+              <div class="col-12 col-sm-6">
+                <label for="appointmentTime" class="form-label text-secondary small fw-semibold">Time</label>
+                <input type="time" name="appointmentTime" id="appointmentTime" class="form-control rounded-0" required>
+              </div>
+
+              <div class="col-12">
+                <label for="eventName" class="form-label text-secondary small fw-semibold">Event Name / Subject</label>
+                <input type="text" name="eventName" id="eventName" placeholder="e.g. Project Consultation" class="form-control rounded-0" required>
+              </div>
+
+              <div class="col-12">
+                <label for="location" class="form-label text-secondary small fw-semibold">Location / Meeting Link</label>
+                <input type="text" name="location" id="location" placeholder="e.g. Google Meet, Zoom, Office Room 3" class="form-control rounded-0" required>
+              </div>
+
+              <div class="col-12 mt-4 d-flex justify-content-between">
+                <a href="<?= routeUrl('/search') ?>" class="btn btn-outline-secondary rounded-0 px-4">Cancel</a>
+                <button type="submit" name="submit" class="btn btn-primary rounded-0 px-4">Submit Appointment</button>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   </div>
-
-  <!-- Copyright -->
-  <footer class="container-fluid bg-secondary py-3 text-center text-white">
-    <p>&copy; 2024 Christian E. Velasquez. All rights reserved.</p>
-  </footer>
-
-  <script src="<?= assetUrl('bootstrap/js/bootstrap.min.js?v=5.3') ?>"></script>
-</body>
-
-</html>
+</div>
