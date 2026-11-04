@@ -1,38 +1,191 @@
+<?php
+$fullName = trim($firstName . ' ' . $lastName);
+$headline = trim($headline ?? '');
+$jobTitle = trim($jobTitle ?? '');
+$company = trim($company ?? '');
+$locationCity = trim($locationCity ?? '');
+$bio = trim($bio ?? '');
+$skillsRaw = trim($skills ?? '');
+$skillTags = array_filter(array_map('trim', explode(',', $skillsRaw)));
+$consultationTopics = trim($consultationTopics ?? '');
+$linkedinUrl = trim($linkedinUrl ?? '');
+$githubUrl = trim($githubUrl ?? '');
+$websiteUrl = trim($websiteUrl ?? '');
+?>
 <div class="container-xl my-4">
-  <div class="row justify-content-center align-items-start g-4">
-    <!-- User Profile Sidebar -->
-    <div class="col-12 col-md-4 col-lg-3">
-      <div class="card rounded-3 shadow-sm border-0 text-center p-3 mb-3">
-        <img src="<?= assetUrl($profilePicture) ?>" alt="Profile Picture" class="img-fluid rounded-circle mx-auto mb-3 shadow-sm" style="width: 110px; height: 110px; object-fit: cover;">
-        <h5 class="fw-bold mb-1 text-dark"><?= htmlspecialchars(trim($firstName . ' ' . $lastName), ENT_QUOTES, 'UTF-8') ?></h5>
-        <?php if (!empty($middleName)): ?>
-          <p class="text-muted small mb-2"><?= htmlspecialchars($middleName, ENT_QUOTES, 'UTF-8') ?></p>
-        <?php endif; ?>
-        
-        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 mb-3">
-          Book a 1:1 Session
+  <!-- 1. LINKEDIN-STYLE PROFILE HERO CARD -->
+  <div class="card rounded-3 shadow-sm border-0 overflow-hidden mb-4 bg-white">
+    <!-- Banner Header -->
+    <div class="position-relative" style="height: 160px; background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #0d9488 100%);">
+      <div class="position-absolute top-0 end-0 p-3 text-white-50 small">
+        <span class="badge bg-white text-dark shadow-sm px-3 py-2 rounded-pill fw-semibold">
+          <i class="bi bi-shield-check text-primary me-1"></i> Verified Professional
         </span>
+      </div>
+    </div>
 
-        <hr class="my-2">
-        <div class="text-start small text-secondary">
-          <p class="mb-1"><i class="bi bi-telephone me-2 text-primary"></i>+63 <?= htmlspecialchars($contactNumber, ENT_QUOTES, 'UTF-8') ?></p>
-          <p class="mb-2"><i class="bi bi-envelope me-2 text-primary"></i><?= htmlspecialchars($emailAddress, ENT_QUOTES, 'UTF-8') ?></p>
-          <div class="bg-light p-3 border rounded-3 mt-2">
-            <span class="d-block fw-semibold text-dark"><i class="bi bi-clock me-1 text-primary"></i> Available Window:</span>
-            <span><?= date('g:i A', strtotime('2000-01-01 ' . $workStartTime)) ?> – <?= date('g:i A', strtotime('2000-01-01 ' . $workEndTime)) ?></span>
-            <small class="d-block text-muted mt-1">(Standard increments: <?= (int)$slotDuration ?> mins)</small>
+    <!-- Profile Header Content -->
+    <div class="card-body px-4 pb-4 pt-0">
+      <div class="d-flex flex-column flex-md-row align-items-start justify-content-between gap-3">
+        <!-- Avatar & Core Info -->
+        <div class="d-flex flex-column flex-sm-row align-items-center align-items-sm-start gap-4" style="margin-top: -65px;">
+          <div class="position-relative">
+            <img src="<?= assetUrl($profilePicture) ?>" alt="<?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?>" class="rounded-circle border border-4 border-white shadow bg-white" style="width: 130px; height: 130px; object-fit: cover;">
+            <span class="position-absolute bottom-0 end-0 bg-success border border-white border-2 rounded-circle p-2" title="Available for Appointments"></span>
+          </div>
+
+          <div class="text-center text-sm-start mt-2 mt-sm-4">
+            <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-sm-start gap-2">
+              <h3 class="fw-bold mb-0 text-dark"><?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?></h3>
+              <?php if (!empty($middleName)): ?>
+                <span class="text-muted fs-6">(<?= htmlspecialchars($middleName, ENT_QUOTES, 'UTF-8') ?>)</span>
+              <?php endif; ?>
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1" style="font-size: 0.72rem;">
+                <i class="bi bi-calendar-check me-1"></i>Open to Meetings
+              </span>
+            </div>
+
+            <?php if (!empty($headline)): ?>
+              <p class="text-secondary fw-medium fs-6 mb-1 mt-1"><?= htmlspecialchars($headline, ENT_QUOTES, 'UTF-8') ?></p>
+            <?php endif; ?>
+
+            <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-sm-start gap-3 small text-muted mt-2">
+              <?php if (!empty($jobTitle) || !empty($company)): ?>
+                <div>
+                  <i class="bi bi-briefcase me-1 text-primary"></i>
+                  <span class="fw-semibold text-dark"><?= htmlspecialchars(trim($jobTitle . ($company ? ' at ' . $company : '')), ENT_QUOTES, 'UTF-8') ?></span>
+                </div>
+              <?php endif; ?>
+
+              <?php if (!empty($locationCity)): ?>
+                <div>
+                  <i class="bi bi-geo-alt me-1 text-danger"></i>
+                  <span><?= htmlspecialchars($locationCity, ENT_QUOTES, 'UTF-8') ?></span>
+                </div>
+              <?php endif; ?>
+
+              <div>
+                <i class="bi bi-clock me-1 text-primary"></i>
+                <span><?= date('g:i A', strtotime('2000-01-01 ' . $workStartTime)) ?> – <?= date('g:i A', strtotime('2000-01-01 ' . $workEndTime)) ?></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Social Links & Primary CTA -->
+        <div class="align-self-center align-self-md-end mt-3 mt-md-0 d-flex flex-wrap align-items-center gap-2">
+          <?php if (!empty($linkedinUrl)): ?>
+            <a href="<?= htmlspecialchars($linkedinUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm rounded-pill px-3" title="LinkedIn Profile">
+              <i class="bi bi-linkedin me-1"></i> LinkedIn
+            </a>
+          <?php endif; ?>
+
+          <?php if (!empty($githubUrl)): ?>
+            <a href="<?= htmlspecialchars($githubUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-dark btn-sm rounded-pill px-3" title="GitHub Profile">
+              <i class="bi bi-github me-1"></i> GitHub
+            </a>
+          <?php endif; ?>
+
+          <?php if (!empty($websiteUrl)): ?>
+            <a href="<?= htmlspecialchars($websiteUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm rounded-pill px-3" title="Personal Website">
+              <i class="bi bi-globe me-1"></i> Portfolio
+            </a>
+          <?php endif; ?>
+
+          <a href="#schedulerCard" class="btn btn-primary btn-sm rounded-pill px-4 shadow-sm fw-bold">
+            <i class="bi bi-calendar-plus me-1"></i> Book Time
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. TWO-COLUMN LAYOUT: PROFESSIONAL DOSSIER & CAL.COM SCHEDULER -->
+  <div class="row g-4 align-items-start">
+    
+    <!-- LEFT COLUMN: ABOUT, SKILLS, CONSULTATION TOPICS -->
+    <div class="col-12 col-lg-5">
+      <!-- About / Summary Card -->
+      <div class="card rounded-3 shadow-sm border-0 mb-4 bg-white">
+        <div class="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center gap-2">
+          <i class="bi bi-person-lines-fill text-primary"></i>
+          <h6 class="card-title mb-0 fw-bold text-dark">About</h6>
+        </div>
+        <div class="card-body p-4">
+          <?php if (!empty($bio)): ?>
+            <div class="text-secondary small" style="line-height: 1.7; white-space: pre-line;"><?= htmlspecialchars($bio, ENT_QUOTES, 'UTF-8') ?></div>
+          <?php else: ?>
+            <p class="text-muted small mb-0">No bio provided yet. Book an appointment to connect directly!</p>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <!-- Skills & Expertise Card -->
+      <div class="card rounded-3 shadow-sm border-0 mb-4 bg-white">
+        <div class="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center gap-2">
+          <i class="bi bi-award text-primary"></i>
+          <h6 class="card-title mb-0 fw-bold text-dark">Skills & Competencies</h6>
+        </div>
+        <div class="card-body p-4">
+          <?php if (!empty($skillTags)): ?>
+            <div class="d-flex flex-wrap gap-2">
+              <?php foreach ($skillTags as $skill): ?>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill fw-normal" style="font-size: 0.8rem;">
+                  <?= htmlspecialchars($skill, ENT_QUOTES, 'UTF-8') ?>
+                </span>
+              <?php endforeach; ?>
+            </div>
+          <?php else: ?>
+            <p class="text-muted small mb-0">General Professional & Consultation</p>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <!-- Consultation Focus / Why Meet With Me Card -->
+      <div class="card rounded-3 shadow-sm border-0 mb-4 bg-white">
+        <div class="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-lightbulb text-warning"></i>
+            <h6 class="card-title mb-0 fw-bold text-dark">Consultation Focus</h6>
+          </div>
+          <span class="badge bg-light text-secondary border small">Mutual Fit</span>
+        </div>
+        <div class="card-body p-4">
+          <p class="small text-secondary mb-2 fw-semibold">Topics & discussions this person is best suited for:</p>
+          <?php if (!empty($consultationTopics)): ?>
+            <div class="p-3 bg-light rounded-3 border small text-dark" style="white-space: pre-line; line-height: 1.6;">
+              <?= htmlspecialchars($consultationTopics, ENT_QUOTES, 'UTF-8') ?>
+            </div>
+          <?php else: ?>
+            <p class="text-muted small mb-0">Open for professional networking, project consultations, and career syncs.</p>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <!-- Contact & Working Info -->
+      <div class="card rounded-3 shadow-sm border-0 bg-white">
+        <div class="card-body p-4">
+          <h6 class="fw-bold text-dark mb-3 small text-uppercase" style="letter-spacing: 0.04em;">Direct Coordinates</h6>
+          <div class="small text-secondary">
+            <div class="mb-2"><i class="bi bi-envelope text-primary me-2"></i><?= htmlspecialchars($emailAddress, ENT_QUOTES, 'UTF-8') ?></div>
+            <div class="mb-2"><i class="bi bi-telephone text-primary me-2"></i>+63 <?= htmlspecialchars($contactNumber, ENT_QUOTES, 'UTF-8') ?></div>
+            <div><i class="bi bi-stopwatch text-primary me-2"></i><?= (int)$slotDuration ?> min default slots (adjustable per format)</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Booking Configuration & Form -->
-    <div class="col-12 col-md-8 col-lg-8">
-      <div class="card rounded-3 shadow-sm border-0">
+    <!-- RIGHT COLUMN: CAL.COM SCHEDULING ENGINE -->
+    <div class="col-12 col-lg-7" id="schedulerCard">
+      <div class="card rounded-3 shadow-sm border-0 bg-white">
         <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
-          <h5 class="card-title mb-0 fw-bold text-dark">Schedule an Appointment</h5>
-          <span class="badge bg-light text-secondary border">Step 1 & 2</span>
+          <div>
+            <h5 class="card-title mb-0 fw-bold text-dark">Schedule an Appointment</h5>
+            <small class="text-muted">Select format, platform, and an available time slot</small>
+          </div>
+          <span class="badge bg-primary text-white px-3 py-2 rounded-pill">1:1 Session</span>
         </div>
+
         <div class="card-body p-4">
           <?php if (!$isAuthenticated): ?>
             <div class="alert alert-info rounded-3 d-flex justify-content-between align-items-center mb-4">
@@ -48,7 +201,7 @@
             <input type="hidden" name="eventType" id="eventTypeInput" value="consultation">
             <input type="hidden" name="meetingMode" id="meetingModeInput" value="google_meet">
 
-            <!-- Section 1: Meeting Type Cards -->
+            <!-- Step 1: Select Format Cards -->
             <div class="mb-4">
               <label class="form-label text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.04em;">
                 1. Select Meeting Format
@@ -61,7 +214,7 @@
                       <span class="badge bg-light text-secondary border">15m</span>
                     </div>
                     <div class="fw-bold text-dark">Quick Sync</div>
-                    <div class="small text-muted" style="font-size: 0.8rem;">Brief standup, quick Q&A, or intro call.</div>
+                    <div class="small text-muted" style="font-size: 0.8rem;">Standup, quick Q&A, or intro call.</div>
                   </div>
                 </div>
 
@@ -72,7 +225,7 @@
                       <span class="badge bg-primary text-white">30m (Standard)</span>
                     </div>
                     <div class="fw-bold text-dark">Consultation</div>
-                    <div class="small text-muted" style="font-size: 0.8rem;">In-depth review, alignment, or planning.</div>
+                    <div class="small text-muted" style="font-size: 0.8rem;">In-depth review, alignment, or advice.</div>
                   </div>
                 </div>
 
@@ -83,13 +236,13 @@
                       <span class="badge bg-light text-secondary border">60m</span>
                     </div>
                     <div class="fw-bold text-dark">Deep Dive</div>
-                    <div class="small text-muted" style="font-size: 0.8rem;">Technical walkthrough, pairing, or interview.</div>
+                    <div class="small text-muted" style="font-size: 0.8rem;">Pairing, architecture design, or interview.</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Section 2: Meeting Platform / Mode Selection -->
+            <!-- Step 2: Meeting Platform / Mode -->
             <div class="mb-4">
               <label class="form-label text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.04em;">
                 2. Meeting Platform / Mode
@@ -110,7 +263,7 @@
               </div>
             </div>
 
-            <!-- Section 3: Date & Interactive Slots -->
+            <!-- Step 3: Date & Interactive Slots -->
             <div class="row g-3 mb-4">
               <div class="col-12 col-sm-6">
                 <label for="appointmentDate" class="form-label text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.04em;">
@@ -149,7 +302,7 @@
               </div>
             </div>
 
-            <!-- Section 4: Details & Notes -->
+            <!-- Step 4: Subject, Location & Agenda -->
             <div class="row g-3">
               <div class="col-12">
                 <label for="eventName" class="form-label text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.04em;">
@@ -173,11 +326,11 @@
               </div>
 
               <div class="col-12 mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
-                <a href="<?= routeUrl(isset($_SESSION['userId']) ? '/search' : '/') ?>" class="btn btn-outline-secondary rounded-2 px-4">&larr; Cancel</a>
+                <a href="<?= routeUrl(isset($_SESSION['userId']) ? '/search' : '/') ?>" class="btn btn-outline-secondary rounded-2 px-4">&larr; Back</a>
                 <?php if ($isAuthenticated): ?>
-                  <button type="submit" name="submit" id="submitBtn" class="btn btn-primary rounded-2 px-4 shadow-sm" disabled>Confirm Booking</button>
+                  <button type="submit" name="submit" id="submitBtn" class="btn btn-primary rounded-2 px-4 shadow-sm fw-bold" disabled>Confirm Booking</button>
                 <?php else: ?>
-                  <a href="<?= routeUrl('/login') ?>" class="btn btn-primary rounded-2 px-4 shadow-sm">Sign In to Book</a>
+                  <a href="<?= routeUrl('/login') ?>" class="btn btn-primary rounded-2 px-4 shadow-sm fw-bold">Sign In to Book</a>
                 <?php endif; ?>
               </div>
             </div>

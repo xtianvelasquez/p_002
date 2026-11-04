@@ -20,6 +20,16 @@ CREATE TABLE user_account (
   work_start_time varchar(10) DEFAULT '09:00',
   work_end_time varchar(10) DEFAULT '17:00',
   slot_duration_minutes int DEFAULT 30,
+  headline varchar(200) DEFAULT NULL,
+  bio text DEFAULT NULL,
+  job_title varchar(150) DEFAULT NULL,
+  company varchar(150) DEFAULT NULL,
+  location_city varchar(100) DEFAULT NULL,
+  skills text DEFAULT NULL,
+  consultation_topics text DEFAULT NULL,
+  linkedin_url varchar(255) DEFAULT NULL,
+  github_url varchar(255) DEFAULT NULL,
+  website_url varchar(255) DEFAULT NULL,
   PRIMARY KEY (user_id)
 );
 

@@ -46,6 +46,7 @@ $router->add('GET', '/feedbacks', 'User\Controllers\UserController@feedbacks');
 $router->add('GET', '/received', 'Appointment\Controllers\AppointmentController@panel');
 $router->add('GET', '/sent', 'Appointment\Controllers\AppointmentController@sent');
 $router->add('GET', '/u/{account}', 'Appointment\Controllers\AppointmentController@bookForm');
+$router->add('GET', '/user/{account}', 'Appointment\Controllers\AppointmentController@bookForm');
 $router->add('GET', '/appointment/book', 'Appointment\Controllers\AppointmentController@bookForm');
 $router->add('POST', '/appointment/book', 'Appointment\Controllers\AppointmentController@book');
 $router->add('GET', '/api/appointment/slots', 'Appointment\Controllers\AppointmentController@apiSlots');

@@ -220,4 +220,22 @@ if (str_contains($sampleIcs, 'BEGIN:VCALENDAR') && str_contains($sampleIcs, 'PRO
     exit(1);
 }
 
-echo "--- ALL CHECKS PASSED (13/13) ---\n";
+// 14. Test LinkedIn-Style Professional Search by Skill & Company
+$skillSearchResults = $userModel->searchUsers('PostgreSQL');
+if (!empty($skillSearchResults) && count($skillSearchResults) >= 1) {
+    echo "[PASS] LinkedIn-style search successfully discovered user by skill keyword 'PostgreSQL'.\n";
+} else {
+    echo "[FAIL] Skill-based user search failed.\n";
+    exit(1);
+}
+
+// 15. Test LinkedIn Profile Fields Retrieval
+$stacyDetails = $apptModel->getUserDetails('10BwghsSz2BD8L7Htdfd');
+if ($stacyDetails && !empty($stacyDetails['headline']) && !empty($stacyDetails['skills']) && !empty($stacyDetails['consultation_topics']) && !empty($stacyDetails['linkedin_url'])) {
+    echo "[PASS] LinkedIn professional profile fields verified on user account.\n";
+} else {
+    echo "[FAIL] LinkedIn profile fields missing or unpopulated.\n";
+    exit(1);
+}
+
+echo "--- ALL CHECKS PASSED (15/15) ---\n";

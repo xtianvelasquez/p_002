@@ -156,7 +156,9 @@ class AppointmentModel extends BaseModel {
     public function getUserDetails($userId) {
         $stmt = $this->db->prepare("
             SELECT user_id, first_name, middle_name, last_name, search_name, contact_number, email_address, profile_picture,
-                   work_start_time, work_end_time, slot_duration_minutes 
+                   work_start_time, work_end_time, slot_duration_minutes,
+                   headline, bio, job_title, company, location_city, skills, consultation_topics,
+                   linkedin_url, github_url, website_url
             FROM user_account 
             WHERE user_id = ? 
             LIMIT 1

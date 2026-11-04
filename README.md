@@ -58,6 +58,8 @@ This project incorporates web application security best practices:
 - **Authentication & Profiles**: Secure sign-up, login, and profile editing with image upload validation.
 - **Configurable Availability**: Users define their working start/end times and slot durations (15, 30, 45, 60 minutes) in their profile.
 - **Public Shareable Booking Link**: Each user has a unique shareable profile link (`/u/{id}`) for direct booking without logging into the search dashboard first.
+- **LinkedIn-Style Professional Dossier**: Comprehensive professional profiles with headline, current role & company, base location, about me bio, interactive skills tags, consultation focus areas, and verified social links (LinkedIn, GitHub, Portfolio).
+- **Skill-Based & Keyword Discovery**: Search not just by name, but by company, job title, and technical skills (e.g., PostgreSQL, Docker, DevOps) with instant people cards.
 - **Interactive Slot Selector**: Dynamic, conflict-aware slot generation via REST API (`/api/appointment/slots`), showing clickable open slots and disabling booked times.
 - **Interactive Visual Calendar**: Month calendar view on the dashboard with color-coded status pills, month/year navigation, and instant modal previews.
 - **Cal.com Style Meeting Formats**: Selectable session types (⚡ 15m Quick Sync, 💼 30m Consultation, 🚀 60m Deep Dive) and platforms (🎥 Google Meet, 💻 Zoom, 🏢 In-Person, 📞 Phone).

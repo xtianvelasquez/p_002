@@ -72,7 +72,9 @@ class UserModel extends BaseModel {
             UPDATE user_account 
             SET first_name = ?, middle_name = ?, last_name = ?, search_name = ?, 
                 contact_number = ?, email_address = ?, profile_picture = ?, last_update = ?,
-                work_start_time = ?, work_end_time = ?, slot_duration_minutes = ?
+                work_start_time = ?, work_end_time = ?, slot_duration_minutes = ?,
+                headline = ?, bio = ?, job_title = ?, company = ?, location_city = ?,
+                skills = ?, consultation_topics = ?, linkedin_url = ?, github_url = ?, website_url = ?
             WHERE user_id = ?
         ");
         return $stmt->execute([
@@ -87,14 +89,39 @@ class UserModel extends BaseModel {
             $data['work_start_time'] ?? '09:00',
             $data['work_end_time'] ?? '17:00',
             $data['slot_duration_minutes'] ?? 30,
+            $data['headline'] ?? null,
+            $data['bio'] ?? null,
+            $data['job_title'] ?? null,
+            $data['company'] ?? null,
+            $data['location_city'] ?? null,
+            $data['skills'] ?? null,
+            $data['consultation_topics'] ?? null,
+            $data['linkedin_url'] ?? null,
+            $data['github_url'] ?? null,
+            $data['website_url'] ?? null,
             $id
         ]);
     }
 
     public function searchUsers($name) {
         $searchTerm = '%' . trim($name) . '%';
-        $stmt = $this->db->prepare("SELECT user_id, first_name, last_name, profile_picture FROM user_account WHERE first_name ILIKE ? OR last_name ILIKE ? OR search_name ILIKE ?");
-        $stmt->execute([$searchTerm, $searchTerm, $searchTerm]);
+        $stmt = $this->db->prepare("
+            SELECT user_id, first_name, middle_name, last_name, profile_picture,
+                   headline, job_title, company, location_city, skills, consultation_topics
+            FROM user_account 
+            WHERE first_name ILIKE ? 
+               OR last_name ILIKE ? 
+               OR search_name ILIKE ?
+               OR headline ILIKE ?
+               OR company ILIKE ?
+               OR job_title ILIKE ?
+               OR skills ILIKE ?
+            ORDER BY first_name ASC
+        ");
+        $stmt->execute([
+            $searchTerm, $searchTerm, $searchTerm, 
+            $searchTerm, $searchTerm, $searchTerm, $searchTerm
+        ]);
         return $stmt->fetchAll();
     }
 }

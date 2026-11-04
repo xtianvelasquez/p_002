@@ -35,6 +35,16 @@ class UserController extends BaseController {
                 'workStartTime' => $user["work_start_time"] ?? '09:00',
                 'workEndTime' => $user["work_end_time"] ?? '17:00',
                 'slotDuration' => $user["slot_duration_minutes"] ?? 30,
+                'headline' => $user["headline"] ?? '',
+                'bio' => $user["bio"] ?? '',
+                'jobTitle' => $user["job_title"] ?? '',
+                'company' => $user["company"] ?? '',
+                'locationCity' => $user["location_city"] ?? '',
+                'skills' => $user["skills"] ?? '',
+                'consultationTopics' => $user["consultation_topics"] ?? '',
+                'linkedinUrl' => $user["linkedin_url"] ?? '',
+                'githubUrl' => $user["github_url"] ?? '',
+                'websiteUrl' => $user["website_url"] ?? '',
                 'shareableLink' => routeUrl('/u/' . $user["user_id"])
             ];
             $this->renderView('User/Views/profile', $data);
@@ -58,6 +68,16 @@ class UserController extends BaseController {
             $workStartTime = trim($_POST["workStartTime"] ?? '09:00');
             $workEndTime = trim($_POST["workEndTime"] ?? '17:00');
             $slotDuration = max(15, min(120, (int)($_POST["slotDuration"] ?? 30)));
+            $headline = trim($_POST["headline"] ?? '');
+            $jobTitle = trim($_POST["jobTitle"] ?? '');
+            $company = trim($_POST["company"] ?? '');
+            $locationCity = trim($_POST["locationCity"] ?? '');
+            $bio = trim($_POST["bio"] ?? '');
+            $skills = trim($_POST["skills"] ?? '');
+            $consultationTopics = trim($_POST["consultationTopics"] ?? '');
+            $linkedinUrl = trim($_POST["linkedinUrl"] ?? '');
+            $githubUrl = trim($_POST["githubUrl"] ?? '');
+            $websiteUrl = trim($_POST["websiteUrl"] ?? '');
             $dateUpdate = date("Y-m-d");
 
             if (empty($firstName) || empty($lastName)) {
@@ -134,7 +154,17 @@ class UserController extends BaseController {
                 'last_update' => $dateUpdate,
                 'work_start_time' => $workStartTime,
                 'work_end_time' => $workEndTime,
-                'slot_duration_minutes' => $slotDuration
+                'slot_duration_minutes' => $slotDuration,
+                'headline' => $headline,
+                'bio' => $bio,
+                'job_title' => $jobTitle,
+                'company' => $company,
+                'location_city' => $locationCity,
+                'skills' => $skills,
+                'consultation_topics' => $consultationTopics,
+                'linkedin_url' => $linkedinUrl,
+                'github_url' => $githubUrl,
+                'website_url' => $websiteUrl
             ];
 
             if ($this->userModel->updateUser($userId, $updateData)) {
