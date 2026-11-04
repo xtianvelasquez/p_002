@@ -17,7 +17,9 @@ function isNavActive($path, $subPath) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?= htmlspecialchars($title ?? 'One Calenday', ENT_QUOTES, 'UTF-8') ?></title>
+  <title><?= htmlspecialchars($title ?? 'More Than Blue', ENT_QUOTES, 'UTF-8') ?></title>
+  <link rel="icon" type="image/png" href="<?= assetUrl('images/logo.png') ?>">
+  <link rel="shortcut icon" type="image/png" href="<?= assetUrl('images/logo.png') ?>">
   <link rel="stylesheet" href="<?= assetUrl('bootstrap/css/bootstrap.min.css?v=5.3') ?>">
   <style>
     body {
@@ -42,8 +44,8 @@ function isNavActive($path, $subPath) {
         </a>
       <?php else: ?>
         <a href="<?= routeUrl('/') ?>" class="navbar-brand d-flex align-items-center gap-2 fw-bold text-dark">
-          <img src="<?= assetUrl('images/logo.png') ?>" alt="One Calenday Logo" height="30">
-          <span>ONE CALENDAY</span>
+          <img src="<?= assetUrl('images/logo.png') ?>" alt="More Than Blue Logo" height="30">
+          <span>MORE THAN BLUE</span>
         </a>
       <?php endif; ?>
 
@@ -125,7 +127,7 @@ function isNavActive($path, $subPath) {
   <!-- Footer -->
   <footer class="mt-auto py-3 bg-white border-top text-center text-muted">
     <div class="container">
-      <small>&copy; <?= date('Y') ?> Christian E. Velasquez. All rights reserved. &bull; One Calenday Appointment System</small>
+      <small>&copy; <?= date('Y') ?> Christian E. Velasquez. All rights reserved. &bull; More Than Blue Appointment System</small>
     </div>
   </footer>
 

@@ -1,5 +1,5 @@
 <?php
-// PHP Script to initialize PostgreSQL Database for One Calenday
+// PHP Script to initialize PostgreSQL Database for More Than Blue
 $config = require __DIR__ . '/config/config.php';
 
 $portsToTry = [(string)$config['port']];

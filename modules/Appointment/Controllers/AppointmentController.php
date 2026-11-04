@@ -53,6 +53,9 @@ class AppointmentController extends BaseController {
                 'appointment_time' => $appt['appointment_time'],
                 'event_name' => $appt['event_name'],
                 'location' => $appt['location'],
+                'event_type' => $appt['event_type'] ?? 'consultation',
+                'meeting_mode' => $appt['meeting_mode'] ?? 'google_meet',
+                'agenda' => $appt['agenda'] ?? '',
                 'appointment_status' => $appt['appointment_status']
             ];
         }
@@ -80,6 +83,9 @@ class AppointmentController extends BaseController {
                 'appointment_time' => $appt['appointment_time'],
                 'event_name' => $appt['event_name'],
                 'location' => $appt['location'],
+                'event_type' => $appt['event_type'] ?? 'consultation',
+                'meeting_mode' => $appt['meeting_mode'] ?? 'google_meet',
+                'agenda' => $appt['agenda'] ?? '',
                 'appointment_status' => $appt['appointment_status']
             ];
         }
@@ -139,10 +145,12 @@ class AppointmentController extends BaseController {
             return $this->jsonResponse(['error' => 'Invalid date format (expected YYYY-MM-DD)'], 400);
         }
 
-        $slots = $this->appointmentModel->generateAvailableSlots($receiverId, $date);
+        $duration = isset($_GET["duration"]) && (int)$_GET["duration"] > 0 ? (int)$_GET["duration"] : null;
+        $slots = $this->appointmentModel->generateAvailableSlots($receiverId, $date, $duration);
         return $this->jsonResponse([
             'receiverId' => $receiverId,
             'date' => $date,
+            'duration' => $duration,
             'slots' => $slots
         ]);
     }
@@ -158,6 +166,19 @@ class AppointmentController extends BaseController {
             $appointmentTime = trim($_POST["appointmentTime"] ?? "");
             $eventName = trim($_POST["eventName"] ?? "");
             $location = trim($_POST["location"] ?? "");
+            $eventType = trim($_POST["eventType"] ?? "consultation");
+            $meetingMode = trim($_POST["meetingMode"] ?? "google_meet");
+            $agenda = trim($_POST["agenda"] ?? "");
+
+            $allowedEventTypes = ["quick_sync", "consultation", "deep_dive"];
+            if (!in_array($eventType, $allowedEventTypes, true)) {
+                $eventType = "consultation";
+            }
+
+            $allowedMeetingModes = ["google_meet", "zoom", "in_person", "phone"];
+            if (!in_array($meetingMode, $allowedMeetingModes, true)) {
+                $meetingMode = "google_meet";
+            }
 
             if (empty($receiverId) || empty($senderId) || empty($appointmentDate) || empty($appointmentTime) || empty($eventName) || empty($location)) {
                 $this->setFlash('danger', 'All fields and an open time slot are required to schedule an appointment.');
@@ -191,6 +212,9 @@ class AppointmentController extends BaseController {
                 'appointment_time' => $appointmentTime,
                 'event_name' => $eventName,
                 'location' => $location,
+                'event_type' => $eventType,
+                'meeting_mode' => $meetingMode,
+                'agenda' => $agenda,
                 'appointment_status' => $appointmentStatus
             ];
 
@@ -208,7 +232,7 @@ class AppointmentController extends BaseController {
 
     public function view($params) {
         $this->requireAuth();
-        $id = $params["id"] ?? "";
+        $id = $params["id"] ?? $_GET["id"] ?? "";
         $userId = $_SESSION["userId"];
 
         if (empty($id)) {
@@ -228,6 +252,32 @@ class AppointmentController extends BaseController {
         $displayContact = $isSender ? ($appt['receiver_contact'] ?? '') : ($appt['sender_contact'] ?? '');
         $displayEmail = $isSender ? ($appt['receiver_email'] ?? '') : ($appt['sender_email'] ?? '');
 
+        // Determine meeting duration
+        $durationMinutes = 30;
+        if (($appt['event_type'] ?? '') === 'quick_sync') $durationMinutes = 15;
+        elseif (($appt['event_type'] ?? '') === 'deep_dive') $durationMinutes = 60;
+
+        // Build Google Calendar TEMPLATE URL
+        $partnerName = $displayName;
+        $title = $appt['event_name'] ?: 'Appointment with ' . $partnerName;
+        $desc = "More Than Blue Appointment with " . $partnerName;
+        if (!empty($appt['agenda'])) {
+            $desc .= "\n\nAgenda:\n" . $appt['agenda'];
+        }
+        $loc = $appt['location'] ?: 'Online';
+
+        $startTimeStr = $appt['appointment_time'] ?: '09:00';
+        $startDT = new \DateTime($appt['appointment_date'] . ' ' . $startTimeStr);
+        $endDT = clone $startDT;
+        $endDT->modify("+{$durationMinutes} minutes");
+
+        $datesParam = $startDT->format('Ymd\THis') . '/' . $endDT->format('Ymd\THis');
+        $googleCalUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE"
+            . "&text=" . urlencode($title)
+            . "&dates=" . $datesParam
+            . "&details=" . urlencode($desc)
+            . "&location=" . urlencode($loc);
+
         $this->renderView('Appointment/Views/view', [
             'appointmentId' => $appt['appointment_id'],
             'fullName' => $displayName,
@@ -237,8 +287,78 @@ class AppointmentController extends BaseController {
             'appointment_time' => $appt['appointment_time'],
             'event_name' => $appt['event_name'],
             'location' => $appt['location'],
+            'event_type' => $appt['event_type'] ?? 'consultation',
+            'meeting_mode' => $appt['meeting_mode'] ?? 'google_meet',
+            'agenda' => $appt['agenda'] ?? '',
+            'duration_minutes' => $durationMinutes,
+            'googleCalUrl' => $googleCalUrl,
             'appointment_status' => $appt['appointment_status']
         ]);
+    }
+
+    public function exportIcs($params = []) {
+        $this->requireAuth();
+        $id = $params["id"] ?? $_GET["id"] ?? "";
+        $userId = $_SESSION["userId"];
+
+        if (empty($id)) {
+            $this->redirect('/received');
+        }
+
+        $appt = $this->appointmentModel->getAppointmentForUser($id, $userId);
+        if (!$appt) {
+            $this->setFlash('danger', 'Appointment not found or unauthorized access.');
+            $this->redirect('/received');
+        }
+
+        $isSender = ($appt['sender_id'] === $userId);
+        $partnerName = $isSender 
+            ? trim(($appt['receiver_first_name'] ?? '') . ' ' . ($appt['receiver_last_name'] ?? ''))
+            : trim(($appt['sender_first_name'] ?? '') . ' ' . ($appt['sender_last_name'] ?? ''));
+
+        $title = $appt['event_name'] ?: 'Appointment with ' . $partnerName;
+        $description = "More Than Blue Appointment with " . $partnerName;
+        if (!empty($appt['agenda'])) {
+            $description .= "\\n\\nAgenda: " . str_replace(["\r\n", "\n"], "\\n", $appt['agenda']);
+        }
+        $location = $appt['location'] ?: 'Online';
+
+        $durationMinutes = 30;
+        if (($appt['event_type'] ?? '') === 'quick_sync') $durationMinutes = 15;
+        elseif (($appt['event_type'] ?? '') === 'deep_dive') $durationMinutes = 60;
+
+        $startTimeStr = $appt['appointment_time'] ?: '09:00';
+        $startDT = new \DateTime($appt['appointment_date'] . ' ' . $startTimeStr);
+        $endDT = clone $startDT;
+        $endDT->modify("+{$durationMinutes} minutes");
+
+        $dtStart = $startDT->format('Ymd\THis');
+        $dtEnd = $endDT->format('Ymd\THis');
+        $dtStamp = gmdate('Ymd\THis\Z');
+        $uid = $appt['appointment_id'] . '@morethanblue.local';
+
+        $ics = "BEGIN:VCALENDAR\r\n"
+            . "VERSION:2.0\r\n"
+            . "PRODID:-//More Than Blue//Appointment Scheduler//EN\r\n"
+            . "CALSCALE:GREGORIAN\r\n"
+            . "METHOD:PUBLISH\r\n"
+            . "BEGIN:VEVENT\r\n"
+            . "UID:" . $uid . "\r\n"
+            . "DTSTAMP:" . $dtStamp . "\r\n"
+            . "DTSTART:" . $dtStart . "\r\n"
+            . "DTEND:" . $dtEnd . "\r\n"
+            . "SUMMARY:" . addcslashes($title, ",;") . "\r\n"
+            . "DESCRIPTION:" . addcslashes($description, ",;") . "\r\n"
+            . "LOCATION:" . addcslashes($location, ",;") . "\r\n"
+            . "STATUS:CONFIRMED\r\n"
+            . "END:VEVENT\r\n"
+            . "END:VCALENDAR\r\n";
+
+        header('Content-Type: text/calendar; charset=utf-8');
+        header('Content-Disposition: attachment; filename="appointment-' . substr($appt['appointment_id'], 0, 8) . '.ics"');
+        header('Content-Length: ' . strlen($ics));
+        echo $ics;
+        exit;
     }
 
     public function edit($params) {

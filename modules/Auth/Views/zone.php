@@ -5,7 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="<?= assetUrl('bootstrap/css/bootstrap.min.css?v=5.3') ?>">
-  <title>One Calenday</title>
+  <title>More Than Blue</title>
+  <link rel="icon" type="image/png" href="<?= assetUrl('images/logo.png') ?>">
   <style>
     html,
     body {
@@ -19,8 +20,8 @@
   <!-- Navbar -->
   <nav class="navbar navbar-expand-md py-3 px-3">
     <a href="<?= routeUrl('/') ?>" class="navbar-brand fw-bold">
-      <img src="<?= assetUrl('images/logo.png') ?>" alt="one calenday logo" class="align-middle" height="30" width="60">
-      ONE CALENDAY
+      <img src="<?= assetUrl('images/logo.png') ?>" alt="More Than Blue logo" class="align-middle" height="30">
+      MORE THAN BLUE
     </a>
     <button type="button" class="navbar-toggler" data-bs-target="#ourDashboard" data-bs-toggle="collapse">
       <span class="navbar-toggler-icon"></span>

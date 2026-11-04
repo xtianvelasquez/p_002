@@ -5,7 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="<?= assetUrl('bootstrap/css/bootstrap.min.css?v=5.3') ?>">
-  <title>One Calenday</title>
+  <title>More Than Blue</title>
+  <link rel="icon" type="image/png" href="<?= assetUrl('images/logo.png') ?>">
   <style>
     html,
     body {

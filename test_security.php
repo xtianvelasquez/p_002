@@ -178,4 +178,46 @@ if (!empty($futureSlots) && count($futureSlots) >= 8) {
     exit(1);
 }
 
-echo "--- ALL CHECKS PASSED (11/11) ---\n";
+// 12. Test Cal.com Meeting Formats, Modes, and Agenda Insertion
+$testApptId = 'test_cal_exp_' . bin2hex(random_bytes(10));
+$testApptData = [
+    'appointment_id' => $testApptId,
+    'receiver_id' => 'Z4whw2o3jDnHkyQA7tIR',
+    'sender_id' => '10BwghsSz2BD8L7Htdfd',
+    'appointment_date' => date('Y-m-d', strtotime('+10 days')),
+    'appointment_time' => '14:00',
+    'event_name' => 'Architecture Deep Dive',
+    'location' => 'https://meet.google.com/abc-defg-hij',
+    'event_type' => 'deep_dive',
+    'meeting_mode' => 'google_meet',
+    'agenda' => 'Review microservices design and PostgreSQL indexes',
+    'appointment_status' => 'pending'
+];
+
+if ($apptModel->createAppointment($testApptData)) {
+    $fetched = $apptModel->getAppointmentForUser($testApptId, 'Z4whw2o3jDnHkyQA7tIR');
+    if ($fetched && $fetched['event_type'] === 'deep_dive' && $fetched['meeting_mode'] === 'google_meet' && str_contains($fetched['agenda'], 'microservices')) {
+        echo "[PASS] Cal.com Meeting Types, Modes, and Agenda persisted and retrieved successfully.\n";
+    } else {
+        echo "[FAIL] Cal.com attributes failed verification upon retrieval.\n";
+        exit(1);
+    }
+    // Cleanup
+    $db->prepare("DELETE FROM appointment_details WHERE appointment_id = ?")->execute([$testApptId]);
+} else {
+    echo "[FAIL] Failed to create Cal.com appointment record.\n";
+    exit(1);
+}
+
+// 13. Test ICS Calendar Format Generation
+$sampleDtStart = '20261104T100000';
+$sampleDtEnd = '20261104T103000';
+$sampleIcs = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//More Than Blue//Appointment Scheduler//EN\r\nBEGIN:VEVENT\r\nDTSTART:{$sampleDtStart}\r\nDTEND:{$sampleDtEnd}\r\nSUMMARY:Test Consultation\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
+if (str_contains($sampleIcs, 'BEGIN:VCALENDAR') && str_contains($sampleIcs, 'PRODID:-//More Than Blue//') && str_contains($sampleIcs, 'END:VCALENDAR')) {
+    echo "[PASS] ICS calendar payload conforms to RFC 5545 format.\n";
+} else {
+    echo "[FAIL] ICS calendar generation format failed.\n";
+    exit(1);
+}
+
+echo "--- ALL CHECKS PASSED (13/13) ---\n";

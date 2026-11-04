@@ -53,7 +53,12 @@ class AppointmentModel extends BaseModel {
     }
 
     public function createAppointment($data) {
-        $stmt = $this->db->prepare("INSERT INTO appointment_details(appointment_id, receiver_id, sender_id, appointment_date, appointment_time, event_name, location, appointment_status) VALUES(?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $this->db->prepare("
+            INSERT INTO appointment_details(
+                appointment_id, receiver_id, sender_id, appointment_date, appointment_time, 
+                event_name, location, event_type, meeting_mode, agenda, appointment_status
+            ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
         return $stmt->execute([
             $data['appointment_id'],
             $data['receiver_id'],
@@ -62,6 +67,9 @@ class AppointmentModel extends BaseModel {
             $data['appointment_time'],
             $data['event_name'],
             $data['location'],
+            $data['event_type'] ?? 'consultation',
+            $data['meeting_mode'] ?? 'google_meet',
+            $data['agenda'] ?? null,
             $data['appointment_status']
         ]);
     }
@@ -109,7 +117,7 @@ class AppointmentModel extends BaseModel {
         return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
     }
 
-    public function generateAvailableSlots($receiverId, $date) {
+    public function generateAvailableSlots($receiverId, $date, $customDuration = null) {
         $user = $this->getUserDetails($receiverId);
         if (!$user) {
             return [];
@@ -117,7 +125,7 @@ class AppointmentModel extends BaseModel {
 
         $startTimeStr = !empty($user['work_start_time']) ? $user['work_start_time'] : '09:00';
         $endTimeStr = !empty($user['work_end_time']) ? $user['work_end_time'] : '17:00';
-        $intervalMinutes = !empty($user['slot_duration_minutes']) ? (int)$user['slot_duration_minutes'] : 30;
+        $intervalMinutes = $customDuration ? (int)$customDuration : (!empty($user['slot_duration_minutes']) ? (int)$user['slot_duration_minutes'] : 30);
 
         $bookedTimes = $this->getBookedSlots($receiverId, $date);
 

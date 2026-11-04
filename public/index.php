@@ -54,6 +54,7 @@ $router->add('GET', '/appointment/edit', 'Appointment\Controllers\AppointmentCon
 $router->add('POST', '/appointment/status', 'Appointment\Controllers\AppointmentController@updateStatus');
 $router->add('GET', '/appointment/delete', 'Appointment\Controllers\AppointmentController@deleteForm');
 $router->add('POST', '/appointment/delete', 'Appointment\Controllers\AppointmentController@deleteConfirm');
+$router->add('GET', '/appointment/export-ics', 'Appointment\Controllers\AppointmentController@exportIcs');
 $router->add('GET', '/appointment/delete-sent', 'Appointment\Controllers\AppointmentController@deleteSentForm');
 $router->add('POST', '/appointment/delete-sent', 'Appointment\Controllers\AppointmentController@deleteSentConfirm');
 

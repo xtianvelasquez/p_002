@@ -1,11 +1,11 @@
-# One Calenday Appointment & Scheduling System
+# More Than Blue Appointment & Scheduling System
 
 [![PHP Version](https://img.shields.io/badge/PHP-8.1%2B-777BB4?logo=php&logoColor=white)](https://www.php.net/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Bootstrap](https://img.shields.io/badge/Bootstrap-v5.3-7952B3?logo=bootstrap&logoColor=white)](https://getbootstrap.com/)
 [![Security](https://img.shields.io/badge/Security-Bcrypt%20%7C%20CSRF%20%7C%20IDOR--Protected-green)](#security-features)
 
-**One Calenday** is a modular PHP and PostgreSQL appointment management web application. It features a custom modular MVC architecture, custom router, relational database design with prepared queries, conflict-aware appointment scheduling, and strong security practices.
+**More Than Blue** is a modular PHP and PostgreSQL appointment management web application. It features a custom modular MVC architecture, custom router, relational database design with prepared queries, conflict-aware appointment scheduling, and strong security practices.
 
 ---
 
@@ -59,6 +59,9 @@ This project incorporates web application security best practices:
 - **Configurable Availability**: Users define their working start/end times and slot durations (15, 30, 45, 60 minutes) in their profile.
 - **Public Shareable Booking Link**: Each user has a unique shareable profile link (`/u/{id}`) for direct booking without logging into the search dashboard first.
 - **Interactive Slot Selector**: Dynamic, conflict-aware slot generation via REST API (`/api/appointment/slots`), showing clickable open slots and disabling booked times.
+- **Interactive Visual Calendar**: Month calendar view on the dashboard with color-coded status pills, month/year navigation, and instant modal previews.
+- **Cal.com Style Meeting Formats**: Selectable session types (⚡ 15m Quick Sync, 💼 30m Consultation, 🚀 60m Deep Dive) and platforms (🎥 Google Meet, 💻 Zoom, 🏢 In-Person, 📞 Phone).
+- **Calendar Synchronization**: One-click RFC 5545 `.ICS` export (for Apple Calendar & Outlook) plus direct web links to Google Calendar.
 - **Fuzzy User Search**: Partial, case-insensitive user search powered by PostgreSQL `ILIKE` indexing.
 - **Received & Sent Panels**: Single-query `JOIN` views for appointments you have received from others and appointments you have sent out.
 - **Appointment Status Workflow**: Receivers can approve or deny requests; either party can cancel appointments.

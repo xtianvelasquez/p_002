@@ -1,4 +1,4 @@
--- PostgreSQL Dump of One Calenday Database
+-- PostgreSQL Dump of More Than Blue Database
 
 DROP TABLE IF EXISTS appointment_details CASCADE;
 DROP TABLE IF EXISTS user_account CASCADE;
@@ -45,6 +45,9 @@ CREATE TABLE appointment_details (
   appointment_time varchar(50) NOT NULL DEFAULT '',
   event_name varchar(100) NOT NULL,
   location varchar(100) NOT NULL,
+  event_type varchar(50) DEFAULT 'consultation',
+  meeting_mode varchar(50) DEFAULT 'google_meet',
+  agenda text DEFAULT NULL,
   appointment_status char(50) DEFAULT NULL,
   PRIMARY KEY (appointment_id),
   CONSTRAINT fk_receiver FOREIGN KEY (receiver_id) REFERENCES user_account (user_id) ON DELETE CASCADE,
