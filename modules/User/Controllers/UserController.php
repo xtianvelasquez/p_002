@@ -5,6 +5,9 @@ use App\Core\BaseController;
 use App\Modules\Auth\Models\UserModel;
 
 class UserController extends BaseController {
+    /**
+     * @var UserModel
+     */
     private $userModel;
 
     public function __construct() {

@@ -1,4 +1,30 @@
 <?php
+/**
+ * @var string $appointmentId
+ * @var string $fullName
+ * @var string $contactNumber
+ * @var string $emailAddress
+ * @var string $appointment_date
+ * @var string $appointment_time
+ * @var string $event_name
+ * @var string $location
+ * @var string|null $event_type
+ * @var string|null $meeting_mode
+ * @var string|null $agenda
+ * @var int $duration_minutes
+ * @var string $googleCalUrl
+ * @var string $appointment_status
+ */
+$appointmentId = $appointmentId ?? '';
+$fullName = $fullName ?? '';
+$contactNumber = $contactNumber ?? '';
+$emailAddress = $emailAddress ?? '';
+$appointment_date = $appointment_date ?? '';
+$appointment_time = $appointment_time ?? '';
+$event_name = $event_name ?? '';
+$location = $location ?? '';
+$googleCalUrl = $googleCalUrl ?? '#';
+
 $status = strtolower(trim($appointment_status ?? 'pending'));
 $badgeClass = match ($status) {
     'approved' => 'bg-success',

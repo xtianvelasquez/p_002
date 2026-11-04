@@ -1,3 +1,9 @@
+<?php
+/**
+ * @var string $appointmentId
+ */
+$appointmentId = $appointmentId ?? '';
+?>
 <div class="container-xl my-5">
   <div class="row justify-content-center">
     <div class="col-11 col-sm-8 col-md-6 col-lg-5">

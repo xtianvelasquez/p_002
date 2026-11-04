@@ -1,3 +1,13 @@
+<?php
+/**
+ * @var string $searchTerm
+ * @var bool $searched
+ * @var array|null $searchResults
+ */
+$searchTerm = $searchTerm ?? '';
+$searched = !empty($searched);
+$searchResults = $searchResults ?? null;
+?>
 <div class="container-xl my-5">
   <div class="row justify-content-center">
     <div class="col-12 col-md-10 col-lg-8">

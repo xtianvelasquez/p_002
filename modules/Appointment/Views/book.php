@@ -1,4 +1,43 @@
 <?php
+/**
+ * @var string $id
+ * @var string $firstName
+ * @var string|null $middleName
+ * @var string $lastName
+ * @var string $contactNumber
+ * @var string $emailAddress
+ * @var string $profilePicture
+ * @var string $workStartTime
+ * @var string $workEndTime
+ * @var int $slotDuration
+ * @var string $initialDate
+ * @var array $initialSlots
+ * @var bool $isAuthenticated
+ * @var string|null $headline
+ * @var string|null $jobTitle
+ * @var string|null $company
+ * @var string|null $locationCity
+ * @var string|null $bio
+ * @var string|null $skills
+ * @var string|null $consultationTopics
+ * @var string|null $linkedinUrl
+ * @var string|null $githubUrl
+ * @var string|null $websiteUrl
+ */
+$id = $id ?? '';
+$firstName = $firstName ?? '';
+$middleName = $middleName ?? '';
+$lastName = $lastName ?? '';
+$contactNumber = $contactNumber ?? '';
+$emailAddress = $emailAddress ?? '';
+$profilePicture = $profilePicture ?? 'images/logo.png';
+$workStartTime = $workStartTime ?? '09:00';
+$workEndTime = $workEndTime ?? '17:00';
+$slotDuration = $slotDuration ?? 30;
+$initialDate = $initialDate ?? date('Y-m-d');
+$initialSlots = $initialSlots ?? [];
+$isAuthenticated = !empty($isAuthenticated);
+
 $fullName = trim($firstName . ' ' . $lastName);
 $headline = trim($headline ?? '');
 $jobTitle = trim($jobTitle ?? '');

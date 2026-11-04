@@ -1,4 +1,8 @@
 <?php
+/**
+ * @var array $appointments
+ */
+$appointments = $appointments ?? [];
 $totalCount = count($appointments);
 $approvedCount = 0;
 $pendingCount = 0;

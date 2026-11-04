@@ -14,7 +14,10 @@
     "autoload": {
         "psr-4": {
             "App\\": ""
-        }
+        },
+        "files": [
+            "core/helpers.php"
+        ]
     },
     "scripts": {
         "test": "php test_security.php"

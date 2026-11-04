@@ -7,6 +7,9 @@ use Exception;
 class Database {
     private static $instance = null;
     private static $cachedPort = null;
+    /**
+     * @var PDO
+     */
     private $connection;
 
     private function __construct() {
@@ -66,6 +69,9 @@ class Database {
         }
     }
 
+    /**
+     * @return PDO
+     */
     public static function getInstance() {
         if (self::$instance === null) {
             self::$instance = new self();

@@ -1,3 +1,47 @@
+<?php
+/**
+ * @var string $shareableLink
+ * @var string $currentProfilePicture
+ * @var string $firstName
+ * @var string|null $middleName
+ * @var string $lastName
+ * @var string $contactNumber
+ * @var string $emailAddress
+ * @var string $workStartTime
+ * @var string $workEndTime
+ * @var int $slotDuration
+ * @var string|null $headline
+ * @var string|null $jobTitle
+ * @var string|null $company
+ * @var string|null $locationCity
+ * @var string|null $bio
+ * @var string|null $skills
+ * @var string|null $consultationTopics
+ * @var string|null $linkedinUrl
+ * @var string|null $githubUrl
+ * @var string|null $websiteUrl
+ */
+$shareableLink = $shareableLink ?? '';
+$currentProfilePicture = $currentProfilePicture ?? 'images/logo.png';
+$firstName = $firstName ?? '';
+$middleName = $middleName ?? '';
+$lastName = $lastName ?? '';
+$contactNumber = $contactNumber ?? '';
+$emailAddress = $emailAddress ?? '';
+$workStartTime = $workStartTime ?? '09:00';
+$workEndTime = $workEndTime ?? '17:00';
+$slotDuration = $slotDuration ?? 30;
+$headline = $headline ?? '';
+$jobTitle = $jobTitle ?? '';
+$company = $company ?? '';
+$locationCity = $locationCity ?? '';
+$bio = $bio ?? '';
+$skills = $skills ?? '';
+$consultationTopics = $consultationTopics ?? '';
+$linkedinUrl = $linkedinUrl ?? '';
+$githubUrl = $githubUrl ?? '';
+$websiteUrl = $websiteUrl ?? '';
+?>
 <div class="container-xl my-5">
   <div class="row justify-content-center">
     <div class="col-12 col-md-10 col-lg-8">

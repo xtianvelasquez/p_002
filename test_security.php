@@ -18,6 +18,8 @@ spl_autoload_register(function ($class) {
 
 echo "--- RUNNING TESTS ---\n";
 
+$db = \App\Core\Database::getInstance();
+
 // 1. Test Password Verification
 $userModel = new \App\Modules\Auth\Models\UserModel();
 $user = $userModel->getUserByEmailAndPassword('stacybaluyot@example.com', 'stacybaluyot');
@@ -136,7 +138,6 @@ $createdUser = $userModel->getUserByEmail($testEmail);
 if ($createdUser && $createdUser['first_name'] === 'Flow') {
     echo "[PASS] End-to-end user registration saved user to database.\n";
     // Clean up
-    $db = \App\Core\Database::getInstance();
     $stmt = $db->prepare("DELETE FROM user_account WHERE email_address = ?");
     $stmt->execute([$testEmail]);
 } else {

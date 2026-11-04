@@ -1,3 +1,9 @@
+<?php
+/**
+ * @var array $appointments
+ */
+$appointments = $appointments ?? [];
+?>
 <div class="container-xl my-4">
   <div class="row justify-content-center">
     <div class="col-12">

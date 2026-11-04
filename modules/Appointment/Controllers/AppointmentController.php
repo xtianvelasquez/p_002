@@ -3,8 +3,12 @@ namespace App\Modules\Appointment\Controllers;
 
 use App\Core\BaseController;
 use App\Modules\Appointment\Models\AppointmentModel;
+use DateTime;
 
 class AppointmentController extends BaseController {
+    /**
+     * @var AppointmentModel
+     */
     private $appointmentModel;
 
     public function __construct() {
@@ -240,7 +244,7 @@ class AppointmentController extends BaseController {
         }
     }
 
-    public function view($params) {
+    public function view($params = []) {
         $this->requireAuth();
         $id = $params["id"] ?? $_GET["id"] ?? "";
         $userId = $_SESSION["userId"];
@@ -371,7 +375,7 @@ class AppointmentController extends BaseController {
         exit;
     }
 
-    public function edit($params) {
+    public function edit($params = []) {
         $this->requireAuth();
         $id = $params["id"] ?? "";
         $userId = $_SESSION["userId"];
@@ -415,7 +419,7 @@ class AppointmentController extends BaseController {
         }
     }
 
-    public function deleteForm($params) {
+    public function deleteForm($params = []) {
         $this->requireAuth();
         $id = $params["id"] ?? "";
         $userId = $_SESSION["userId"];
@@ -453,7 +457,7 @@ class AppointmentController extends BaseController {
         }
     }
 
-    public function deleteSentForm($params) {
+    public function deleteSentForm($params = []) {
         $this->requireAuth();
         $id = $params["id"] ?? "";
         $userId = $_SESSION["userId"];

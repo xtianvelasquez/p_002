@@ -1,3 +1,12 @@
+<?php
+/**
+ * @var string $appointmentId
+ * @var array $appointment
+ * @var bool $isReceiver
+ */
+$appointmentId = $appointmentId ?? '';
+$isReceiver = !empty($isReceiver);
+?>
 <div class="container-xl my-5">
   <div class="row justify-content-center">
     <div class="col-11 col-sm-9 col-md-7 col-lg-5">
