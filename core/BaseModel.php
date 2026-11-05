@@ -4,10 +4,7 @@ namespace App\Core;
 use PDO;
 
 class BaseModel {
-    /**
-     * @var PDO
-     */
-    protected $db;
+    protected PDO $db;
 
     public function __construct() {
         $this->db = Database::getInstance();

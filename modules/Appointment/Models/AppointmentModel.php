@@ -3,9 +3,6 @@ namespace App\Modules\Appointment\Models;
 
 use App\Core\BaseModel;
 
-/**
- * @property PDO $db
- */
 class AppointmentModel extends BaseModel {
     public function getReceivedAppointments($userId) {
         $stmt = $this->db->prepare("

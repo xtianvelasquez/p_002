@@ -2,11 +2,7 @@
 namespace App\Modules\Auth\Models;
 
 use App\Core\BaseModel;
-use PDO;
 
-/**
- * @property PDO $db
- */
 class UserModel extends BaseModel {
     public function getUserById($id) {
         $stmt = $this->db->prepare("
