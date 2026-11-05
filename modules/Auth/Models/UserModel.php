@@ -9,7 +9,19 @@ use PDO;
  */
 class UserModel extends BaseModel {
     public function getUserById($id) {
-        $stmt = $this->db->prepare("SELECT * FROM user_account WHERE user_id = ? LIMIT 1");
+        $stmt = $this->db->prepare("
+            SELECT u.*,
+                   p.headline, p.bio, p.job_title, p.company, p.location_city, p.skills, p.consultation_topics,
+                   p.linkedin_url, p.github_url, p.website_url,
+                   COALESCE(a.work_start_time, '09:00') AS work_start_time,
+                   COALESCE(a.work_end_time, '17:00') AS work_end_time,
+                   COALESCE(a.slot_duration_minutes, 30) AS slot_duration_minutes
+            FROM user_account u
+            LEFT JOIN user_profile p ON u.user_id = p.user_id
+            LEFT JOIN user_availability a ON u.user_id = a.user_id
+            WHERE u.user_id = ? 
+            LIMIT 1
+        ");
         $stmt->execute([$id]);
         return $stmt->fetch();
     }
@@ -21,13 +33,37 @@ class UserModel extends BaseModel {
     }
 
     public function getUserByEmail($email) {
-        $stmt = $this->db->prepare("SELECT * FROM user_account WHERE email_address = ? LIMIT 1");
+        $stmt = $this->db->prepare("
+            SELECT u.*,
+                   p.headline, p.bio, p.job_title, p.company, p.location_city, p.skills, p.consultation_topics,
+                   p.linkedin_url, p.github_url, p.website_url,
+                   COALESCE(a.work_start_time, '09:00') AS work_start_time,
+                   COALESCE(a.work_end_time, '17:00') AS work_end_time,
+                   COALESCE(a.slot_duration_minutes, 30) AS slot_duration_minutes
+            FROM user_account u
+            LEFT JOIN user_profile p ON u.user_id = p.user_id
+            LEFT JOIN user_availability a ON u.user_id = a.user_id
+            WHERE u.email_address = ? 
+            LIMIT 1
+        ");
         $stmt->execute([$email]);
         return $stmt->fetch();
     }
 
     public function getUserByGoogleId($googleId) {
-        $stmt = $this->db->prepare("SELECT * FROM user_account WHERE google_id = ? LIMIT 1");
+        $stmt = $this->db->prepare("
+            SELECT u.*,
+                   p.headline, p.bio, p.job_title, p.company, p.location_city, p.skills, p.consultation_topics,
+                   p.linkedin_url, p.github_url, p.website_url,
+                   COALESCE(a.work_start_time, '09:00') AS work_start_time,
+                   COALESCE(a.work_end_time, '17:00') AS work_end_time,
+                   COALESCE(a.slot_duration_minutes, 30) AS slot_duration_minutes
+            FROM user_account u
+            LEFT JOIN user_profile p ON u.user_id = p.user_id
+            LEFT JOIN user_availability a ON u.user_id = a.user_id
+            WHERE u.google_id = ? 
+            LIMIT 1
+        ");
         $stmt->execute([$googleId]);
         return $stmt->fetch();
     }
@@ -38,28 +74,52 @@ class UserModel extends BaseModel {
     }
 
     public function createGoogleUser($data) {
-        $stmt = $this->db->prepare("
-            INSERT INTO user_account (
-                user_id, first_name, middle_name, last_name, search_name, 
-                contact_number, email_address, user_password, profile_picture,
-                work_start_time, work_end_time, slot_duration_minutes, google_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-        return $stmt->execute([
-            $data['user_id'],
-            $data['first_name'],
-            $data['middle_name'] ?? null,
-            $data['last_name'],
-            $data['search_name'],
-            $data['contact_number'] ?? '0000000000',
-            $data['email_address'],
-            $data['user_password'],
-            $data['profile_picture'] ?? 'images/logo.png',
-            $data['work_start_time'] ?? '09:00',
-            $data['work_end_time'] ?? '17:00',
-            $data['slot_duration_minutes'] ?? 30,
-            $data['google_id']
-        ]);
+        $this->db->beginTransaction();
+        try {
+            $stmt = $this->db->prepare("
+                INSERT INTO user_account (
+                    user_id, first_name, middle_name, last_name, search_name, 
+                    contact_number, email_address, user_password, profile_picture, google_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            $stmt->execute([
+                $data['user_id'],
+                $data['first_name'],
+                $data['middle_name'] ?? null,
+                $data['last_name'],
+                $data['search_name'],
+                $data['contact_number'] ?? '0000000000',
+                $data['email_address'],
+                $data['user_password'],
+                $data['profile_picture'] ?? 'images/logo.png',
+                $data['google_id']
+            ]);
+
+            $stmtAvail = $this->db->prepare("
+                INSERT INTO user_availability (user_id, work_start_time, work_end_time, slot_duration_minutes)
+                VALUES (?, ?, ?, ?)
+            ");
+            $stmtAvail->execute([
+                $data['user_id'],
+                $data['work_start_time'] ?? '09:00',
+                $data['work_end_time'] ?? '17:00',
+                $data['slot_duration_minutes'] ?? 30
+            ]);
+
+            $stmtProf = $this->db->prepare("
+                INSERT INTO user_profile (user_id)
+                VALUES (?)
+            ");
+            $stmtProf->execute([$data['user_id']]);
+
+            $this->db->commit();
+            return true;
+        } catch (\Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            return false;
+        }
     }
 
     public function getUserByEmailAndPassword($email, $password) {
@@ -83,79 +143,145 @@ class UserModel extends BaseModel {
     }
 
     public function createUser($data) {
-        $stmt = $this->db->prepare("
-            INSERT INTO user_account (
-                user_id, first_name, middle_name, last_name, search_name, 
-                contact_number, email_address, user_password, profile_picture,
-                work_start_time, work_end_time, slot_duration_minutes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-        return $stmt->execute([
-            $data['user_id'],
-            $data['first_name'],
-            $data['middle_name'],
-            $data['last_name'],
-            $data['search_name'],
-            $data['contact_number'],
-            $data['email_address'],
-            $data['user_password'],
-            $data['profile_picture'],
-            $data['work_start_time'] ?? '09:00',
-            $data['work_end_time'] ?? '17:00',
-            $data['slot_duration_minutes'] ?? 30
-        ]);
+        $this->db->beginTransaction();
+        try {
+            $stmt = $this->db->prepare("
+                INSERT INTO user_account (
+                    user_id, first_name, middle_name, last_name, search_name, 
+                    contact_number, email_address, user_password, profile_picture
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            $stmt->execute([
+                $data['user_id'],
+                $data['first_name'],
+                $data['middle_name'],
+                $data['last_name'],
+                $data['search_name'],
+                $data['contact_number'],
+                $data['email_address'],
+                $data['user_password'],
+                $data['profile_picture']
+            ]);
+
+            $stmtAvail = $this->db->prepare("
+                INSERT INTO user_availability (user_id, work_start_time, work_end_time, slot_duration_minutes)
+                VALUES (?, ?, ?, ?)
+            ");
+            $stmtAvail->execute([
+                $data['user_id'],
+                $data['work_start_time'] ?? '09:00',
+                $data['work_end_time'] ?? '17:00',
+                $data['slot_duration_minutes'] ?? 30
+            ]);
+
+            $stmtProf = $this->db->prepare("
+                INSERT INTO user_profile (user_id)
+                VALUES (?)
+            ");
+            $stmtProf->execute([$data['user_id']]);
+
+            $this->db->commit();
+            return true;
+        } catch (\Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            return false;
+        }
     }
 
     public function updateUser($id, $data) {
-        $stmt = $this->db->prepare("
-            UPDATE user_account 
-            SET first_name = ?, middle_name = ?, last_name = ?, search_name = ?, 
-                contact_number = ?, email_address = ?, profile_picture = ?, last_update = ?,
-                work_start_time = ?, work_end_time = ?, slot_duration_minutes = ?,
-                headline = ?, bio = ?, job_title = ?, company = ?, location_city = ?,
-                skills = ?, consultation_topics = ?, linkedin_url = ?, github_url = ?, website_url = ?
-            WHERE user_id = ?
-        ");
-        return $stmt->execute([
-            $data['first_name'],
-            $data['middle_name'],
-            $data['last_name'],
-            $data['search_name'],
-            $data['contact_number'],
-            $data['email_address'],
-            $data['profile_picture'],
-            $data['last_update'],
-            $data['work_start_time'] ?? '09:00',
-            $data['work_end_time'] ?? '17:00',
-            $data['slot_duration_minutes'] ?? 30,
-            $data['headline'] ?? null,
-            $data['bio'] ?? null,
-            $data['job_title'] ?? null,
-            $data['company'] ?? null,
-            $data['location_city'] ?? null,
-            $data['skills'] ?? null,
-            $data['consultation_topics'] ?? null,
-            $data['linkedin_url'] ?? null,
-            $data['github_url'] ?? null,
-            $data['website_url'] ?? null,
-            $id
-        ]);
+        $this->db->beginTransaction();
+        try {
+            $stmtAccount = $this->db->prepare("
+                UPDATE user_account 
+                SET first_name = ?, middle_name = ?, last_name = ?, search_name = ?, 
+                    contact_number = ?, email_address = ?, profile_picture = ?, last_update = ?
+                WHERE user_id = ?
+            ");
+            $stmtAccount->execute([
+                $data['first_name'],
+                $data['middle_name'],
+                $data['last_name'],
+                $data['search_name'],
+                $data['contact_number'],
+                $data['email_address'],
+                $data['profile_picture'],
+                $data['last_update'],
+                $id
+            ]);
+
+            $stmtAvail = $this->db->prepare("
+                INSERT INTO user_availability (user_id, work_start_time, work_end_time, slot_duration_minutes)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT (user_id) DO UPDATE SET
+                    work_start_time = EXCLUDED.work_start_time,
+                    work_end_time = EXCLUDED.work_end_time,
+                    slot_duration_minutes = EXCLUDED.slot_duration_minutes
+            ");
+            $stmtAvail->execute([
+                $id,
+                $data['work_start_time'] ?? '09:00',
+                $data['work_end_time'] ?? '17:00',
+                $data['slot_duration_minutes'] ?? 30
+            ]);
+
+            $stmtProfile = $this->db->prepare("
+                INSERT INTO user_profile (
+                    user_id, headline, bio, job_title, company, location_city,
+                    skills, consultation_topics, linkedin_url, github_url, website_url
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (user_id) DO UPDATE SET
+                    headline = EXCLUDED.headline,
+                    bio = EXCLUDED.bio,
+                    job_title = EXCLUDED.job_title,
+                    company = EXCLUDED.company,
+                    location_city = EXCLUDED.location_city,
+                    skills = EXCLUDED.skills,
+                    consultation_topics = EXCLUDED.consultation_topics,
+                    linkedin_url = EXCLUDED.linkedin_url,
+                    github_url = EXCLUDED.github_url,
+                    website_url = EXCLUDED.website_url
+            ");
+            $stmtProfile->execute([
+                $id,
+                $data['headline'] ?? null,
+                $data['bio'] ?? null,
+                $data['job_title'] ?? null,
+                $data['company'] ?? null,
+                $data['location_city'] ?? null,
+                $data['skills'] ?? null,
+                $data['consultation_topics'] ?? null,
+                $data['linkedin_url'] ?? null,
+                $data['github_url'] ?? null,
+                $data['website_url'] ?? null
+            ]);
+
+            $this->db->commit();
+            return true;
+        } catch (\Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            return false;
+        }
     }
 
     public function searchUsers($name) {
         $searchTerm = '%' . trim($name) . '%';
         $stmt = $this->db->prepare("
-            SELECT user_id, first_name, middle_name, last_name, profile_picture,
-                   headline, job_title, company, location_city, skills, consultation_topics
-            FROM user_account 
-            WHERE first_name ILIKE ? 
-               OR last_name ILIKE ? 
-               OR search_name ILIKE ?
-               OR headline ILIKE ?
-               OR company ILIKE ?
-               OR job_title ILIKE ?
-               OR skills ILIKE ?
-            ORDER BY first_name ASC
+            SELECT u.user_id, u.first_name, u.middle_name, u.last_name, u.profile_picture,
+                   p.headline, p.job_title, p.company, p.location_city, p.skills, p.consultation_topics
+            FROM user_account u
+            LEFT JOIN user_profile p ON u.user_id = p.user_id
+            WHERE u.first_name ILIKE ? 
+               OR u.last_name ILIKE ? 
+               OR u.search_name ILIKE ?
+               OR p.headline ILIKE ?
+               OR p.company ILIKE ?
+               OR p.job_title ILIKE ?
+               OR p.skills ILIKE ?
+            ORDER BY u.first_name ASC
         ");
         $stmt->execute([
             $searchTerm, $searchTerm, $searchTerm, 

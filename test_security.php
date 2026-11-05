@@ -291,4 +291,104 @@ if ($userModel->createGoogleUser($googleUserData)) {
     exit(1);
 }
 
-echo "--- ALL CHECKS PASSED (17/17) ---\n";
+// 18. Test 3NF Database Normalization Schema & Column Separation
+$userAccountCols = $db->query("SELECT column_name FROM information_schema.columns WHERE table_name = 'user_account'")->fetchAll(PDO::FETCH_COLUMN);
+$userProfileCols = $db->query("SELECT column_name FROM information_schema.columns WHERE table_name = 'user_profile'")->fetchAll(PDO::FETCH_COLUMN);
+$userAvailabilityCols = $db->query("SELECT column_name FROM information_schema.columns WHERE table_name = 'user_availability'")->fetchAll(PDO::FETCH_COLUMN);
+
+if (!in_array('headline', $userAccountCols, true) &&
+    !in_array('work_start_time', $userAccountCols, true) &&
+    in_array('headline', $userProfileCols, true) &&
+    in_array('skills', $userProfileCols, true) &&
+    in_array('work_start_time', $userAvailabilityCols, true) &&
+    in_array('slot_duration_minutes', $userAvailabilityCols, true)) {
+    echo "[PASS] 3NF Database normalization verified: separate domain tables with no redundant columns in user_account.\n";
+} else {
+    echo "[FAIL] Normalization check failed: unexpected columns in user_account or missing in profile/availability.\n";
+    exit(1);
+}
+
+// 19. Test Normalized Multi-Table Profile & Availability Update
+$normTestUserId = 'norm_test_' . bin2hex(random_bytes(6));
+$normUserData = [
+    'user_id' => $normTestUserId,
+    'first_name' => 'Normalize',
+    'middle_name' => 'Db',
+    'last_name' => 'Tester',
+    'search_name' => 'NORMALIZE DB TESTER',
+    'contact_number' => '09123456789',
+    'email_address' => 'norm_' . time() . '@example.com',
+    'user_password' => password_hash('password123', PASSWORD_DEFAULT),
+    'profile_picture' => 'images/logo.png',
+    'work_start_time' => '10:00',
+    'work_end_time' => '18:00',
+    'slot_duration_minutes' => 45
+];
+
+if ($userModel->createUser($normUserData)) {
+    $updateData = [
+        'first_name' => 'NormalizeUpdated',
+        'middle_name' => 'Db',
+        'last_name' => 'Tester',
+        'search_name' => 'NORMALIZEUPDATED DB TESTER',
+        'contact_number' => '09988776655',
+        'email_address' => $normUserData['email_address'],
+        'profile_picture' => 'images/logo.png',
+        'last_update' => date('Y-m-d'),
+        'work_start_time' => '08:30',
+        'work_end_time' => '16:30',
+        'slot_duration_minutes' => 60,
+        'headline' => 'Normalized Schema Specialist',
+        'bio' => 'Focusing on 3NF database architecture.',
+        'job_title' => 'Database Architect',
+        'company' => 'More Than Blue',
+        'location_city' => 'Manila',
+        'skills' => 'PostgreSQL, 3NF, SQL Tuning',
+        'consultation_topics' => 'Database Optimization',
+        'linkedin_url' => 'https://linkedin.com/in/norm-tester',
+        'github_url' => 'https://github.com/norm-tester',
+        'website_url' => 'https://normtester.dev'
+    ];
+
+    if ($userModel->updateUser($normTestUserId, $updateData)) {
+        $fetchedNormalized = $userModel->getUserById($normTestUserId);
+        if ($fetchedNormalized &&
+            $fetchedNormalized['first_name'] === 'NormalizeUpdated' &&
+            $fetchedNormalized['work_start_time'] === '08:30' &&
+            $fetchedNormalized['slot_duration_minutes'] == 60 &&
+            $fetchedNormalized['headline'] === 'Normalized Schema Specialist' &&
+            $fetchedNormalized['company'] === 'More Than Blue') {
+            echo "[PASS] Multi-table profile & availability updates persisted and unified seamlessly.\n";
+        } else {
+            echo "[FAIL] Fetched normalized user data does not match updated values.\n";
+            exit(1);
+        }
+    } else {
+        echo "[FAIL] updateUser returned false.\n";
+        exit(1);
+    }
+
+    // 20. Test Foreign Key ON DELETE CASCADE
+    $stmtDel = $db->prepare("DELETE FROM user_account WHERE user_id = ?");
+    $stmtDel->execute([$normTestUserId]);
+
+    $profCheck = $db->prepare("SELECT COUNT(*) FROM user_profile WHERE user_id = ?");
+    $profCheck->execute([$normTestUserId]);
+    $profCount = (int)$profCheck->fetchColumn();
+
+    $availCheck = $db->prepare("SELECT COUNT(*) FROM user_availability WHERE user_id = ?");
+    $availCheck->execute([$normTestUserId]);
+    $availCount = (int)$availCheck->fetchColumn();
+
+    if ($profCount === 0 && $availCount === 0) {
+        echo "[PASS] Foreign key ON DELETE CASCADE verified: child records in user_profile & user_availability automatically purged.\n";
+    } else {
+        echo "[FAIL] Foreign key cascade failed: orphan rows remain in user_profile or user_availability.\n";
+        exit(1);
+    }
+} else {
+    echo "[FAIL] Failed to create user for normalization test.\n";
+    exit(1);
+}
+
+echo "--- ALL CHECKS PASSED (20/20) ---\n";

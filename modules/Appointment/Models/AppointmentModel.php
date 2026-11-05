@@ -158,12 +158,16 @@ class AppointmentModel extends BaseModel {
 
     public function getUserDetails($userId) {
         $stmt = $this->db->prepare("
-            SELECT user_id, first_name, middle_name, last_name, search_name, contact_number, email_address, profile_picture,
-                   work_start_time, work_end_time, slot_duration_minutes,
-                   headline, bio, job_title, company, location_city, skills, consultation_topics,
-                   linkedin_url, github_url, website_url
-            FROM user_account 
-            WHERE user_id = ? 
+            SELECT u.user_id, u.first_name, u.middle_name, u.last_name, u.search_name, u.contact_number, u.email_address, u.profile_picture,
+                   COALESCE(a.work_start_time, '09:00') AS work_start_time,
+                   COALESCE(a.work_end_time, '17:00') AS work_end_time,
+                   COALESCE(a.slot_duration_minutes, 30) AS slot_duration_minutes,
+                   p.headline, p.bio, p.job_title, p.company, p.location_city, p.skills, p.consultation_topics,
+                   p.linkedin_url, p.github_url, p.website_url
+            FROM user_account u
+            LEFT JOIN user_profile p ON u.user_id = p.user_id
+            LEFT JOIN user_availability a ON u.user_id = a.user_id
+            WHERE u.user_id = ? 
             LIMIT 1
         ");
         $stmt->execute([$userId]);
