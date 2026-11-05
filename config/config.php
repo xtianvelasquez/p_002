@@ -28,6 +28,7 @@ return [
     'user' => getenv('DB_USER') ?: 'postgres',
     'password' => getenv('DB_PASSWORD') ?: 'admin123',
     'app_env' => getenv('APP_ENV') ?: 'development',
-    'google_client_id' => getenv('GOOGLE_CLIENT_ID') ?: '',
-    'google_client_secret' => getenv('GOOGLE_CLIENT_SECRET') ?: '',
+    'google_client_id' => getenv('GOOGLE_CLIENT_ID') ?: ($_ENV['GOOGLE_CLIENT_ID'] ?? ''),
+    'google_client_secret' => getenv('GOOGLE_CLIENT_SECRET') ?: ($_ENV['GOOGLE_CLIENT_SECRET'] ?? ''),
+    'google_redirect_uri' => getenv('GOOGLE_REDIRECT_URI') ?: ($_ENV['GOOGLE_REDIRECT_URI'] ?? ''),
 ];

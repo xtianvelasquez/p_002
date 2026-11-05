@@ -391,4 +391,19 @@ if ($userModel->createUser($normUserData)) {
     exit(1);
 }
 
-echo "--- ALL CHECKS PASSED (20/20) ---\n";
+// 21. Test GOOGLE_REDIRECT_URI Loaded from .env and Config
+$appConfig = require __DIR__ . '/config/config.php';
+$authCtrl = new \App\Modules\Auth\Controllers\AuthController();
+$googleCreds = $authCtrl->getGoogleCredentials();
+
+if (!empty($appConfig['google_redirect_uri']) &&
+    !empty($googleCreds['redirect_uri']) &&
+    $googleCreds['redirect_uri'] === $appConfig['google_redirect_uri'] &&
+    str_contains($googleCreds['redirect_uri'], '/auth/google/callback')) {
+    echo "[PASS] GOOGLE_REDIRECT_URI successfully loaded from .env dynamically (" . $googleCreds['redirect_uri'] . ").\n";
+} else {
+    echo "[FAIL] GOOGLE_REDIRECT_URI not loaded properly from .env.\n";
+    exit(1);
+}
+
+echo "--- ALL CHECKS PASSED (21/21) ---\n";

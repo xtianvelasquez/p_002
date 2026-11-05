@@ -197,17 +197,23 @@ class AuthController extends BaseController {
         $this->renderView('Auth/Views/zone');
     }
 
-    private function getGoogleCredentials() {
+    public function getGoogleCredentials() {
         $config = require dirname(__DIR__, 3) . '/config/config.php';
         return [
-            'client_id' => $config['google_client_id'] ?? getenv('GOOGLE_CLIENT_ID') ?? '',
-            'client_secret' => $config['google_client_secret'] ?? getenv('GOOGLE_CLIENT_SECRET') ?? ''
+            'client_id' => $config['google_client_id'] ?? getenv('GOOGLE_CLIENT_ID') ?: ($_ENV['GOOGLE_CLIENT_ID'] ?? ''),
+            'client_secret' => $config['google_client_secret'] ?? getenv('GOOGLE_CLIENT_SECRET') ?: ($_ENV['GOOGLE_CLIENT_SECRET'] ?? ''),
+            'redirect_uri' => $this->getGoogleRedirectUri()
         ];
     }
 
-    private function getGoogleRedirectUri() {
-        if (!empty(getenv('GOOGLE_REDIRECT_URI'))) {
-            return getenv('GOOGLE_REDIRECT_URI');
+    public function getGoogleRedirectUri() {
+        $config = require dirname(__DIR__, 3) . '/config/config.php';
+        if (!empty($config['google_redirect_uri'])) {
+            return trim($config['google_redirect_uri']);
+        }
+        $envUri = getenv('GOOGLE_REDIRECT_URI') ?: ($_ENV['GOOGLE_REDIRECT_URI'] ?? ($_SERVER['GOOGLE_REDIRECT_URI'] ?? ''));
+        if (!empty($envUri)) {
+            return trim($envUri);
         }
         $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost:8000';
@@ -230,7 +236,7 @@ class AuthController extends BaseController {
 
         $params = [
             'client_id' => $creds['client_id'],
-            'redirect_uri' => $this->getGoogleRedirectUri(),
+            'redirect_uri' => $creds['redirect_uri'],
             'response_type' => 'code',
             'scope' => 'openid email profile',
             'state' => $state,
@@ -265,7 +271,7 @@ class AuthController extends BaseController {
         }
 
         $creds = $this->getGoogleCredentials();
-        $redirectUri = $this->getGoogleRedirectUri();
+        $redirectUri = $creds['redirect_uri'];
 
         // 1. Exchange authorization code for access token
         $tokenEndpoint = 'https://oauth2.googleapis.com/token';
