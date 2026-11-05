@@ -12,9 +12,10 @@ foreach ($appointments as $a) {
     elseif ($st === 'pending') $pendingCount++;
 }
 ?>
-<div class="container-xl my-4">
+<div class="page-shell">
+  <div class="page-heading"><div><div class="eyebrow mb-2">Your workspace</div><h1>Received appointments</h1><p>Review requests and keep your availability organized.</p></div><a href="<?= routeUrl('/profile') ?>" class="btn btn-outline-primary btn-sm app-nav-action">Availability settings</a></div>
   <!-- Dashboard Stats Banner -->
-  <div class="row g-3 mb-4">
+  <div class="row g-3 mb-4 dashboard-stats">
     <div class="col-12 col-md-4">
       <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
         <div class="d-flex justify-content-between align-items-center">
@@ -58,7 +59,7 @@ foreach ($appointments as $a) {
 
   <div class="row justify-content-center">
     <div class="col-12">
-      <div class="card rounded-3 shadow-sm border-0">
+      <div class="card rounded-3 shadow-sm border-0 dashboard-main">
         <!-- Card Header with View Switcher -->
         <div class="card-header bg-white py-3 px-4 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
           <div class="d-flex align-items-center gap-2">

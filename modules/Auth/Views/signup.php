@@ -1,6 +1,6 @@
-<div class="container-xl my-5">
-  <div class="row justify-content-center">
-    <div class="col-11 col-sm-10 col-md-8 col-lg-6">
+<div class="auth-shell">
+  <aside class="auth-aside"><div class="auth-aside-copy"><div class="auth-aside-mark">✳</div><h2>A simpler way to bring people together.</h2><p>Create your profile, share when you’re free, and let meaningful conversations find a time.</p><div class="hero-proof"><div class="proof-avatars"><span>MT</span><span>CV</span><span>JD</span></div><span style="color:#d9e8f5">Your next great conversation starts here</span></div></div></aside>
+  <section class="auth-main"><div class="auth-card">
       <div class="card rounded-3 shadow-sm border-0 bg-white">
         <div class="card-header bg-white py-4 border-bottom text-center">
           <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-subtle text-primary mb-2" style="width: 48px; height: 48px;">
@@ -71,6 +71,5 @@
           <a href="<?= routeUrl('/login') ?>" class="text-decoration-none small fw-semibold">Sign In</a>
         </div>
       </div>
-    </div>
-  </div>
+  </div></section>
 </div>

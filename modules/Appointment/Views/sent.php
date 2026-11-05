@@ -4,10 +4,11 @@
  */
 $appointments = $appointments ?? [];
 ?>
-<div class="container-xl my-4">
+<div class="page-shell">
+  <div class="page-heading"><div><div class="eyebrow mb-2">Your schedule</div><h1>Sent appointments</h1><p>Keep track of the conversations you’ve booked.</p></div><a href="<?= routeUrl('/search') ?>" class="btn btn-primary btn-sm app-nav-action">Find a professional</a></div>
   <div class="row justify-content-center">
     <div class="col-12">
-      <div class="card rounded-3 shadow-sm border-0">
+      <div class="card rounded-3 shadow-sm border-0 dashboard-main">
         <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center">
           <div class="d-flex align-items-center gap-2">
             <h5 class="card-title mb-0 fw-bold text-dark">Outgoing Appointments</h5>

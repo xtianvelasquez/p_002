@@ -42,9 +42,10 @@ $linkedinUrl = $linkedinUrl ?? '';
 $githubUrl = $githubUrl ?? '';
 $websiteUrl = $websiteUrl ?? '';
 ?>
-<div class="container-xl my-5">
+<div class="page-shell">
+  <div class="page-heading"><div><div class="eyebrow mb-2">Your account</div><h1>Profile settings</h1><p>Keep your professional profile and booking hours up to date.</p></div></div>
   <div class="row justify-content-center">
-    <div class="col-12 col-md-10 col-lg-8">
+    <div class="col-12 col-md-11 col-lg-10">
 
       <!-- Public Booking Link Card -->
       <div class="card rounded-3 shadow-sm border-0 mb-4 bg-white p-3">

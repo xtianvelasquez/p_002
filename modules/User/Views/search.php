@@ -8,12 +8,13 @@ $searchTerm = $searchTerm ?? '';
 $searched = !empty($searched);
 $searchResults = $searchResults ?? null;
 ?>
-<div class="container-xl my-5">
+<div class="page-shell">
+  <div class="page-heading"><div><div class="eyebrow mb-2">Find your next conversation</div><h1>Search professionals</h1><p>Discover people and book a time that works for both of you.</p></div><span class="text-secondary small">Thoughtful meetings start here</span></div>
   <div class="row justify-content-center">
-    <div class="col-12 col-md-10 col-lg-8">
+    <div class="col-12">
       <div class="card rounded-3 shadow-sm border-0 mb-4">
         <div class="card-header bg-white py-3 px-4 border-bottom">
-          <h5 class="card-title mb-0 fw-bold text-dark"><i class="bi bi-people me-2 text-primary"></i>Find Professionals & Book Time</h5>
+                  <h5 class="card-title mb-0 fw-bold text-dark">Find the right person</h5>
         </div>
         <div class="card-body p-4">
           <form action="<?= routeUrl('/search') ?>" method="get">
@@ -49,14 +50,15 @@ $searchResults = $searchResults ?? null;
                       $skillsRaw = trim($user['skills'] ?? '');
                       $skillTags = array_filter(array_map('trim', explode(',', $skillsRaw)));
                     ?>
-                    <div class="col-12">
-                      <div class="card border rounded-3 p-3 h-100 hover-shadow transition" style="transition: all 0.2s ease;">
+                    <div class="col-12 col-md-6 col-xl-4">
+                      <div class="professional-card h-100">
+                        <div class="professional-cover"></div><div class="professional-body">
                         <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
                           <div class="d-flex align-items-start gap-3 flex-grow-1" style="min-width: 0;">
-                            <img src="<?= $avatarUrl ?>" alt="<?= $name ?>" class="rounded-circle border shadow-sm flex-shrink-0" style="width: 64px; height: 64px; object-fit: cover;" onerror="this.onerror=null; this.src='<?= $avatarFallback ?>';">
+                            <img src="<?= $avatarUrl ?>" alt="<?= $name ?>" class="professional-avatar rounded-circle flex-shrink-0" onerror="this.onerror=null; this.src='<?= $avatarFallback ?>';">
                             <div class="flex-grow-1" style="min-width: 0;">
                               <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-                                <a href="<?= routeUrl('/u/' . $uid) ?>" class="fw-bold text-dark fs-5 text-decoration-none hover-primary"><?= $name ?></a>
+                                <a href="<?= routeUrl('/u/' . $uid) ?>" class="professional-name"><?= $name ?></a>
                                 <?php if ($isSelf): ?>
                                   <span class="badge bg-secondary-subtle text-secondary border">You</span>
                                 <?php else: ?>
@@ -65,9 +67,9 @@ $searchResults = $searchResults ?? null;
                               </div>
 
                               <?php if (!empty($headline)): ?>
-                                <p class="text-secondary small mb-1 mt-1 fw-medium text-break"><?= htmlspecialchars($headline, ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="professional-tagline mb-1 mt-1 fw-medium text-break"><?= htmlspecialchars($headline, ENT_QUOTES, 'UTF-8') ?></p>
                               <?php elseif (!empty($jobTitle) || !empty($company)): ?>
-                                <p class="text-secondary small mb-1 mt-1 text-break">
+                                <p class="professional-tagline mb-1 mt-1 text-break">
                                   <?= htmlspecialchars(trim($jobTitle . ($company ? ' at ' . $company : '')), ENT_QUOTES, 'UTF-8') ?>
                                 </p>
                               <?php endif; ?>
@@ -77,7 +79,7 @@ $searchResults = $searchResults ?? null;
                               <?php endif; ?>
 
                               <?php if (!empty($skillTags)): ?>
-                                <div class="d-flex flex-wrap gap-1 mt-2">
+                                <div class="professional-skills d-flex flex-wrap gap-1 mt-2">
                                   <?php foreach (array_slice($skillTags, 0, 5) as $skill): ?>
                                     <span class="badge bg-light text-secondary border fw-normal" style="font-size: 0.72rem;"><?= htmlspecialchars($skill, ENT_QUOTES, 'UTF-8') ?></span>
                                   <?php endforeach; ?>
@@ -89,12 +91,9 @@ $searchResults = $searchResults ?? null;
                             </div>
                           </div>
 
-                          <div class="flex-shrink-0 align-self-stretch align-self-md-center mt-2 mt-md-0 text-md-end">
-                            <a href="<?= routeUrl('/u/' . $uid) ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-2 text-nowrap d-block d-md-inline-block shadow-sm">
-                              <i class="bi bi-person-badge me-1"></i> View Profile & Book
-                            </a>
-                          </div>
+                          <a href="<?= routeUrl('/u/' . $uid) ?>" class="btn btn-primary btn-sm professional-action"><i class="bi bi-calendar2-check me-1"></i> View profile & book</a>
                         </div>
+                      </div>
                       </div>
                     </div>
                   <?php endforeach; ?>

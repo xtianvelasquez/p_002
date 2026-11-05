@@ -1,6 +1,6 @@
-<div class="container-xl my-5">
-  <div class="row justify-content-center">
-    <div class="col-11 col-sm-8 col-md-6 col-lg-5">
+<div class="auth-shell">
+  <aside class="auth-aside"><div class="auth-aside-copy"><div class="auth-aside-mark">◷</div><h2>Make time for what matters.</h2><p>Your schedule, your availability, and the people you want to meet—all in one thoughtful place.</p><div class="hero-proof"><div class="proof-avatars"><span>MT</span><span>CV</span><span>JD</span></div><span style="color:#d9e8f5">A little more space in your day</span></div></div></aside>
+  <section class="auth-main"><div class="auth-card">
       <div class="card rounded-3 shadow-sm border-0 bg-white">
         <div class="card-header bg-white py-4 border-bottom text-center">
           <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-subtle text-primary mb-2" style="width: 48px; height: 48px;">
@@ -46,6 +46,5 @@
           <a href="<?= routeUrl('/signup') ?>" class="text-decoration-none small fw-semibold">Sign Up</a>
         </div>
       </div>
-    </div>
-  </div>
+  </div></section>
 </div>
