@@ -5,7 +5,7 @@
         <div class="eyebrow"><span class="eyebrow-dot"></span> A calmer way to make time</div>
         <h1 id="hero-title">Schedule appointments <span>with ease and clarity.</span></h1>
         <p>Make room for meaningful conversations. Share when you’re available, find the right people, and book time without the back and forth.</p>
-        <div class="hero-actions"><a href="<?= routeUrl('/signup') ?>" class="btn btn-primary">Start your free trial <span aria-hidden="true">→</span></a><a href="<?= routeUrl('/login') ?>" class="btn btn-outline-primary">Sign in</a></div>
+        <div class="hero-actions"><a href="<?= routeUrl('/login') ?>" class="btn btn-primary">Sign in <span aria-hidden="true">→</span></a></div>
         <div class="hero-proof"><div class="proof-avatars"><span>MT</span><span>CV</span><span>JD</span></div><span>Simple scheduling for <strong>better conversations</strong></span></div>
       </div>
       <div class="hero-visual" aria-label="Illustration of an appointment being booked">

@@ -205,7 +205,9 @@ class AuthController extends BaseController {
     }
 
     public function logout() {
-        $this->validateCsrf();
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+            $this->validateCsrf();
+        }
         $_SESSION = [];
         if (ini_get('session.use_cookies')) {
             $cookie = session_get_cookie_params();

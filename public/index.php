@@ -63,6 +63,7 @@ $router->add('GET', '/login', 'Auth\Controllers\AuthController@loginForm');
 $router->add('POST', '/login', 'Auth\Controllers\AuthController@login');
 $router->add('GET', '/signup', 'Auth\Controllers\AuthController@signupForm');
 $router->add('POST', '/signup', 'Auth\Controllers\AuthController@signup');
+$router->add('GET', '/logout', 'Auth\Controllers\AuthController@logout');
 $router->add('POST', '/logout', 'Auth\Controllers\AuthController@logout');
 $router->add('GET', '/auth/google', 'Auth\Controllers\AuthController@googleRedirect');
 $router->add('GET', '/auth/google/callback', 'Auth\Controllers\AuthController@googleCallback');

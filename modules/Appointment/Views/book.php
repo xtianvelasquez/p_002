@@ -56,11 +56,6 @@ $websiteUrl = trim($websiteUrl ?? '');
   <div class="card rounded-3 shadow-sm border-0 overflow-hidden mb-4 bg-white">
     <!-- Banner Header -->
     <div class="position-relative" style="height: 160px; background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #0d9488 100%);">
-      <div class="position-absolute top-0 end-0 p-3 text-white-50 small">
-        <span class="badge bg-white text-dark shadow-sm px-3 py-2 rounded-pill fw-semibold">
-          <i class="bi bi-shield-check text-primary me-1"></i> Verified Professional
-        </span>
-      </div>
     </div>
 
     <!-- Profile Header Content -->
