@@ -78,12 +78,12 @@ $appointments = $appointments ?? [];
                       <td><span class="badge rounded-pill <?= $badgeClass ?> px-2 py-1"><?= htmlspecialchars(ucfirst($status), ENT_QUOTES, 'UTF-8') ?></span></td>
                       <td class="text-end pe-4">
                         <div class="btn-group btn-group-sm" role="group">
-                          <a href="<?= routeUrl('/appointment/view?id=' . $appt['appointment_id']) ?>" class="btn btn-outline-secondary" title="View details">View</a>
-                          <a href="<?= routeUrl('/appointment/export-ics?id=' . $appt['appointment_id']) ?>" class="btn btn-outline-secondary" title="Download iCal (.ics)">
+                          <a href="<?= routeUrl('/appointment/view?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-secondary" title="View details">View</a>
+                          <a href="<?= routeUrl('/appointment/export-ics?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-secondary" title="Download iCal (.ics)">
                             <i class="bi bi-calendar-arrow-down me-1"></i>iCal
                           </a>
-                          <a href="<?= routeUrl('/appointment/edit?id=' . $appt['appointment_id']) ?>" class="btn btn-outline-primary" title="Update status">Status</a>
-                          <a href="<?= routeUrl('/appointment/delete-sent?id=' . $appt['appointment_id']) ?>" class="btn btn-outline-danger" title="Cancel/Delete">Delete</a>
+                          <a href="<?= routeUrl('/appointment/edit?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-primary" title="Update status">Status</a>
+                          <a href="<?= routeUrl('/appointment/delete-sent?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-danger" title="Cancel/Delete">Delete</a>
                         </div>
                       </td>
                     </tr>

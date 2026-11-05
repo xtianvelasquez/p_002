@@ -98,7 +98,7 @@ class AppointmentController extends BaseController {
     }
 
     public function bookForm($params = []) {
-        $id = $params["account"] ?? $params["id"] ?? $_GET["account"] ?? "";
+        $id = scalarString($params['account'] ?? $params['id'] ?? $_GET['account'] ?? '');
 
         if (empty($id)) {
             $this->setFlash('danger', 'Missing account identifier.');
@@ -117,7 +117,7 @@ class AppointmentController extends BaseController {
         }
 
         $initialDate = date('Y-m-d');
-        $initialSlots = $this->appointmentModel->generateAvailableSlots($id, $initialDate);
+        $initialSlots = $this->appointmentModel->generateAvailableSlots($id, $initialDate, 30);
 
         $this->renderView('Appointment/Views/book', [
             'id' => $id,
@@ -147,19 +147,27 @@ class AppointmentController extends BaseController {
     }
 
     public function apiSlots($params = []) {
-        $receiverId = trim($_GET["receiverId"] ?? $params["receiverId"] ?? "");
-        $date = trim($_GET["date"] ?? $params["date"] ?? date('Y-m-d'));
+        $receiverId = trim(scalarString($_GET['receiverId'] ?? $params['receiverId'] ?? ''));
+        $date = trim(scalarString($_GET['date'] ?? $params['date'] ?? date('Y-m-d')));
 
         if (empty($receiverId)) {
             return $this->jsonResponse(['error' => 'Receiver ID is required'], 400);
         }
 
         // Validate date format YYYY-MM-DD
-        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+        $parsedDate = \DateTime::createFromFormat('!Y-m-d', $date);
+        if (!$parsedDate || $parsedDate->format('Y-m-d') !== $date) {
             return $this->jsonResponse(['error' => 'Invalid date format (expected YYYY-MM-DD)'], 400);
         }
 
-        $duration = isset($_GET["duration"]) && (int)$_GET["duration"] > 0 ? (int)$_GET["duration"] : null;
+        $durationInput = $_GET['duration'] ?? null;
+        if ($durationInput !== null && !is_scalar($durationInput)) {
+            return $this->jsonResponse(['error' => 'Unsupported appointment duration'], 400);
+        }
+        $duration = $durationInput !== null ? filter_var((string)$durationInput, FILTER_VALIDATE_INT) : null;
+        if ($duration !== null && !in_array($duration, [15, 30, 60], true)) {
+            return $this->jsonResponse(['error' => 'Unsupported appointment duration'], 400);
+        }
         $slots = $this->appointmentModel->generateAvailableSlots($receiverId, $date, $duration);
         return $this->jsonResponse([
             'receiverId' => $receiverId,
@@ -174,15 +182,15 @@ class AppointmentController extends BaseController {
         
         if (isset($_POST["submit"])) {
             $this->validateCsrf();
-            $receiverId = trim($_POST["receiverId"] ?? "");
+            $receiverId = trim(scalarString($_POST['receiverId'] ?? ''));
             $senderId = $_SESSION["userId"] ?? "";
-            $appointmentDate = trim($_POST["appointmentDate"] ?? "");
-            $appointmentTime = trim($_POST["appointmentTime"] ?? "");
-            $eventName = trim($_POST["eventName"] ?? "");
-            $location = trim($_POST["location"] ?? "");
-            $eventType = trim($_POST["eventType"] ?? "consultation");
-            $meetingMode = trim($_POST["meetingMode"] ?? "google_meet");
-            $agenda = trim($_POST["agenda"] ?? "");
+            $appointmentDate = trim(scalarString($_POST['appointmentDate'] ?? ''));
+            $appointmentTime = trim(scalarString($_POST['appointmentTime'] ?? ''));
+            $eventName = trim(scalarString($_POST['eventName'] ?? ''));
+            $location = trim(scalarString($_POST['location'] ?? ''));
+            $eventType = trim(scalarString($_POST['eventType'] ?? 'consultation'));
+            $meetingMode = trim(scalarString($_POST['meetingMode'] ?? 'google_meet'));
+            $agenda = trim(scalarString($_POST['agenda'] ?? ''));
 
             $allowedEventTypes = ["quick_sync", "consultation", "deep_dive"];
             if (!in_array($eventType, $allowedEventTypes, true)) {
@@ -196,7 +204,17 @@ class AppointmentController extends BaseController {
 
             if (empty($receiverId) || empty($senderId) || empty($appointmentDate) || empty($appointmentTime) || empty($eventName) || empty($location)) {
                 $this->setFlash('danger', 'All fields and an open time slot are required to schedule an appointment.');
-                $this->redirect('/appointment/book?account=' . $receiverId);
+                $this->redirect('/appointment/book?account=' . rawurlencode($receiverId));
+            }
+
+            $parsedDate = DateTime::createFromFormat('!Y-m-d', $appointmentDate);
+            $dateErrors = DateTime::getLastErrors();
+            $validTime = preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $appointmentTime) === 1;
+            if (!$parsedDate || ($dateErrors !== false && ($dateErrors['warning_count'] > 0 || $dateErrors['error_count'] > 0))
+                || $parsedDate->format('Y-m-d') !== $appointmentDate || !$validTime
+                || strlen($eventName) > 100 || strlen($location) > 100 || strlen($agenda) > 5000) {
+                $this->setFlash('danger', 'Please check the appointment date, time, and field lengths.');
+                $this->redirect('/appointment/book?account=' . rawurlencode($receiverId));
             }
 
             if ($receiverId === $senderId) {
@@ -206,13 +224,24 @@ class AppointmentController extends BaseController {
 
             if ($appointmentDate < date('Y-m-d')) {
                 $this->setFlash('danger', 'Cannot schedule appointments in the past.');
-                $this->redirect('/appointment/book?account=' . $receiverId);
+                $this->redirect('/appointment/book?account=' . rawurlencode($receiverId));
             }
 
             // Conflict detection
-            if ($this->appointmentModel->hasConflict($receiverId, $appointmentDate, $appointmentTime)) {
+            $requestedSlot = null;
+            foreach ($this->appointmentModel->generateAvailableSlots($receiverId, $appointmentDate, match ($eventType) {
+                'quick_sync' => 15,
+                'deep_dive' => 60,
+                default => 30,
+            }) as $slot) {
+                if ($slot['time'] === $appointmentTime && $slot['available']) {
+                    $requestedSlot = $slot;
+                    break;
+                }
+            }
+            if ($requestedSlot === null || $this->appointmentModel->hasConflict($receiverId, $appointmentDate, $appointmentTime, $eventType)) {
                 $this->setFlash('danger', 'The selected time slot (' . $appointmentTime . ') is already booked. Please choose an open slot.');
-                $this->redirect('/appointment/book?account=' . $receiverId);
+                $this->redirect('/appointment/book?account=' . rawurlencode($receiverId));
             }
 
             $appointmentId = $this->generateAppointmentId($receiverId, $senderId);
@@ -237,7 +266,7 @@ class AppointmentController extends BaseController {
                 $this->redirect('/sent');
             } else {
                 $this->setFlash('danger', 'An error occurred while creating the appointment. Please try again.');
-                $this->redirect('/appointment/book?account=' . $receiverId);
+                $this->redirect('/appointment/book?account=' . rawurlencode($receiverId));
             }
         } else {
             $this->redirect('/search');
@@ -246,7 +275,7 @@ class AppointmentController extends BaseController {
 
     public function view($params = []) {
         $this->requireAuth();
-        $id = $params["id"] ?? $_GET["id"] ?? "";
+        $id = scalarString($params['id'] ?? $_GET['id'] ?? '');
         $userId = $_SESSION["userId"];
 
         if (empty($id)) {
@@ -312,7 +341,7 @@ class AppointmentController extends BaseController {
 
     public function exportIcs($params = []) {
         $this->requireAuth();
-        $id = $params["id"] ?? $_GET["id"] ?? "";
+        $id = scalarString($params['id'] ?? $_GET['id'] ?? '');
         $userId = $_SESSION["userId"];
 
         if (empty($id)) {
@@ -333,7 +362,7 @@ class AppointmentController extends BaseController {
         $title = $appt['event_name'] ?: 'Appointment with ' . $partnerName;
         $description = "More Than Blue Appointment with " . $partnerName;
         if (!empty($appt['agenda'])) {
-            $description .= "\\n\\nAgenda: " . str_replace(["\r\n", "\n"], "\\n", $appt['agenda']);
+            $description .= "\n\nAgenda: " . $appt['agenda'];
         }
         $location = $appt['location'] ?: 'Online';
 
@@ -350,6 +379,13 @@ class AppointmentController extends BaseController {
         $dtEnd = $endDT->format('Ymd\THis');
         $dtStamp = gmdate('Ymd\THis\Z');
         $uid = $appt['appointment_id'] . '@morethanblue.local';
+        $escapeIcsText = static function ($value) {
+            return str_replace(
+                ["\\", "\r\n", "\r", "\n", ",", ";"],
+                ["\\\\", "\\n", "\\n", "\\n", "\\,", "\\;"],
+                (string)$value
+            );
+        };
 
         $ics = "BEGIN:VCALENDAR\r\n"
             . "VERSION:2.0\r\n"
@@ -361,15 +397,16 @@ class AppointmentController extends BaseController {
             . "DTSTAMP:" . $dtStamp . "\r\n"
             . "DTSTART:" . $dtStart . "\r\n"
             . "DTEND:" . $dtEnd . "\r\n"
-            . "SUMMARY:" . addcslashes($title, ",;") . "\r\n"
-            . "DESCRIPTION:" . addcslashes($description, ",;") . "\r\n"
-            . "LOCATION:" . addcslashes($location, ",;") . "\r\n"
+            . "SUMMARY:" . $escapeIcsText($title) . "\r\n"
+            . "DESCRIPTION:" . $escapeIcsText($description) . "\r\n"
+            . "LOCATION:" . $escapeIcsText($location) . "\r\n"
             . "STATUS:CONFIRMED\r\n"
             . "END:VEVENT\r\n"
             . "END:VCALENDAR\r\n";
 
         header('Content-Type: text/calendar; charset=utf-8');
-        header('Content-Disposition: attachment; filename="appointment-' . substr($appt['appointment_id'], 0, 8) . '.ics"');
+        $downloadId = preg_replace('/[^A-Za-z0-9_-]/', '', substr((string)$appt['appointment_id'], 0, 8));
+        header('Content-Disposition: attachment; filename="appointment-' . $downloadId . '.ics"');
         header('Content-Length: ' . strlen($ics));
         echo $ics;
         exit;
@@ -377,7 +414,7 @@ class AppointmentController extends BaseController {
 
     public function edit($params = []) {
         $this->requireAuth();
-        $id = $params["id"] ?? "";
+        $id = scalarString($params['id'] ?? '');
         $userId = $_SESSION["userId"];
 
         if (empty($id)) {
@@ -402,8 +439,8 @@ class AppointmentController extends BaseController {
         $this->validateCsrf();
         $userId = $_SESSION["userId"];
 
-        $id = trim($_POST["id"] ?? "");
-        $status = trim($_POST["status"] ?? "");
+        $id = trim(scalarString($_POST['id'] ?? ''));
+        $status = trim(scalarString($_POST['status'] ?? ''));
 
         $allowedStatuses = ["approved", "denied", "cancel"];
         if (empty($id) || !in_array($status, $allowedStatuses, true)) {
@@ -421,7 +458,7 @@ class AppointmentController extends BaseController {
 
     public function deleteForm($params = []) {
         $this->requireAuth();
-        $id = $params["id"] ?? "";
+        $id = scalarString($params['id'] ?? '');
         $userId = $_SESSION["userId"];
 
         if (empty($id)) {
@@ -442,7 +479,7 @@ class AppointmentController extends BaseController {
         $this->validateCsrf();
         $userId = $_SESSION["userId"];
 
-        $id = trim($_POST["id"] ?? "");
+        $id = trim(scalarString($_POST['id'] ?? ''));
 
         if (empty($id)) {
             $this->redirect('/received');
@@ -459,7 +496,7 @@ class AppointmentController extends BaseController {
 
     public function deleteSentForm($params = []) {
         $this->requireAuth();
-        $id = $params["id"] ?? "";
+        $id = scalarString($params['id'] ?? '');
         $userId = $_SESSION["userId"];
 
         if (empty($id)) {
@@ -480,7 +517,7 @@ class AppointmentController extends BaseController {
         $this->validateCsrf();
         $userId = $_SESSION["userId"];
 
-        $id = trim($_POST["id"] ?? "");
+        $id = trim(scalarString($_POST['id'] ?? ''));
 
         if (empty($id)) {
             $this->redirect('/sent');

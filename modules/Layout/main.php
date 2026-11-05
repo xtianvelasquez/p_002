@@ -33,7 +33,7 @@ $isSignedIn = isset($_SESSION['userId']);
             <li class="nav-item"><a class="nav-link <?= isNavActive('/sent', $subPath) ?>" href="<?= routeUrl('/sent') ?>">Sent</a></li>
             <li class="nav-item"><a class="nav-link <?= isNavActive('/search', $subPath) ?>" href="<?= routeUrl('/search') ?>">Search</a></li>
             <li class="nav-item ms-lg-2"><a class="btn btn-outline-secondary btn-sm app-nav-action" href="<?= routeUrl('/profile') ?>">Profile settings</a></li>
-            <li class="nav-item ms-lg-1"><a class="btn btn-outline-danger btn-sm app-nav-action" href="<?= routeUrl('/logout') ?>">Sign out</a></li>
+            <li class="nav-item ms-lg-1"><form method="post" action="<?= routeUrl('/logout') ?>" class="m-0"><?= csrfField() ?><button class="btn btn-outline-danger btn-sm app-nav-action" type="submit">Sign out</button></form></li>
           <?php else: ?>
             <?php if (rtrim($subPath, '/') === '/'): ?>
               <li class="nav-item"><a class="nav-link" href="#how-it-works">Schedule</a></li>

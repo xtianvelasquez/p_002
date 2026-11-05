@@ -45,11 +45,18 @@ class AuthController extends BaseController {
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->validateCsrf();
-            $emailAddress = filter_var(trim($_POST["emailAddress"] ?? ''), FILTER_SANITIZE_EMAIL);
-            $password = trim($_POST["password"] ?? '');
+            $emailAddress = strtolower(trim(scalarString($_POST['emailAddress'] ?? '')));
+            $password = scalarString($_POST['password'] ?? '');
+
+            if (strlen($password) > 72) {
+                $this->setFlash('danger', 'The email or password you entered is incorrect. Please try again.');
+                $this->redirect('/login');
+            }
 
             $user = $this->userModel->getUserByEmailAndPassword($emailAddress, $password);
             if ($user) {
+                session_regenerate_id(true);
+                unset($_SESSION['_csrf']);
                 $_SESSION["profilePicture"] = $user["profile_picture"];
                 $_SESSION["searchName"] = $user["search_name"];
                 $_SESSION["emailAddress"] = $user["email_address"];
@@ -80,15 +87,15 @@ class AuthController extends BaseController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->validateCsrf();
             $userId = $this->generateUserId();
-            $firstName = trim($_POST["firstName"] ?? '');
-            $middleName = trim($_POST["middleName"] ?? '');
-            $lastName = trim($_POST["lastName"] ?? '');
+            $firstName = trim(scalarString($_POST['firstName'] ?? ''));
+            $middleName = trim(scalarString($_POST['middleName'] ?? ''));
+            $lastName = trim(scalarString($_POST['lastName'] ?? ''));
             $searchName = strtoupper(trim($firstName . " " . $lastName));
-            $rawContact = trim($_POST["contactNumber"] ?? '');
-            $emailAddress = filter_var(trim($_POST["emailAddress"] ?? ''), FILTER_SANITIZE_EMAIL);
-            $password = trim($_POST["password"] ?? '');
+            $rawContact = trim(scalarString($_POST['contactNumber'] ?? ''));
+            $emailAddress = strtolower(trim(scalarString($_POST['emailAddress'] ?? '')));
+            $password = scalarString($_POST['password'] ?? '');
 
-            if (empty($firstName) || empty($lastName)) {
+            if (empty($firstName) || empty($lastName) || strlen($firstName) > 100 || strlen($lastName) > 100 || strlen($middleName) > 100) {
                 $this->setFlash('danger', 'First name and last name are required.');
                 $this->redirect('/signup');
             }
@@ -97,9 +104,13 @@ class AuthController extends BaseController {
                 $this->setFlash('danger', 'Invalid email address provided.');
                 $this->redirect('/signup');
             }
+            if (strlen($emailAddress) > 100) {
+                $this->setFlash('danger', 'Email address is too long.');
+                $this->redirect('/signup');
+            }
 
-            if (strlen($password) < 6) {
-                $this->setFlash('danger', 'Password must be at least 6 characters.');
+            if (strlen($password) < 12 || strlen($password) > 72) {
+                $this->setFlash('danger', 'Password must be between 12 and 72 bytes.');
                 $this->redirect('/signup');
             }
 
@@ -122,6 +133,7 @@ class AuthController extends BaseController {
 
             // Handle Profile Picture (optional with default avatar)
             $profilePictureRelativePath = 'images/logo.png';
+            $uploadedProfilePath = null;
 
             if (isset($_FILES["profilePicture"]) && $_FILES["profilePicture"]["error"] !== UPLOAD_ERR_NO_FILE) {
                 $profilePictureError = $_FILES["profilePicture"]["error"];
@@ -131,20 +143,21 @@ class AuthController extends BaseController {
                 }
 
                 $profilePictureSize = $_FILES["profilePicture"]["size"];
-                if ($profilePictureSize >= 10000000) {
+                if ($profilePictureSize > 10000000) {
                     $this->setFlash('danger', 'File size exceeds 10MB limit.');
                     $this->redirect('/signup');
                 }
 
-                $ext = validateUploadedImage($_FILES["profilePicture"]["tmp_name"], $_FILES["profilePicture"]["name"]);
+                $ext = validateUploadedImage($_FILES["profilePicture"]["tmp_name"]);
                 if (!$ext) {
                     $this->setFlash('danger', 'Invalid file type. Only PNG, JPG, and JPEG images are allowed.');
                     $this->redirect('/signup');
                 }
 
                 $publicUploadsDir = dirname(__DIR__, 3) . '/public/uploads';
-                if (!is_dir($publicUploadsDir)) {
-                    mkdir($publicUploadsDir, 0755, true);
+                if (!is_dir($publicUploadsDir) && !mkdir($publicUploadsDir, 0755, true) && !is_dir($publicUploadsDir)) {
+                    $this->setFlash('danger', 'Image uploads are temporarily unavailable.');
+                    $this->redirect('/signup');
                 }
 
                 $fileName = bin2hex(random_bytes(16)) . '.' . $ext;
@@ -156,6 +169,7 @@ class AuthController extends BaseController {
                 }
 
                 $profilePictureRelativePath = 'uploads/' . $fileName;
+                $uploadedProfilePath = $targetPath;
             }
 
             $signupData = [
@@ -175,11 +189,14 @@ class AuthController extends BaseController {
                     $this->setFlash('success', 'Signup successful! Please sign in with your credentials.');
                     $this->redirect('/login');
                 } else {
+                    if ($uploadedProfilePath && is_file($uploadedProfilePath)) unlink($uploadedProfilePath);
                     $this->setFlash('danger', 'An error occurred during registration. Please try again.');
                     $this->redirect('/signup');
                 }
             } catch (Exception $e) {
-                $this->setFlash('danger', 'Database registration error: ' . $e->getMessage());
+                if ($uploadedProfilePath && is_file($uploadedProfilePath)) unlink($uploadedProfilePath);
+                error_log((string)$e);
+                $this->setFlash('danger', 'Registration could not be completed. Please try again.');
                 $this->redirect('/signup');
             }
         } else {
@@ -188,13 +205,21 @@ class AuthController extends BaseController {
     }
 
     public function logout() {
-        session_unset();
+        $this->validateCsrf();
+        $_SESSION = [];
+        if (ini_get('session.use_cookies')) {
+            $cookie = session_get_cookie_params();
+            setcookie(session_name(), '', [
+                'expires' => time() - 42000,
+                'path' => $cookie['path'],
+                'domain' => $cookie['domain'],
+                'secure' => $cookie['secure'],
+                'httponly' => $cookie['httponly'],
+                'samesite' => $cookie['samesite'] ?? 'Lax',
+            ]);
+        }
         session_destroy();
         $this->redirect('/login');
-    }
-
-    public function zone() {
-        $this->renderView('Auth/Views/zone');
     }
 
     public function getGoogleCredentials() {
@@ -215,8 +240,10 @@ class AuthController extends BaseController {
         if (!empty($envUri)) {
             return trim($envUri);
         }
-        $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
-        $host = $_SERVER['HTTP_HOST'] ?? 'localhost:8000';
+        $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['SERVER_NAME'] ?? 'localhost';
+        $port = (int)($_SERVER['SERVER_PORT'] ?? ($scheme === 'https' ? 443 : 80));
+        if (!in_array($port, [80, 443], true)) $host .= ':' . $port;
         return $scheme . '://' . $host . routeUrl('/auth/google/callback');
     }
 
@@ -254,14 +281,13 @@ class AuthController extends BaseController {
             $this->redirect('/received');
         }
 
-        $code = trim($_GET['code'] ?? '');
-        $state = trim($_GET['state'] ?? '');
+        $code = trim(scalarString($_GET['code'] ?? ''));
+        $state = trim(scalarString($_GET['state'] ?? ''));
         $savedState = $_SESSION['oauth_state'] ?? '';
         unset($_SESSION['oauth_state']);
 
         if (empty($code)) {
-            $error = trim($_GET['error'] ?? 'Authentication was cancelled or failed.');
-            $this->setFlash('danger', 'Google Sign-In failed: ' . htmlspecialchars($error, ENT_QUOTES, 'UTF-8'));
+            $this->setFlash('danger', 'Google sign-in was cancelled or could not be completed.');
             $this->redirect('/login');
         }
 
@@ -289,7 +315,8 @@ class AuthController extends BaseController {
             if (isset($tokenResponse['error']) && $tokenResponse['error'] === 'redirect_uri_mismatch') {
                 $errorMsg = 'Redirect URI mismatch. Google received: ' . $redirectUri . '. Please ensure this exact URI is added to your Authorized Redirect URIs in the Google Cloud Console.';
             }
-            $this->setFlash('danger', 'Google Authentication Error: ' . htmlspecialchars($errorMsg, ENT_QUOTES, 'UTF-8'));
+            error_log('Google OAuth token exchange failed: ' . $errorMsg);
+            $this->setFlash('danger', 'Google sign-in could not be completed. Please try again.');
             $this->redirect('/login');
         }
 
@@ -303,12 +330,22 @@ class AuthController extends BaseController {
 
         if (!$userInfo || empty($userInfo['email'])) {
             $infoError = $userInfo['error_description'] ?? $userInfo['error'] ?? 'Could not retrieve user profile from Google.';
-            $this->setFlash('danger', 'Google Profile Error: ' . htmlspecialchars($infoError, ENT_QUOTES, 'UTF-8'));
+            error_log('Google OAuth profile request failed: ' . $infoError);
+            $this->setFlash('danger', 'Google sign-in could not be completed. Please try again.');
+            $this->redirect('/login');
+        }
+
+        if (empty($userInfo['email_verified']) || empty($userInfo['sub'])) {
+            $this->setFlash('danger', 'Google did not return a verified account. Please try another sign-in method.');
             $this->redirect('/login');
         }
 
         $googleId = (string)($userInfo['sub'] ?? '');
-        $email = filter_var($userInfo['email'], FILTER_SANITIZE_EMAIL);
+        $email = strtolower(trim(scalarString($userInfo['email'] ?? '')));
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 100) {
+            $this->setFlash('danger', 'Google did not return a valid email address.');
+            $this->redirect('/login');
+        }
         $firstName = trim($userInfo['given_name'] ?? '');
         $lastName = trim($userInfo['family_name'] ?? '');
         $fullName = trim($userInfo['name'] ?? '');
@@ -350,7 +387,7 @@ class AuthController extends BaseController {
                 'middle_name' => null,
                 'last_name' => $lastName,
                 'search_name' => $searchName,
-                'contact_number' => '0000000000',
+                'contact_number' => '999' . str_pad((string)random_int(0, 9999999), 7, '0', STR_PAD_LEFT),
                 'email_address' => $email,
                 'user_password' => password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT),
                 'profile_picture' => $picture,
@@ -368,12 +405,15 @@ class AuthController extends BaseController {
                     $this->redirect('/login');
                 }
             } catch (Exception $e) {
-                $this->setFlash('danger', 'Error setting up Google account: ' . $e->getMessage());
+                error_log((string)$e);
+                $this->setFlash('danger', 'Google sign-in could not be completed. Please try again.');
                 $this->redirect('/login');
             }
         }
 
         // 6. Sign in user
+        session_regenerate_id(true);
+        unset($_SESSION['_csrf']);
         $_SESSION["profilePicture"] = $user["profile_picture"];
         $_SESSION["searchName"] = $user["search_name"];
         $_SESSION["emailAddress"] = $user["email_address"];
@@ -399,25 +439,19 @@ class AuthController extends BaseController {
             }
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
             curl_setopt($ch, CURLOPT_TIMEOUT, 15);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
             $response = curl_exec($ch);
-            if ($response === false) {
-                // If SSL verification fails on local Windows environment, fallback with SSL peer verification disabled
-                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-                curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-                $response = curl_exec($ch);
-            }
-
-            $decoded = json_decode((string)$response, true);
-            if (is_array($decoded)) {
-                return $decoded;
-            }
-            if ($response === false) {
-                return ['error' => 'curl_error', 'error_description' => curl_error($ch)];
-            }
-            return ['error' => 'invalid_response', 'error_description' => (string)$response];
+            $curlError = curl_error($ch);
+            $statusCode = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+            curl_close($ch);
+            if ($response === false) return ['error' => 'request_failed', 'error_description' => $curlError];
+            $decoded = json_decode($response, true);
+            return is_array($decoded) && $statusCode >= 200 && $statusCode < 300
+                ? $decoded
+                : ['error' => 'request_failed'];
         }
 
         $opts = [
@@ -428,8 +462,8 @@ class AuthController extends BaseController {
                 'ignore_errors' => true
             ],
             'ssl' => [
-                'verify_peer' => false,
-                'verify_peer_name' => false
+                'verify_peer' => true,
+                'verify_peer_name' => true
             ]
         ];
         if ($method === 'POST') {

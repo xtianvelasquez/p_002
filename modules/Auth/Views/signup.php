@@ -53,8 +53,8 @@
                 <input type="email" name="emailAddress" id="emailAddress" class="form-control rounded-2" placeholder="name@example.com" required>
               </div>
               <div class="col-12">
-                <label for="password" class="form-label text-secondary small fw-semibold">Password (min 6 characters)</label>
-                <input type="password" name="password" id="password" minlength="6" class="form-control rounded-2" required>
+                <label for="password" class="form-label text-secondary small fw-semibold">Password (12 characters minimum)</label>
+                <input type="password" name="password" id="password" minlength="12" maxlength="72" autocomplete="new-password" class="form-control rounded-2" required>
               </div>
               <div class="col-12">
                 <label for="profilePicture" class="form-label text-secondary small fw-semibold">Profile Picture (Optional, PNG/JPG max 10MB)</label>

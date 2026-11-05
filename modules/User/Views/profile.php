@@ -55,13 +55,13 @@ $websiteUrl = $websiteUrl ?? '';
               <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Public Profile & Booking Link</span>
               <span class="text-success small"><i class="bi bi-broadcast me-1"></i>Live</span>
             </div>
-            <code class="small text-dark fw-semibold" id="shareLinkCode"><?= htmlspecialchars($_SERVER['HTTP_HOST'] ?? 'localhost:8000') . $shareableLink ?></code>
+            <code class="small text-dark fw-semibold" id="shareLinkCode"><?= htmlspecialchars($shareableLink, ENT_QUOTES, 'UTF-8') ?></code>
           </div>
           <div class="d-flex gap-2">
-            <a href="<?= $shareableLink ?>" target="_blank" class="btn btn-outline-primary btn-sm rounded-2">
+            <a href="<?= htmlspecialchars($shareableLink, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm rounded-2">
               <i class="bi bi-box-arrow-up-right me-1"></i> Preview Profile
             </a>
-            <button type="button" class="btn btn-secondary btn-sm rounded-2" onclick="navigator.clipboard.writeText('<?= htmlspecialchars($_SERVER['REQUEST_SCHEME'] ?? 'http') . '://' . htmlspecialchars($_SERVER['HTTP_HOST'] ?? 'localhost:8000') . $shareableLink ?>'); this.innerText = 'Copied!'; setTimeout(() => this.innerText = 'Copy', 2000);">Copy Link</button>
+            <button type="button" class="btn btn-secondary btn-sm rounded-2" id="copyBookingLink">Copy Link</button>
           </div>
         </div>
       </div>
@@ -73,7 +73,7 @@ $websiteUrl = $websiteUrl ?? '';
         ?>
         <div class="card-header bg-white py-4 border-bottom text-center">
           <div class="position-relative d-inline-block mb-3">
-            <img src="<?= userAvatarUrl($currentProfilePicture, $myFullName, 110) ?>" alt="Profile Picture" class="rounded-circle border shadow-sm" style="width: 110px; height: 110px; object-fit: cover;" onerror="this.onerror=null; this.src='<?= getInitialsAvatarDataUri($myFullName, 110) ?>';">
+            <img src="<?= htmlspecialchars(userAvatarUrl($currentProfilePicture, $myFullName, 110), ENT_QUOTES, 'UTF-8') ?>" alt="Profile Picture" class="rounded-circle border shadow-sm" style="width: 110px; height: 110px; object-fit: cover;" onerror="this.onerror=null; this.src='<?= getInitialsAvatarDataUri($myFullName, 110) ?>';">
           </div>
           <h4 class="card-title mb-1 fw-bold text-dark"><?= htmlspecialchars($myFullName, ENT_QUOTES, 'UTF-8') ?></h4>
           <p class="text-muted small mb-0">Manage your LinkedIn-style professional persona and booking preferences</p>
@@ -238,3 +238,15 @@ $websiteUrl = $websiteUrl ?? '';
     </div>
   </div>
 </div>
+<script>
+  document.getElementById('copyBookingLink')?.addEventListener('click', async function () {
+    const link = new URL(document.getElementById('shareLinkCode').textContent, window.location.origin).href;
+    try {
+      await navigator.clipboard.writeText(link);
+      this.textContent = 'Copied!';
+      setTimeout(() => { this.textContent = 'Copy Link'; }, 2000);
+    } catch (error) {
+      this.textContent = 'Copy failed';
+    }
+  });
+</script>

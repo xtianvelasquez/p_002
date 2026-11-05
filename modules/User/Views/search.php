@@ -55,7 +55,7 @@ $searchResults = $searchResults ?? null;
                         <div class="professional-cover"></div><div class="professional-body">
                         <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
                           <div class="d-flex align-items-start gap-3 flex-grow-1" style="min-width: 0;">
-                            <img src="<?= $avatarUrl ?>" alt="<?= $name ?>" class="professional-avatar rounded-circle flex-shrink-0" onerror="this.onerror=null; this.src='<?= $avatarFallback ?>';">
+                            <img src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= $name ?>" class="professional-avatar rounded-circle flex-shrink-0" onerror="this.onerror=null; this.src='<?= $avatarFallback ?>';">
                             <div class="flex-grow-1" style="min-width: 0;">
                               <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
                                 <a href="<?= routeUrl('/u/' . $uid) ?>" class="professional-name"><?= $name ?></a>

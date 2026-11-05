@@ -2,80 +2,42 @@
 namespace App\Core;
 
 use PDO;
-use Exception;
+use PDOException;
+use RuntimeException;
 
-class Database {
-    private static $instance = null;
-    private static $cachedPort = null;
-    /**
-     * @var PDO
-     */
-    private $connection;
+final class Database {
+    private static ?PDO $instance = null;
 
-    private function __construct() {
-        $configFile = dirname(__DIR__) . '/config/config.php';
-        if (!file_exists($configFile)) {
-            throw new Exception("Configuration file not found.");
-        }
-        $config = require $configFile;
-        
-        $options = [
-            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES   => false,
-        ];
+    private function __construct() {}
 
-        $host = ($config['host'] === 'localhost') ? '127.0.0.1' : $config['host'];
-        $configuredPort = (int)$config['port'];
-
-        // If we already resolved an active port in this process/session, use it directly
-        if (self::$cachedPort !== null) {
-            $targetPort = self::$cachedPort;
-        } else {
-            $targetPort = $configuredPort;
-
-            // Fast TCP probe (15ms timeout) to avoid Windows 4-second TCP timeout on closed ports
-            $probe = @fsockopen($host, $targetPort, $errCode, $errMsg, 0.03);
-            if ($probe) {
-                fclose($probe);
-                self::$cachedPort = $targetPort;
-            } else {
-                // If configured port is closed, probe standard alternate port (5433 or 5432)
-                $alternatePort = ($targetPort === 5432) ? 5433 : 5432;
-                $altProbe = @fsockopen($host, $alternatePort, $errCode, $errMsg, 0.03);
-                if ($altProbe) {
-                    fclose($altProbe);
-                    $targetPort = $alternatePort;
-                    self::$cachedPort = $targetPort;
-                }
-            }
+    public static function getInstance(): PDO {
+        if (self::$instance instanceof PDO) {
+            return self::$instance;
         }
 
-        $dsn = "pgsql:host={$host};port={$targetPort};dbname={$config['dbname']}";
+        $config = require dirname(__DIR__) . '/config/config.php';
+        $host = (string)$config['host'];
+        if (!preg_match('/^[A-Za-z0-9.:-]{1,253}$/', $host)
+            || !preg_match('/^[A-Za-z0-9_]{1,63}$/', (string)$config['dbname'])) {
+            throw new RuntimeException('DB_HOST or DB_NAME contains unsupported characters.');
+        }
+        $port = filter_var($config['port'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 65535]]);
+        if ($port === false) {
+            throw new RuntimeException('DB_PORT must be a valid TCP port.');
+        }
 
+        $dsn = sprintf('pgsql:host=%s;port=%d;dbname=%s', $host, $port, $config['dbname']);
         try {
-            $this->connection = new PDO($dsn, $config['user'], $config['password'], $options);
-            self::$cachedPort = $targetPort;
-        } catch (Exception $e) {
-            // As a final failover if probe was false positive, try alternate
-            $fallbackPort = ($targetPort === 5432) ? 5433 : 5432;
-            $fallbackDsn = "pgsql:host={$host};port={$fallbackPort};dbname={$config['dbname']}";
-            try {
-                $this->connection = new PDO($fallbackDsn, $config['user'], $config['password'], $options);
-                self::$cachedPort = $fallbackPort;
-            } catch (Exception $inner) {
-                die("We're currently experiencing some technical difficulties. Please try again later.");
-            }
+            self::$instance = new PDO($dsn, $config['user'], $config['password'], [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false,
+                PDO::ATTR_TIMEOUT => 5,
+            ]);
+        } catch (PDOException $exception) {
+            throw new RuntimeException('Unable to connect to the configured database.', 0, $exception);
         }
-    }
 
-    /**
-     * @return PDO
-     */
-    public static function getInstance() {
-        if (self::$instance === null) {
-            self::$instance = new self();
-        }
-        return self::$instance->connection;
+        return self::$instance;
     }
 }

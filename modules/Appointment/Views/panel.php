@@ -140,12 +140,12 @@ foreach ($appointments as $a) {
                         <td><span class="badge rounded-pill <?= $badgeClass ?> px-2 py-1"><?= htmlspecialchars(ucfirst($status), ENT_QUOTES, 'UTF-8') ?></span></td>
                         <td class="text-end pe-4">
                           <div class="btn-group btn-group-sm" role="group">
-                            <a href="<?= routeUrl('/appointment/view?id=' . $appt['appointment_id']) ?>" class="btn btn-outline-secondary" title="View details">View</a>
-                            <a href="<?= routeUrl('/appointment/export-ics?id=' . $appt['appointment_id']) ?>" class="btn btn-outline-secondary" title="Download iCal (.ics)">
+                            <a href="<?= routeUrl('/appointment/view?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-secondary" title="View details">View</a>
+                            <a href="<?= routeUrl('/appointment/export-ics?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-secondary" title="Download iCal (.ics)">
                               <i class="bi bi-calendar-arrow-down me-1"></i>iCal
                             </a>
-                            <a href="<?= routeUrl('/appointment/edit?id=' . $appt['appointment_id']) ?>" class="btn btn-outline-primary" title="Update status">Status</a>
-                            <a href="<?= routeUrl('/appointment/delete?id=' . $appt['appointment_id']) ?>" class="btn btn-outline-danger" title="Delete record">Delete</a>
+                            <a href="<?= routeUrl('/appointment/edit?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-primary" title="Update status">Status</a>
+                            <a href="<?= routeUrl('/appointment/delete?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-danger" title="Delete record">Delete</a>
                           </div>
                         </td>
                       </tr>
@@ -316,14 +316,15 @@ document.addEventListener('DOMContentLoaded', function () {
     const prevMonthLastDate = new Date(currentYear, currentMonth, 0).getDate();
 
     // Map appointments by date (YYYY-MM-DD)
-    const apptMap = {};
+    const apptMap = Object.create(null);
     appointments.forEach(a => {
       const d = a.appointment_date;
       if (!apptMap[d]) apptMap[d] = [];
       apptMap[d].push(a);
     });
 
-    const todayStr = (new Date()).toISOString().split('T')[0];
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
     // Leading empty/prev-month days
     for (let i = firstDayIndex; i > 0; i--) {
@@ -346,28 +347,36 @@ document.addEventListener('DOMContentLoaded', function () {
       col.className = 'col p-2 border position-relative text-start ' + (isToday ? 'bg-primary-subtle border-primary' : 'bg-white');
       col.style.cssText = 'flex: 0 0 14.2857%; max-width: 14.2857%; min-height: 105px;';
 
-      let inner = `<div class="d-flex justify-content-between align-items-center mb-1">
-        <span class="small fw-bold ${isToday ? 'badge bg-primary text-white rounded-circle p-1' : 'text-dark'}" style="width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;">${d}</span>
-      </div>`;
+      const dayHeading = document.createElement('div');
+      dayHeading.className = 'd-flex justify-content-between align-items-center mb-1';
+      const dayLabel = document.createElement('span');
+      dayLabel.className = `small fw-bold ${isToday ? 'badge bg-primary text-white rounded-circle p-1' : 'text-dark'}`;
+      dayLabel.style.cssText = 'width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;';
+      dayLabel.textContent = String(d);
+      dayHeading.appendChild(dayLabel);
+      col.appendChild(dayHeading);
 
       if (apptMap[dateString] && apptMap[dateString].length > 0) {
-        inner += `<div class="d-flex flex-column gap-1 overflow-hidden" style="max-height: 80px; overflow-y: auto;">`;
+        const eventList = document.createElement('div');
+        eventList.className = 'd-flex flex-column gap-1 overflow-hidden';
+        eventList.style.cssText = 'max-height: 80px; overflow-y: auto;';
         apptMap[dateString].forEach(appt => {
           const status = (appt.appointment_status || 'pending').toLowerCase();
           let bgPill = 'bg-warning text-dark';
           if (status === 'approved') bgPill = 'bg-success text-white';
           else if (status === 'denied' || status === 'cancel') bgPill = 'bg-secondary text-white';
 
-          inner += `<button type="button" class="btn btn-sm text-truncate text-start p-1 border-0 cal-event-pill ${bgPill}" 
-            data-id="${appt.appointment_id}" 
-            style="font-size: 0.72rem; line-height: 1.2; border-radius: 4px;">
-            <strong>${appt.appointment_time}</strong> ${appt.fullName}
-          </button>`;
+          const pill = document.createElement('button');
+          pill.type = 'button';
+          pill.className = `btn btn-sm text-truncate text-start p-1 border-0 cal-event-pill ${bgPill}`;
+          pill.dataset.id = String(appt.appointment_id);
+          pill.style.cssText = 'font-size: 0.72rem; line-height: 1.2; border-radius: 4px;';
+          pill.textContent = `${appt.appointment_time} ${appt.fullName}`;
+          eventList.appendChild(pill);
         });
-        inner += `</div>`;
+        col.appendChild(eventList);
       }
 
-      col.innerHTML = inner;
       calGrid.appendChild(col);
     }
 

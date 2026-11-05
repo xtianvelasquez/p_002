@@ -21,13 +21,20 @@ if (file_exists($envFile)) {
     }
 }
 
+$appEnv = strtolower(trim(getenv('APP_ENV') ?: 'development'));
+$dbPassword = getenv('DB_PASSWORD');
+if ($appEnv === 'production' && ($dbPassword === false || $dbPassword === '')) {
+    throw new RuntimeException('DB_PASSWORD must be configured in production.');
+}
+
 return [
     'host' => getenv('DB_HOST') ?: 'localhost',
     'port' => getenv('DB_PORT') ?: '5432',
     'dbname' => getenv('DB_NAME') ?: 'blue',
     'user' => getenv('DB_USER') ?: 'postgres',
-    'password' => getenv('DB_PASSWORD') ?: 'admin123',
-    'app_env' => getenv('APP_ENV') ?: 'development',
+    'password' => $dbPassword === false ? '' : $dbPassword,
+    'app_env' => $appEnv,
+    'timezone' => getenv('APP_TIMEZONE') ?: 'Asia/Manila',
     'google_client_id' => getenv('GOOGLE_CLIENT_ID') ?: ($_ENV['GOOGLE_CLIENT_ID'] ?? ''),
     'google_client_secret' => getenv('GOOGLE_CLIENT_SECRET') ?: ($_ENV['GOOGLE_CLIENT_SECRET'] ?? ''),
     'google_redirect_uri' => getenv('GOOGLE_REDIRECT_URI') ?: ($_ENV['GOOGLE_REDIRECT_URI'] ?? ''),

@@ -21,13 +21,19 @@ if (!function_exists('routeUrl')) {
     }
 }
 
+if (!function_exists('scalarString')) {
+    function scalarString($value, $default = '') {
+        return is_string($value) || is_numeric($value) ? (string)$value : (string)$default;
+    }
+}
+
 if (!function_exists('assetUrl')) {
     function assetUrl($path = '') {
         if (empty($path)) {
             return '';
         }
         // If already an absolute URL (e.g. Google profile picture: https://lh3.googleusercontent.com/...)
-        if (preg_match('#^(https?:)?//#i', $path) || strpos($path, 'data:') === 0) {
+        if (preg_match('#^https://#i', $path)) {
             return $path;
         }
         $path = '/' . ltrim($path, '/');
@@ -114,16 +120,19 @@ if (!function_exists('userAvatarUrl')) {
             return getInitialsAvatarDataUri($name, $size);
         }
         // If external URL (e.g. Google avatar)
-        if (preg_match('#^(https?:)?//#i', $picture) || strpos($picture, 'data:') === 0) {
+        if (preg_match('#^https://#i', $picture)) {
             return $picture;
         }
         // If local file, check if it actually exists in public directory
         $publicDir = realpath(__DIR__ . '/../public');
         if ($publicDir) {
             $localFile = $publicDir . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, ltrim($picture, '/\\'));
-            if (!file_exists($localFile)) {
+            $realLocalFile = realpath($localFile);
+            if (!$realLocalFile || !str_starts_with($realLocalFile, $publicDir . DIRECTORY_SEPARATOR) || !is_file($realLocalFile)) {
                 return getInitialsAvatarDataUri($name, $size);
             }
+        } else {
+            return getInitialsAvatarDataUri($name, $size);
         }
         return assetUrl($picture);
     }
@@ -171,10 +180,15 @@ if (!function_exists('getFlashes')) {
 }
 
 if (!function_exists('validateUploadedImage')) {
-    function validateUploadedImage($tmpPath, $originalName = '') {
+    function validateUploadedImage($tmpPath) {
         // 1. Check using getimagesize() (validates image magic bytes)
         $imageInfo = @getimagesize($tmpPath);
         if ($imageInfo !== false && !empty($imageInfo['mime'])) {
+            if (($imageInfo[0] ?? 0) < 1 || ($imageInfo[1] ?? 0) < 1
+                || $imageInfo[0] > 8000 || $imageInfo[1] > 8000
+                || ($imageInfo[0] * $imageInfo[1]) > 20000000) {
+                return false;
+            }
             $mime = strtolower($imageInfo['mime']);
             $allowed = [
                 'image/jpeg' => 'jpg',
@@ -185,30 +199,6 @@ if (!function_exists('validateUploadedImage')) {
                 return $allowed[$mime];
             }
             return false;
-        }
-
-        // 2. If finfo class exists, check MIME type
-        if (class_exists('finfo')) {
-            $finfo = new \finfo(FILEINFO_MIME_TYPE);
-            $mime = $finfo->file($tmpPath);
-            $allowed = [
-                'image/jpeg' => 'jpg',
-                'image/pjpeg' => 'jpg',
-                'image/png'  => 'png',
-            ];
-            if (isset($allowed[$mime])) {
-                return $allowed[$mime];
-            }
-            return false;
-        }
-
-        // 3. Fallback to extension check
-        $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-        if ($ext === 'jpeg' || $ext === 'jpg') {
-            return 'jpg';
-        }
-        if ($ext === 'png') {
-            return 'png';
         }
 
         return false;

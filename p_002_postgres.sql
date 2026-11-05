@@ -117,9 +117,9 @@ INSERT INTO appointment_details (appointment_id, receiver_id, sender_id, appoint
 --
 -- Indexes for performance
 --
-CREATE INDEX idx_appointment_details_receiver_id ON appointment_details (receiver_id);
-CREATE INDEX idx_appointment_details_sender_id ON appointment_details (sender_id);
-CREATE INDEX idx_user_account_email ON user_account (email_address);
-CREATE INDEX idx_user_account_google_id ON user_account (google_id);
-CREATE INDEX idx_user_profile_company ON user_profile (company);
-CREATE INDEX idx_user_profile_job_title ON user_profile (job_title);
+CREATE INDEX idx_appointment_receiver_date_status ON appointment_details (receiver_id, appointment_date, appointment_status);
+CREATE INDEX idx_appointment_sender_date_time ON appointment_details (sender_id, appointment_date, appointment_time);
+CREATE UNIQUE INDEX idx_user_account_email ON user_account (LOWER(email_address));
+CREATE UNIQUE INDEX idx_user_account_contact_number ON user_account (contact_number)
+    WHERE contact_number <> '0000000000';
+CREATE UNIQUE INDEX idx_user_account_google_id ON user_account (google_id) WHERE google_id IS NOT NULL;

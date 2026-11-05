@@ -10,7 +10,8 @@ use PDO;
 class UserModel extends BaseModel {
     public function getUserById($id) {
         $stmt = $this->db->prepare("
-            SELECT u.*,
+            SELECT u.user_id, u.first_name, u.middle_name, u.last_name, u.search_name,
+                   u.contact_number, u.email_address, u.profile_picture, u.google_id, u.last_update,
                    p.headline, p.bio, p.job_title, p.company, p.location_city, p.skills, p.consultation_topics,
                    p.linkedin_url, p.github_url, p.website_url,
                    COALESCE(a.work_start_time, '09:00') AS work_start_time,
@@ -27,14 +28,21 @@ class UserModel extends BaseModel {
     }
 
     public function getUserByEmailOrPhone($email, $phone) {
-        $stmt = $this->db->prepare("SELECT email_address, contact_number FROM user_account WHERE contact_number = ? OR email_address = ? LIMIT 1");
+        $stmt = $this->db->prepare("SELECT email_address, contact_number FROM user_account WHERE contact_number = ? OR LOWER(email_address) = LOWER(?) LIMIT 1");
         $stmt->execute([$phone, $email]);
+        return $stmt->fetch();
+    }
+
+    public function getOtherUserByEmailOrPhone($email, $phone, $userId) {
+        $stmt = $this->db->prepare("SELECT user_id FROM user_account WHERE (contact_number = ? OR LOWER(email_address) = LOWER(?)) AND user_id <> ? LIMIT 1");
+        $stmt->execute([$phone, $email, $userId]);
         return $stmt->fetch();
     }
 
     public function getUserByEmail($email) {
         $stmt = $this->db->prepare("
-            SELECT u.*,
+            SELECT u.user_id, u.first_name, u.middle_name, u.last_name, u.search_name,
+                   u.contact_number, u.email_address, u.user_password, u.profile_picture, u.google_id, u.last_update,
                    p.headline, p.bio, p.job_title, p.company, p.location_city, p.skills, p.consultation_topics,
                    p.linkedin_url, p.github_url, p.website_url,
                    COALESCE(a.work_start_time, '09:00') AS work_start_time,
@@ -43,7 +51,7 @@ class UserModel extends BaseModel {
             FROM user_account u
             LEFT JOIN user_profile p ON u.user_id = p.user_id
             LEFT JOIN user_availability a ON u.user_id = a.user_id
-            WHERE u.email_address = ? 
+            WHERE LOWER(u.email_address) = LOWER(?)
             LIMIT 1
         ");
         $stmt->execute([$email]);
@@ -52,7 +60,8 @@ class UserModel extends BaseModel {
 
     public function getUserByGoogleId($googleId) {
         $stmt = $this->db->prepare("
-            SELECT u.*,
+            SELECT u.user_id, u.first_name, u.middle_name, u.last_name, u.search_name,
+                   u.contact_number, u.email_address, u.profile_picture, u.google_id, u.last_update,
                    p.headline, p.bio, p.job_title, p.company, p.location_city, p.skills, p.consultation_topics,
                    p.linkedin_url, p.github_url, p.website_url,
                    COALESCE(a.work_start_time, '09:00') AS work_start_time,
@@ -128,18 +137,8 @@ class UserModel extends BaseModel {
             if (password_verify($password, $user['user_password'])) {
                 return $user;
             }
-            if ($user['user_password'] === $password) {
-                // Legacy plain text match - rehash
-                $this->updatePassword($user['user_id'], password_hash($password, PASSWORD_DEFAULT));
-                return $user;
-            }
         }
         return false;
-    }
-
-    public function updatePassword($id, $hashedPassword) {
-        $stmt = $this->db->prepare("UPDATE user_account SET user_password = ? WHERE user_id = ?");
-        return $stmt->execute([$hashedPassword, $id]);
     }
 
     public function createUser($data) {
@@ -268,7 +267,7 @@ class UserModel extends BaseModel {
     }
 
     public function searchUsers($name) {
-        $searchTerm = '%' . trim($name) . '%';
+        $searchTerm = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], trim($name)) . '%';
         $stmt = $this->db->prepare("
             SELECT u.user_id, u.first_name, u.middle_name, u.last_name, u.profile_picture,
                    p.headline, p.job_title, p.company, p.location_city, p.skills, p.consultation_topics
@@ -282,6 +281,7 @@ class UserModel extends BaseModel {
                OR p.job_title ILIKE ?
                OR p.skills ILIKE ?
             ORDER BY u.first_name ASC
+            LIMIT 60
         ");
         $stmt->execute([
             $searchTerm, $searchTerm, $searchTerm, 

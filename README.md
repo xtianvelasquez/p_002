@@ -44,7 +44,7 @@ flowchart LR
 
 This project incorporates web application security best practices:
 
-- **Bcrypt Password Hashing**: Passwords are authenticated and salted via `password_hash()` and `password_verify()` with automatic legacy rehash upgrading.
+- **Password Hashing**: Passwords are stored with PHP's `password_hash()` and checked with `password_verify()`.
 - **CSRF Defense**: All state-modifying requests (Profile updates, appointment status changes, bookings, and deletions) require cryptographic CSRF tokens (`_csrf`).
 - **Authorization & IDOR Protection**: Direct object reference vulnerabilities are blocked by enforcing strict ownership checks (`receiver_id` or `sender_id`) at the database query layer.
 - **Path-Traversal Proof Uploads**: File uploads validate genuine MIME types (`finfo_file`), generate cryptographically random filenames, and enforce directory containment to prevent arbitrary file deletion.
@@ -94,15 +94,22 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=blue
 DB_USER=postgres
-DB_PASSWORD=admin123
+DB_PASSWORD=your-local-postgres-password
+APP_ENV=development
+APP_TIMEZONE=Asia/Manila
 ```
 
 ### 4. Database Setup
-Run the database importer script:
+Run the database importer script against a new or empty database:
 ```bash
 php import_db.php
 ```
-*(Or import [p_002_postgres.sql](file:///c:/p_002/p_002_postgres.sql) directly via `psql` or pgAdmin).*
+The importer refuses to replace existing application tables by default. `php import_db.php --reset` drops and rebuilds those tables, deleting their data.
+
+For an existing database, review and apply the SQL in `database/migrations/` after resolving any duplicate account identifiers.
+The SQL file contains `DROP TABLE` statements. Import it directly only into a new or empty database.
+
+`p_002.sql` is a legacy MariaDB dump. The application uses the PostgreSQL schema in `p_002_postgres.sql`.
 
 ### 5. Run the Local Server
 Serve from the `public` directory:

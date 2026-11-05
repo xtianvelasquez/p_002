@@ -8,9 +8,9 @@
         <div class="hero-actions"><a href="<?= routeUrl('/signup') ?>" class="btn btn-primary">Start your free trial <span aria-hidden="true">→</span></a><a href="<?= routeUrl('/login') ?>" class="btn btn-outline-primary">Sign in</a></div>
         <div class="hero-proof"><div class="proof-avatars"><span>MT</span><span>CV</span><span>JD</span></div><span>Simple scheduling for <strong>better conversations</strong></span></div>
       </div>
-      <div class="hero-visual" aria-label="Preview of a weekly appointment calendar">
+      <div class="hero-visual" aria-label="Illustration of an appointment being booked">
         <div class="visual-glow"></div>
-        <div class="visual-window"><div class="window-top"><div class="window-dots"><i></i><i></i><i></i></div><span>YOUR WEEK, AT A GLANCE</span><span>•••</span></div><div class="schedule-card"><div class="schedule-head"><strong>November 2026</strong><span>+ New appointment</span></div><div class="schedule-grid"><?php foreach (['S','M','T','W','T','F','S','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','1','2','3','4','5'] as $i => $day): ?><span class="<?= $i === 17 ? 'selected' : (in_array($i,[12,25],true) ? 'booked' : '') ?>"><?= $day ?></span><?php endforeach; ?></div><div class="schedule-slots"><span>9:00 AM</span><span class="selected">10:30 AM</span><span>1:00 PM</span></div></div></div>
+        <img class="hero-undraw" src="<?= assetUrl('images/illustrations/booking.svg') ?>" alt="A person choosing an appointment from a calendar">
         <div class="floating-note"><strong><span class="floating-check">✓</span>You're all set</strong>Appointment confirmed · 10:30 AM</div>
       </div>
     </div>

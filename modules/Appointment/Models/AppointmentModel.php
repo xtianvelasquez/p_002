@@ -2,7 +2,6 @@
 namespace App\Modules\Appointment\Models;
 
 use App\Core\BaseModel;
-use PDO;
 
 /**
  * @property PDO $db
@@ -34,12 +33,6 @@ class AppointmentModel extends BaseModel {
         return $stmt->fetchAll();
     }
 
-    public function getAppointmentById($id) {
-        $stmt = $this->db->prepare("SELECT * FROM appointment_details WHERE appointment_id = ? LIMIT 1");
-        $stmt->execute([$id]);
-        return $stmt->fetch();
-    }
-
     public function getAppointmentForUser($id, $userId) {
         $stmt = $this->db->prepare("
             SELECT a.*, 
@@ -56,13 +49,27 @@ class AppointmentModel extends BaseModel {
     }
 
     public function createAppointment($data) {
-        $stmt = $this->db->prepare("
+        $this->db->beginTransaction();
+        try {
+            $lock = $this->db->prepare("SELECT user_id FROM user_account WHERE user_id = ? FOR UPDATE");
+            $lock->execute([$data['receiver_id']]);
+            if (!$lock->fetch() || $this->hasConflict(
+                $data['receiver_id'],
+                $data['appointment_date'],
+                $data['appointment_time'],
+                $data['event_type'] ?? 'consultation'
+            )) {
+                $this->db->rollBack();
+                return false;
+            }
+
+            $stmt = $this->db->prepare("
             INSERT INTO appointment_details(
                 appointment_id, receiver_id, sender_id, appointment_date, appointment_time, 
                 event_name, location, event_type, meeting_mode, agenda, appointment_status
             ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
-        return $stmt->execute([
+            $inserted = $stmt->execute([
             $data['appointment_id'],
             $data['receiver_id'],
             $data['sender_id'],
@@ -74,7 +81,13 @@ class AppointmentModel extends BaseModel {
             $data['meeting_mode'] ?? 'google_meet',
             $data['agenda'] ?? null,
             $data['appointment_status']
-        ]);
+            ]);
+            $this->db->commit();
+            return $inserted;
+        } catch (\Throwable $exception) {
+            if ($this->db->inTransaction()) $this->db->rollBack();
+            throw $exception;
+        }
     }
 
     public function updateAppointmentStatusForUser($id, $status, $userId) {
@@ -99,28 +112,37 @@ class AppointmentModel extends BaseModel {
         return $stmt->rowCount() > 0;
     }
 
-    public function hasConflict($receiverId, $date, $time) {
+    public function hasConflict($receiverId, $date, $time, $eventType = 'consultation') {
+        $duration = self::durationForEventType($eventType);
         $stmt = $this->db->prepare("
-            SELECT COUNT(*) AS total 
-            FROM appointment_details 
-            WHERE receiver_id = ? AND appointment_date = ? AND appointment_time = ? AND appointment_status IN ('approved', 'pending')
+            SELECT 1
+            FROM appointment_details
+            WHERE receiver_id = ?
+              AND appointment_date = ?
+              AND appointment_status IN ('approved', 'pending')
+              AND appointment_time::time < (CAST(? AS time) + (? * INTERVAL '1 minute'))
+              AND (appointment_time::time +
+                   (CASE event_type WHEN 'quick_sync' THEN 15 WHEN 'deep_dive' THEN 60 ELSE 30 END * INTERVAL '1 minute')) > CAST(? AS time)
+            LIMIT 1
         ");
-        $stmt->execute([$receiverId, $date, $time]);
-        $row = $stmt->fetch();
-        return ($row && (int)$row['total'] > 0);
+        $stmt->execute([$receiverId, $date, $time, $duration, $time]);
+        return (bool)$stmt->fetchColumn();
     }
 
     public function getBookedSlots($receiverId, $date) {
         $stmt = $this->db->prepare("
-            SELECT appointment_time 
+            SELECT appointment_time, event_type
             FROM appointment_details 
             WHERE receiver_id = ? AND appointment_date = ? AND appointment_status IN ('approved', 'pending')
         ");
         $stmt->execute([$receiverId, $date]);
-        return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        return $stmt->fetchAll() ?: [];
     }
 
     public function generateAvailableSlots($receiverId, $date, $customDuration = null) {
+        $parsedDate = \DateTime::createFromFormat('!Y-m-d', (string)$date);
+        if (!$parsedDate || $parsedDate->format('Y-m-d') !== $date) return [];
+
         $user = $this->getUserDetails($receiverId);
         if (!$user) {
             return [];
@@ -128,21 +150,37 @@ class AppointmentModel extends BaseModel {
 
         $startTimeStr = !empty($user['work_start_time']) ? $user['work_start_time'] : '09:00';
         $endTimeStr = !empty($user['work_end_time']) ? $user['work_end_time'] : '17:00';
-        $intervalMinutes = $customDuration ? (int)$customDuration : (!empty($user['slot_duration_minutes']) ? (int)$user['slot_duration_minutes'] : 30);
+        $intervalMinutes = in_array((int)$customDuration, [15, 30, 60], true)
+            ? (int)$customDuration
+            : (in_array((int)($user['slot_duration_minutes'] ?? 30), [15, 30, 45, 60], true)
+                ? (int)$user['slot_duration_minutes']
+                : 30);
 
-        $bookedTimes = $this->getBookedSlots($receiverId, $date);
+        $bookedSlots = $this->getBookedSlots($receiverId, $date);
 
         $startTimestamp = strtotime($date . ' ' . $startTimeStr);
         $endTimestamp = strtotime($date . ' ' . $endTimeStr);
         $currentTimestamp = time();
 
-        $slots = [];
-        $step = max(15, $intervalMinutes) * 60;
+        if ($startTimestamp === false || $endTimestamp === false || $endTimestamp <= $startTimestamp) return [];
 
-        for ($t = $startTimestamp; $t < $endTimestamp; $t += $step) {
+        $slots = [];
+        $step = $intervalMinutes * 60;
+
+        for ($t = $startTimestamp; $t + ($intervalMinutes * 60) <= $endTimestamp; $t += $step) {
             $timeFormatted = date('H:i', $t);
             $timeDisplay = date('g:i A', $t);
-            $isBooked = in_array($timeFormatted, $bookedTimes, true);
+            $slotEnd = $t + ($intervalMinutes * 60);
+            $isBooked = false;
+            foreach ($bookedSlots as $booked) {
+                $bookedStart = strtotime($date . ' ' . $booked['appointment_time']);
+                if ($bookedStart === false) continue;
+                $bookedEnd = $bookedStart + (self::durationForEventType($booked['event_type'] ?? 'consultation') * 60);
+                if ($t < $bookedEnd && $slotEnd > $bookedStart) {
+                    $isBooked = true;
+                    break;
+                }
+            }
             $isPast = ($t < $currentTimestamp);
 
             $slots[] = [
@@ -154,6 +192,14 @@ class AppointmentModel extends BaseModel {
         }
 
         return $slots;
+    }
+
+    private static function durationForEventType($eventType) {
+        return match ($eventType) {
+            'quick_sync' => 15,
+            'deep_dive' => 60,
+            default => 30,
+        };
     }
 
     public function getUserDetails($userId) {

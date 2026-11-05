@@ -62,34 +62,72 @@ class UserController extends BaseController {
         if (isset($_POST["update"])) {
             $this->validateCsrf();
             $userId = $_SESSION["userId"];
-            $firstName = trim($_POST["firstName"] ?? '');
-            $middleName = trim($_POST["middleName"] ?? '');
-            $lastName = trim($_POST["lastName"] ?? '');
+            $firstName = trim(scalarString($_POST['firstName'] ?? ''));
+            $middleName = trim(scalarString($_POST['middleName'] ?? ''));
+            $lastName = trim(scalarString($_POST['lastName'] ?? ''));
             $searchName = strtoupper(trim($firstName . " " . $lastName));
-            $contactNumber = trim($_POST["contactNumber"] ?? '');
-            $emailAddress = filter_var(trim($_POST["emailAddress"] ?? ''), FILTER_SANITIZE_EMAIL);
-            $workStartTime = trim($_POST["workStartTime"] ?? '09:00');
-            $workEndTime = trim($_POST["workEndTime"] ?? '17:00');
-            $slotDuration = max(15, min(120, (int)($_POST["slotDuration"] ?? 30)));
-            $headline = trim($_POST["headline"] ?? '');
-            $jobTitle = trim($_POST["jobTitle"] ?? '');
-            $company = trim($_POST["company"] ?? '');
-            $locationCity = trim($_POST["locationCity"] ?? '');
-            $bio = trim($_POST["bio"] ?? '');
-            $skills = trim($_POST["skills"] ?? '');
-            $consultationTopics = trim($_POST["consultationTopics"] ?? '');
-            $linkedinUrl = trim($_POST["linkedinUrl"] ?? '');
-            $githubUrl = trim($_POST["githubUrl"] ?? '');
-            $websiteUrl = trim($_POST["websiteUrl"] ?? '');
+            $contactNumber = trim(scalarString($_POST['contactNumber'] ?? ''));
+            $emailAddress = strtolower(trim(scalarString($_POST['emailAddress'] ?? '')));
+            $workStartTime = trim(scalarString($_POST['workStartTime'] ?? '09:00'));
+            $workEndTime = trim(scalarString($_POST['workEndTime'] ?? '17:00'));
+            $slotDuration = (int)scalarString($_POST['slotDuration'] ?? '30');
+            $headline = trim(scalarString($_POST['headline'] ?? ''));
+            $jobTitle = trim(scalarString($_POST['jobTitle'] ?? ''));
+            $company = trim(scalarString($_POST['company'] ?? ''));
+            $locationCity = trim(scalarString($_POST['locationCity'] ?? ''));
+            $bio = trim(scalarString($_POST['bio'] ?? ''));
+            $skills = trim(scalarString($_POST['skills'] ?? ''));
+            $consultationTopics = trim(scalarString($_POST['consultationTopics'] ?? ''));
+            $linkedinUrl = trim(scalarString($_POST['linkedinUrl'] ?? ''));
+            $githubUrl = trim(scalarString($_POST['githubUrl'] ?? ''));
+            $websiteUrl = trim(scalarString($_POST['websiteUrl'] ?? ''));
             $dateUpdate = date("Y-m-d");
 
-            if (empty($firstName) || empty($lastName)) {
-                $this->setFlash('danger', 'First name and last name are required.');
+            foreach (['LinkedIn' => $linkedinUrl, 'GitHub' => $githubUrl, 'Website' => $websiteUrl] as $label => $url) {
+                if ($url === '') continue;
+                $scheme = strtolower((string)parse_url($url, PHP_URL_SCHEME));
+                if (!filter_var($url, FILTER_VALIDATE_URL) || !in_array($scheme, ['http', 'https'], true)) {
+                    $this->setFlash('danger', $label . ' link must be a valid HTTP or HTTPS URL.');
+                    $this->redirect('/profile');
+                }
+            }
+
+            $contactNumber = preg_replace('/\D/', '', $contactNumber);
+            if (strlen($contactNumber) === 11 && str_starts_with($contactNumber, '0')) {
+                $contactNumber = substr($contactNumber, 1);
+            }
+            if (strlen($contactNumber) < 7 || strlen($contactNumber) > 15) {
+                $this->setFlash('danger', 'Please provide a valid contact number.');
+                $this->redirect('/profile');
+            }
+
+            $startTime = \DateTime::createFromFormat('!H:i', $workStartTime);
+            $endTime = \DateTime::createFromFormat('!H:i', $workEndTime);
+            $timeErrors = \DateTime::getLastErrors();
+            if (!$startTime || !$endTime
+                || !preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $workStartTime)
+                || !preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $workEndTime)
+                || $endTime <= $startTime || !in_array($slotDuration, [15, 30, 45, 60], true)
+                || ($timeErrors !== false && ($timeErrors['warning_count'] > 0 || $timeErrors['error_count'] > 0))) {
+                $this->setFlash('danger', 'Please choose valid working hours and a supported slot duration.');
+                $this->redirect('/profile');
+            }
+
+            if (empty($firstName) || empty($lastName)
+                || strlen($firstName) > 100 || strlen($middleName) > 100 || strlen($lastName) > 100
+                || strlen($headline) > 200 || strlen($jobTitle) > 150 || strlen($company) > 150
+                || strlen($locationCity) > 100 || strlen($linkedinUrl) > 255
+                || strlen($githubUrl) > 255 || strlen($websiteUrl) > 255) {
+                $this->setFlash('danger', 'Please check the required fields and their maximum lengths.');
                 $this->redirect('/profile');
             }
 
             if (!filter_var($emailAddress, FILTER_VALIDATE_EMAIL)) {
                 $this->setFlash('danger', 'Invalid email address provided.');
+                $this->redirect('/profile');
+            }
+            if (strlen($emailAddress) > 100) {
+                $this->setFlash('danger', 'Email address is too long.');
                 $this->redirect('/profile');
             }
 
@@ -98,7 +136,13 @@ class UserController extends BaseController {
                 $this->redirect('/login');
             }
 
+            if ($this->userModel->getOtherUserByEmailOrPhone($emailAddress, $contactNumber, $userId)) {
+                $this->setFlash('danger', 'That contact number or email address is already in use.');
+                $this->redirect('/profile');
+            }
+
             $profilePicturePath = $user['profile_picture'];
+            $newUploadPath = null;
 
             // Check if a new file is uploaded
             if (isset($_FILES["profilePicture"]) && $_FILES["profilePicture"]["error"] !== UPLOAD_ERR_NO_FILE) {
@@ -109,12 +153,12 @@ class UserController extends BaseController {
                 }
 
                 $profilePictureSize = $_FILES["profilePicture"]["size"];
-                if ($profilePictureSize >= 10000000) {
+                if ($profilePictureSize > 10000000) {
                     $this->setFlash('danger', 'File size exceeds 10MB limit.');
                     $this->redirect('/profile');
                 }
 
-                $ext = validateUploadedImage($_FILES["profilePicture"]["tmp_name"], $_FILES["profilePicture"]["name"]);
+                $ext = validateUploadedImage($_FILES["profilePicture"]["tmp_name"]);
                 if (!$ext) {
                     $this->setFlash('danger', 'Invalid file type. Only PNG, JPG, and JPEG images are allowed.');
                     $this->redirect('/profile');
@@ -122,8 +166,9 @@ class UserController extends BaseController {
 
                 $publicDir = dirname(__DIR__, 3) . '/public';
                 $uploadsDir = $publicDir . '/uploads';
-                if (!is_dir($uploadsDir)) {
-                    mkdir($uploadsDir, 0755, true);
+                if (!is_dir($uploadsDir) && !mkdir($uploadsDir, 0755, true) && !is_dir($uploadsDir)) {
+                    $this->setFlash('danger', 'Image uploads are temporarily unavailable.');
+                    $this->redirect('/profile');
                 }
 
                 $newFileName = bin2hex(random_bytes(16)) . '.' . $ext;
@@ -134,16 +179,8 @@ class UserController extends BaseController {
                     $this->redirect('/profile');
                 }
 
-                // Safely delete old picture from disk if it was an uploaded file
-                $realUploadsDir = realpath($uploadsDir);
-                if (!empty($user['profile_picture'])) {
-                    $oldFilePath = realpath($publicDir . '/' . ltrim($user['profile_picture'], '/'));
-                    if ($oldFilePath && $realUploadsDir && str_starts_with($oldFilePath, $realUploadsDir) && file_exists($oldFilePath)) {
-                        @unlink($oldFilePath);
-                    }
-                }
-
                 $profilePicturePath = 'uploads/' . $newFileName;
+                $newUploadPath = $targetPath;
             }
 
             $updateData = [
@@ -171,11 +208,19 @@ class UserController extends BaseController {
             ];
 
             if ($this->userModel->updateUser($userId, $updateData)) {
+                if ($newUploadPath !== null && !empty($user['profile_picture'])) {
+                    $realUploadsDir = realpath(dirname($newUploadPath));
+                    $oldFilePath = realpath(dirname(__DIR__, 3) . '/public/' . ltrim($user['profile_picture'], '/\\'));
+                    if ($oldFilePath && $realUploadsDir && str_starts_with($oldFilePath, $realUploadsDir . DIRECTORY_SEPARATOR) && is_file($oldFilePath)) {
+                        unlink($oldFilePath);
+                    }
+                }
                 $_SESSION['profilePicture'] = $profilePicturePath;
                 $_SESSION['searchName'] = $searchName;
                 $this->setFlash('success', 'Profile and availability settings updated successfully!');
                 $this->redirect('/profile');
             } else {
+                if ($newUploadPath !== null && is_file($newUploadPath)) unlink($newUploadPath);
                 $this->setFlash('danger', 'An error occurred while updating your profile.');
                 $this->redirect('/profile');
             }
@@ -187,7 +232,8 @@ class UserController extends BaseController {
     public function search($params = []) {
         $this->requireAuth();
         
-        $name = trim($params["name"] ?? $_GET["name"] ?? $_POST["name"] ?? "");
+        $name = trim(scalarString($params['name'] ?? $_GET['name'] ?? $_POST['name'] ?? ''));
+        $name = substr($name, 0, 100);
         $searchResults = null;
         $searched = false;
 
@@ -207,8 +253,4 @@ class UserController extends BaseController {
         $this->search($params);
     }
 
-    public function feedbacks() {
-        $this->requireAuth();
-        $this->renderView('User/Views/feedbacks');
-    }
 }

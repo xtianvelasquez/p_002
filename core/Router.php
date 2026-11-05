@@ -61,17 +61,8 @@ class Router {
             }
         }
 
-        // If no route matches, redirect based on auth status
-        if (isset($_SESSION['userId'])) {
-            $this->redirectRoute('/received');
-        } else {
-            $this->redirectRoute('/login');
-        }
-        exit;
-    }
-
-    private function redirectRoute($path = '') {
-        header("Location: " . routeUrl($path));
-        exit;
+        http_response_code(404);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'Page not found.';
     }
 }

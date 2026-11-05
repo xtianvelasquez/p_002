@@ -69,7 +69,7 @@ $websiteUrl = trim($websiteUrl ?? '');
         <!-- Avatar & Core Info -->
         <div class="d-flex flex-column flex-sm-row align-items-center align-items-sm-start gap-4" style="margin-top: -65px;">
           <div class="position-relative">
-            <img src="<?= userAvatarUrl($profilePicture, $fullName, 130) ?>" alt="<?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?>" class="rounded-circle border border-4 border-white shadow bg-white" style="width: 130px; height: 130px; object-fit: cover;" onerror="this.onerror=null; this.src='<?= getInitialsAvatarDataUri($fullName, 130) ?>';">
+            <img src="<?= htmlspecialchars(userAvatarUrl($profilePicture, $fullName, 130), ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?>" class="rounded-circle border border-4 border-white shadow bg-white" style="width: 130px; height: 130px; object-fit: cover;" onerror="this.onerror=null; this.src='<?= getInitialsAvatarDataUri($fullName, 130) ?>';">
             <span class="position-absolute bottom-0 end-0 bg-success border border-white border-2 rounded-circle p-2" title="Available for Appointments"></span>
           </div>
 
@@ -445,7 +445,10 @@ document.addEventListener('DOMContentLoaded', function () {
               btn.textContent = slot.display;
             } else {
               btn.setAttribute('disabled', 'true');
-              btn.innerHTML = `${slot.display} <small>(${slot.reason})</small>`;
+              btn.textContent = `${slot.display} `;
+              const reason = document.createElement('small');
+              reason.textContent = `(${slot.reason})`;
+              btn.appendChild(reason);
             }
             slotsContainer.appendChild(btn);
           });
