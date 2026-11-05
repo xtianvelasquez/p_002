@@ -55,6 +55,7 @@ This project incorporates web application security best practices:
 
 ## Features
 
+- **Google OAuth 2.0 Login & Signup**: One-click authentication with Google accounts, automatic account creation for new users, and seamless account linking for existing email addresses.
 - **Authentication & Profiles**: Secure sign-up, login, and profile editing with image upload validation.
 - **Configurable Availability**: Users define their working start/end times and slot durations (15, 30, 45, 60 minutes) in their profile.
 - **Public Shareable Booking Link**: Each user has a unique shareable profile link (`/u/{id}`) for direct booking without logging into the search dashboard first.

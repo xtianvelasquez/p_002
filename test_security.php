@@ -239,4 +239,56 @@ if ($stacyDetails && !empty($stacyDetails['headline']) && !empty($stacyDetails['
     exit(1);
 }
 
-echo "--- ALL CHECKS PASSED (15/15) ---\n";
+// 16. Test Google OAuth User Creation & Retrieval
+$googleTestId = 'goog_oauth_' . bin2hex(random_bytes(8));
+$googleSub = '1092837465' . rand(100000, 999999);
+$googleTestEmail = 'google_user_' . time() . '@gmail.com';
+$googleUserData = [
+    'user_id' => $googleTestId,
+    'first_name' => 'Sergey',
+    'middle_name' => null,
+    'last_name' => 'Brin',
+    'search_name' => 'SERGEY BRIN',
+    'contact_number' => '0000000000',
+    'email_address' => $googleTestEmail,
+    'user_password' => password_hash('random-oauth-hash', PASSWORD_DEFAULT),
+    'profile_picture' => 'images/logo.png',
+    'work_start_time' => '09:00',
+    'work_end_time' => '17:00',
+    'slot_duration_minutes' => 30,
+    'google_id' => $googleSub
+];
+
+if ($userModel->createGoogleUser($googleUserData)) {
+    $foundGoogleUser = $userModel->getUserByGoogleId($googleSub);
+    if ($foundGoogleUser && $foundGoogleUser['email_address'] === $googleTestEmail && $foundGoogleUser['google_id'] === $googleSub) {
+        echo "[PASS] Google OAuth user created and retrieved by google_id successfully.\n";
+    } else {
+        echo "[FAIL] Failed to retrieve user by google_id.\n";
+        exit(1);
+    }
+
+    // 17. Test Google Account Linking
+    $newGoogleSub = 'linked_' . bin2hex(random_bytes(6));
+    if ($userModel->linkGoogleId($googleTestId, $newGoogleSub)) {
+        $linkedUser = $userModel->getUserByGoogleId($newGoogleSub);
+        if ($linkedUser && $linkedUser['user_id'] === $googleTestId) {
+            echo "[PASS] Existing account successfully linked with Google OAuth identifier.\n";
+        } else {
+            echo "[FAIL] Google account linking verification failed.\n";
+            exit(1);
+        }
+    } else {
+        echo "[FAIL] linkGoogleId returned false.\n";
+        exit(1);
+    }
+
+    // Cleanup
+    $stmt = $db->prepare("DELETE FROM user_account WHERE user_id = ?");
+    $stmt->execute([$googleTestId]);
+} else {
+    echo "[FAIL] createGoogleUser query failed.\n";
+    exit(1);
+}
+
+echo "--- ALL CHECKS PASSED (17/17) ---\n";

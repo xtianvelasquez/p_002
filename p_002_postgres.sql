@@ -30,6 +30,7 @@ CREATE TABLE user_account (
   linkedin_url varchar(255) DEFAULT NULL,
   github_url varchar(255) DEFAULT NULL,
   website_url varchar(255) DEFAULT NULL,
+  google_id varchar(100) DEFAULT NULL,
   PRIMARY KEY (user_id)
 );
 
@@ -76,3 +77,4 @@ INSERT INTO appointment_details (appointment_id, receiver_id, sender_id, appoint
 --
 CREATE INDEX idx_appointment_details_receiver_id ON appointment_details (receiver_id);
 CREATE INDEX idx_appointment_details_sender_id ON appointment_details (sender_id);
+CREATE INDEX idx_user_account_google_id ON user_account (google_id);

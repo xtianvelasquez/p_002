@@ -26,6 +26,42 @@ class UserModel extends BaseModel {
         return $stmt->fetch();
     }
 
+    public function getUserByGoogleId($googleId) {
+        $stmt = $this->db->prepare("SELECT * FROM user_account WHERE google_id = ? LIMIT 1");
+        $stmt->execute([$googleId]);
+        return $stmt->fetch();
+    }
+
+    public function linkGoogleId($userId, $googleId) {
+        $stmt = $this->db->prepare("UPDATE user_account SET google_id = ? WHERE user_id = ?");
+        return $stmt->execute([$googleId, $userId]);
+    }
+
+    public function createGoogleUser($data) {
+        $stmt = $this->db->prepare("
+            INSERT INTO user_account (
+                user_id, first_name, middle_name, last_name, search_name, 
+                contact_number, email_address, user_password, profile_picture,
+                work_start_time, work_end_time, slot_duration_minutes, google_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        return $stmt->execute([
+            $data['user_id'],
+            $data['first_name'],
+            $data['middle_name'] ?? null,
+            $data['last_name'],
+            $data['search_name'],
+            $data['contact_number'] ?? '0000000000',
+            $data['email_address'],
+            $data['user_password'],
+            $data['profile_picture'] ?? 'images/logo.png',
+            $data['work_start_time'] ?? '09:00',
+            $data['work_end_time'] ?? '17:00',
+            $data['slot_duration_minutes'] ?? 30,
+            $data['google_id']
+        ]);
+    }
+
     public function getUserByEmailAndPassword($email, $password) {
         $user = $this->getUserByEmail($email);
         if ($user) {

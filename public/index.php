@@ -34,6 +34,8 @@ $router->add('GET', '/signup', 'Auth\Controllers\AuthController@signupForm');
 $router->add('POST', '/signup', 'Auth\Controllers\AuthController@signup');
 $router->add('GET', '/logout', 'Auth\Controllers\AuthController@logout');
 $router->add('GET', '/zone', 'Auth\Controllers\AuthController@zone');
+$router->add('GET', '/auth/google', 'Auth\Controllers\AuthController@googleRedirect');
+$router->add('GET', '/auth/google/callback', 'Auth\Controllers\AuthController@googleCallback');
 
 // User routes
 $router->add('GET', '/profile', 'User\Controllers\UserController@profile');
