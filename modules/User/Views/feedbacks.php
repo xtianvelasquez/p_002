@@ -19,9 +19,13 @@
 
   <!-- Navbar -->
   <nav class="navbar navbar-expand-md py-3 px-3">
+    <?php 
+      $fbName = $_SESSION["searchName"] ?? 'User';
+      $fbPic = $_SESSION["profilePicture"] ?? '';
+    ?>
     <a href="<?= routeUrl('/profile') ?>" class="navbar-brand fw-bold">
-      <img src="<?= assetUrl($_SESSION["profilePicture"]) ?>" alt="your profile picture" class="align-middle rounded-5" height="40" width="40">
-      <?= htmlspecialchars($_SESSION["searchName"], ENT_QUOTES, "UTF-8"); ?>
+      <img src="<?= userAvatarUrl($fbPic, $fbName, 40) ?>" alt="your profile picture" class="align-middle rounded-circle border shadow-sm" height="40" width="40" style="object-fit: cover;" onerror="this.onerror=null; this.src='<?= getInitialsAvatarDataUri($fbName, 40) ?>';">
+      <?= htmlspecialchars($fbName, ENT_QUOTES, "UTF-8"); ?>
     </a>
     <button type="button" class="navbar-toggler" data-bs-target="#ourDashboard" data-bs-toggle="collapse">
       <span class="navbar-toggler-icon"></span>

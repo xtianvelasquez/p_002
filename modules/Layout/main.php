@@ -38,9 +38,13 @@ function isNavActive($path, $subPath) {
   <nav class="navbar navbar-expand-md navbar-light bg-white border-bottom py-2 px-3 shadow-sm">
     <div class="container-fluid">
       <?php if (isset($_SESSION["userId"])): ?>
+        <?php 
+          $navUser = $_SESSION["searchName"] ?? 'My Profile';
+          $navPic = $_SESSION["profilePicture"] ?? '';
+        ?>
         <a href="<?= routeUrl('/profile') ?>" class="navbar-brand d-flex align-items-center gap-2 fw-semibold text-dark">
-          <img src="<?= assetUrl($_SESSION["profilePicture"] ?? 'images/logo.png') ?>" alt="Profile" class="avatar-sm rounded-circle border">
-          <span><?= htmlspecialchars($_SESSION["searchName"] ?? 'My Profile', ENT_QUOTES, 'UTF-8'); ?></span>
+          <img src="<?= userAvatarUrl($navPic, $navUser, 34) ?>" alt="Profile" class="avatar-sm rounded-circle border" onerror="this.onerror=null; this.src='<?= getInitialsAvatarDataUri($navUser, 34) ?>';">
+          <span><?= htmlspecialchars($navUser, ENT_QUOTES, 'UTF-8'); ?></span>
         </a>
       <?php else: ?>
         <a href="<?= routeUrl('/') ?>" class="navbar-brand d-flex align-items-center gap-2 fw-bold text-dark">

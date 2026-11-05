@@ -67,11 +67,14 @@ $websiteUrl = $websiteUrl ?? '';
 
       <!-- Profile & Availability Settings Card -->
       <div class="card rounded-3 shadow-sm border-0">
+        <?php 
+          $myFullName = trim($firstName . ' ' . $lastName);
+        ?>
         <div class="card-header bg-white py-4 border-bottom text-center">
           <div class="position-relative d-inline-block mb-3">
-            <img src="<?= assetUrl($currentProfilePicture) ?>" alt="Profile Picture" class="rounded-circle border shadow-sm" style="width: 110px; height: 110px; object-fit: cover;">
+            <img src="<?= userAvatarUrl($currentProfilePicture, $myFullName, 110) ?>" alt="Profile Picture" class="rounded-circle border shadow-sm" style="width: 110px; height: 110px; object-fit: cover;" onerror="this.onerror=null; this.src='<?= getInitialsAvatarDataUri($myFullName, 110) ?>';">
           </div>
-          <h4 class="card-title mb-1 fw-bold text-dark"><?= htmlspecialchars($firstName . ' ' . $lastName, ENT_QUOTES, 'UTF-8') ?></h4>
+          <h4 class="card-title mb-1 fw-bold text-dark"><?= htmlspecialchars($myFullName, ENT_QUOTES, 'UTF-8') ?></h4>
           <p class="text-muted small mb-0">Manage your LinkedIn-style professional persona and booking preferences</p>
         </div>
         <div class="card-body p-4 p-md-5">

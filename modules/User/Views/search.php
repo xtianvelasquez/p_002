@@ -37,9 +37,11 @@ $searchResults = $searchResults ?? null;
                   <?php foreach ($searchResults as $user): ?>
                     <?php 
                       $uid = htmlspecialchars($user['user_id'], ENT_QUOTES, 'UTF-8');
-                      $pic = htmlspecialchars($user['profile_picture'] ?? 'images/logo.png', ENT_QUOTES, 'UTF-8');
                       $name = htmlspecialchars(trim($user['first_name'] . ' ' . $user['last_name']), ENT_QUOTES, 'UTF-8');
-                      $isSelf = ($user['user_id'] === $_SESSION['userId']);
+                      $pic = $user['profile_picture'] ?? '';
+                      $avatarUrl = userAvatarUrl($pic, $name, 64);
+                      $avatarFallback = getInitialsAvatarDataUri($name, 64);
+                      $isSelf = (isset($_SESSION['userId']) && $user['user_id'] === $_SESSION['userId']);
                       $headline = trim($user['headline'] ?? '');
                       $company = trim($user['company'] ?? '');
                       $jobTitle = trim($user['job_title'] ?? '');
@@ -49,11 +51,11 @@ $searchResults = $searchResults ?? null;
                     ?>
                     <div class="col-12">
                       <div class="card border rounded-3 p-3 h-100 hover-shadow transition" style="transition: all 0.2s ease;">
-                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start gap-3">
-                          <div class="d-flex align-items-start gap-3">
-                            <img src="<?= assetUrl($pic) ?>" alt="<?= $name ?>" class="rounded-circle border shadow-sm flex-shrink-0" style="width: 64px; height: 64px; object-fit: cover;">
-                            <div>
-                              <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                          <div class="d-flex align-items-start gap-3 flex-grow-1" style="min-width: 0;">
+                            <img src="<?= $avatarUrl ?>" alt="<?= $name ?>" class="rounded-circle border shadow-sm flex-shrink-0" style="width: 64px; height: 64px; object-fit: cover;" onerror="this.onerror=null; this.src='<?= $avatarFallback ?>';">
+                            <div class="flex-grow-1" style="min-width: 0;">
+                              <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
                                 <a href="<?= routeUrl('/u/' . $uid) ?>" class="fw-bold text-dark fs-5 text-decoration-none hover-primary"><?= $name ?></a>
                                 <?php if ($isSelf): ?>
                                   <span class="badge bg-secondary-subtle text-secondary border">You</span>
@@ -63,9 +65,9 @@ $searchResults = $searchResults ?? null;
                               </div>
 
                               <?php if (!empty($headline)): ?>
-                                <p class="text-secondary small mb-1 mt-1 fw-medium"><?= htmlspecialchars($headline, ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="text-secondary small mb-1 mt-1 fw-medium text-break"><?= htmlspecialchars($headline, ENT_QUOTES, 'UTF-8') ?></p>
                               <?php elseif (!empty($jobTitle) || !empty($company)): ?>
-                                <p class="text-secondary small mb-1 mt-1">
+                                <p class="text-secondary small mb-1 mt-1 text-break">
                                   <?= htmlspecialchars(trim($jobTitle . ($company ? ' at ' . $company : '')), ENT_QUOTES, 'UTF-8') ?>
                                 </p>
                               <?php endif; ?>
@@ -87,8 +89,8 @@ $searchResults = $searchResults ?? null;
                             </div>
                           </div>
 
-                          <div class="align-self-sm-center flex-shrink-0 mt-3 mt-sm-0 d-flex flex-column gap-2 w-100 w-sm-auto" style="min-width: 170px;">
-                            <a href="<?= routeUrl('/u/' . $uid) ?>" class="btn btn-outline-primary btn-sm rounded-2 text-center">
+                          <div class="flex-shrink-0 align-self-stretch align-self-md-center mt-2 mt-md-0 text-md-end">
+                            <a href="<?= routeUrl('/u/' . $uid) ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-2 text-nowrap d-block d-md-inline-block shadow-sm">
                               <i class="bi bi-person-badge me-1"></i> View Profile & Book
                             </a>
                           </div>
