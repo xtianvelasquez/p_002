@@ -93,7 +93,7 @@ $appointments = $appointments ?? [];
             </div>
           <?php else: ?>
             <div class="text-center py-5">
-              <i class="bi bi-calendar-plus fs-1 text-muted d-block mb-2"></i>
+              <img class="empty-state-illustration" src="<?= assetUrl('images/illustrations/online-calendar.svg') ?>" alt="A calendar ready for appointments">
               <h6 class="text-dark fw-bold">You haven't booked any appointments yet</h6>
               <p class="text-muted small mb-3">Browse user profiles and book time directly on their schedule.</p>
               <a href="<?= routeUrl('/search') ?>" class="btn btn-primary btn-sm rounded-2">Find People to Book</a>

@@ -155,7 +155,7 @@ foreach ($appointments as $a) {
               </div>
             <?php else: ?>
               <div class="text-center py-5">
-                <i class="bi bi-calendar-x fs-1 text-muted d-block mb-2"></i>
+                <img class="empty-state-illustration" src="<?= assetUrl('images/illustrations/online-calendar.svg') ?>" alt="A calendar ready for appointments">
                 <h6 class="text-dark fw-bold">No received appointments yet</h6>
                 <p class="text-muted small mb-0">Share your public link to start receiving appointment requests.</p>
               </div>
