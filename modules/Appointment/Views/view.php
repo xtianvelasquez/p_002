@@ -48,7 +48,7 @@ $meetingModeLabel = match ($meetingMode) {
     default => '🎥 Google Meet'
 };
 ?>
-<div class="container-xl my-5">
+<div class="container-xl my-2 my-lg-3">
   <div class="row justify-content-center">
     <div class="col-11 col-sm-9 col-md-8 col-lg-7">
       <div class="card rounded-3 shadow border-0 overflow-hidden">

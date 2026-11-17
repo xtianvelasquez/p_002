@@ -216,4 +216,162 @@ class AppointmentModel extends BaseModel {
         $stmt->execute([$userId]);
         return $stmt->fetch();
     }
+
+    public function getUserNotifications($userId) {
+        // Fetch recent received appointments (where user is recipient)
+        $stmtRec = $this->db->prepare("
+            SELECT a.*, s.first_name, s.last_name, s.profile_picture
+            FROM appointment_details a
+            JOIN user_account s ON a.sender_id = s.user_id
+            WHERE a.receiver_id = ?
+            ORDER BY a.appointment_date DESC, a.appointment_time DESC
+            LIMIT 15
+        ");
+        $stmtRec->execute([$userId]);
+        $received = $stmtRec->fetchAll() ?: [];
+
+        // Fetch recent sent appointments (where user is sender)
+        $stmtSent = $this->db->prepare("
+            SELECT a.*, r.first_name, r.last_name, r.profile_picture
+            FROM appointment_details a
+            JOIN user_account r ON a.receiver_id = r.user_id
+            WHERE a.sender_id = ?
+            ORDER BY a.appointment_date DESC, a.appointment_time DESC
+            LIMIT 15
+        ");
+        $stmtSent->execute([$userId]);
+        $sent = $stmtSent->fetchAll() ?: [];
+
+        $notifications = [];
+        $readIds = $_SESSION['read_notifications'] ?? [];
+
+        foreach ($received as $a) {
+            $status = strtolower(trim($a['appointment_status'] ?? 'pending'));
+            $name = trim(($a['first_name'] ?? '') . ' ' . ($a['last_name'] ?? ''));
+            $isUnread = !in_array($a['appointment_id'], $readIds, true) && in_array($status, ['pending', 'approved', 'cancel', 'denied']);
+            $eventName = trim($a['event_name'] ?? 'Appointment');
+            $schedText = date('M j, Y', strtotime($a['appointment_date'])) . ' at ' . $a['appointment_time'];
+            $timeAgo = function_exists('formatRelativeNotificationTime') 
+                ? formatRelativeNotificationTime($a['appointment_date'], $a['appointment_time']) 
+                : $schedText;
+            
+            if ($status === 'pending') {
+                $notifications[] = [
+                    'id' => $a['appointment_id'],
+                    'type' => 'received_pending',
+                    'title' => 'New Request',
+                    'message' => "{$name} requested a meeting: \"{$eventName}\"",
+                    'actor_name' => $name,
+                    'actor_picture' => $a['profile_picture'] ?? '',
+                    'event_name' => $eventName,
+                    'schedule_text' => $schedText,
+                    'time_ago' => $timeAgo,
+                    'badge_color' => 'warning',
+                    'icon' => 'bi-calendar-plus-fill',
+                    'url' => routeUrl('/appointment/view?id=' . $a['appointment_id']),
+                    'date' => $a['appointment_date'],
+                    'time' => $a['appointment_time'],
+                    'is_unread' => $isUnread,
+                    'can_quick_action' => true
+                ];
+            } elseif ($status === 'approved') {
+                $notifications[] = [
+                    'id' => $a['appointment_id'],
+                    'type' => 'received_approved',
+                    'title' => 'Confirmed Booking',
+                    'message' => "Meeting with {$name} is scheduled: \"{$eventName}\"",
+                    'actor_name' => $name,
+                    'actor_picture' => $a['profile_picture'] ?? '',
+                    'event_name' => $eventName,
+                    'schedule_text' => $schedText,
+                    'time_ago' => $timeAgo,
+                    'badge_color' => 'success',
+                    'icon' => 'bi-calendar-check-fill',
+                    'url' => routeUrl('/appointment/view?id=' . $a['appointment_id']),
+                    'date' => $a['appointment_date'],
+                    'time' => $a['appointment_time'],
+                    'is_unread' => $isUnread,
+                    'can_quick_action' => false
+                ];
+            } elseif ($status === 'cancel' || $status === 'denied') {
+                $notifications[] = [
+                    'id' => $a['appointment_id'],
+                    'type' => 'received_cancelled',
+                    'title' => 'Meeting Cancelled',
+                    'message' => "Appointment with {$name} was cancelled/declined",
+                    'actor_name' => $name,
+                    'actor_picture' => $a['profile_picture'] ?? '',
+                    'event_name' => $eventName,
+                    'schedule_text' => $schedText,
+                    'time_ago' => $timeAgo,
+                    'badge_color' => 'secondary',
+                    'icon' => 'bi-dash-circle',
+                    'url' => routeUrl('/appointment/view?id=' . $a['appointment_id']),
+                    'date' => $a['appointment_date'],
+                    'time' => $a['appointment_time'],
+                    'is_unread' => $isUnread,
+                    'can_quick_action' => false
+                ];
+            }
+        }
+
+        foreach ($sent as $a) {
+            $status = strtolower(trim($a['appointment_status'] ?? 'pending'));
+            $name = trim(($a['first_name'] ?? '') . ' ' . ($a['last_name'] ?? ''));
+            $isUnread = !in_array($a['appointment_id'], $readIds, true) && ($status === 'approved' || $status === 'denied' || $status === 'cancel');
+            $eventName = trim($a['event_name'] ?? 'Appointment');
+            $schedText = date('M j, Y', strtotime($a['appointment_date'])) . ' at ' . $a['appointment_time'];
+            $timeAgo = function_exists('formatRelativeNotificationTime') 
+                ? formatRelativeNotificationTime($a['appointment_date'], $a['appointment_time']) 
+                : $schedText;
+
+            if ($status === 'approved') {
+                $notifications[] = [
+                    'id' => $a['appointment_id'],
+                    'type' => 'sent_approved',
+                    'title' => 'Request Approved! 🎉',
+                    'message' => "{$name} approved your appointment: \"{$eventName}\"",
+                    'actor_name' => $name,
+                    'actor_picture' => $a['profile_picture'] ?? '',
+                    'event_name' => $eventName,
+                    'schedule_text' => $schedText,
+                    'time_ago' => $timeAgo,
+                    'badge_color' => 'success',
+                    'icon' => 'bi-check-circle-fill',
+                    'url' => routeUrl('/appointment/view?id=' . $a['appointment_id']),
+                    'date' => $a['appointment_date'],
+                    'time' => $a['appointment_time'],
+                    'is_unread' => $isUnread,
+                    'can_quick_action' => false
+                ];
+            } elseif ($status === 'denied' || $status === 'cancel') {
+                $notifications[] = [
+                    'id' => $a['appointment_id'],
+                    'type' => 'sent_declined',
+                    'title' => 'Request Declined / Cancelled',
+                    'message' => "Your appointment request with {$name} was declined or cancelled",
+                    'actor_name' => $name,
+                    'actor_picture' => $a['profile_picture'] ?? '',
+                    'event_name' => $eventName,
+                    'schedule_text' => $schedText,
+                    'time_ago' => $timeAgo,
+                    'badge_color' => 'danger',
+                    'icon' => 'bi-x-circle-fill',
+                    'url' => routeUrl('/appointment/view?id=' . $a['appointment_id']),
+                    'date' => $a['appointment_date'],
+                    'time' => $a['appointment_time'],
+                    'is_unread' => $isUnread,
+                    'can_quick_action' => false
+                ];
+            }
+        }
+
+        // Sort notifications by date/time descending
+        usort($notifications, function($a, $b) {
+            $cmp = strcmp($b['date'], $a['date']);
+            return $cmp !== 0 ? $cmp : strcmp($b['time'], $a['time']);
+        });
+
+        return array_slice($notifications, 0, 10);
+    }
 }

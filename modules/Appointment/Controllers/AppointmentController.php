@@ -37,64 +37,180 @@ class AppointmentController extends BaseController {
         return $generatedAppointmentId;
     }
 
+    private function processAppointments($rawAppointments, $sort, $statusFilter, $searchQuery) {
+        $enriched = [];
+        foreach ($rawAppointments as $appt) {
+            $fullName = strtoupper(trim(($appt["first_name"] ?? '') . " " . ($appt["last_name"] ?? '')));
+            if (empty($fullName)) {
+                $fullName = "UNKNOWN";
+            }
+            $enriched[] = [
+                'appointment_id' => $appt['appointment_id'],
+                'fullName' => $fullName,
+                'first_name' => $appt['first_name'] ?? '',
+                'last_name' => $appt['last_name'] ?? '',
+                'profile_picture' => $appt['profile_picture'] ?? 'images/logo.png',
+                'appointment_date' => $appt['appointment_date'],
+                'appointment_time' => $appt['appointment_time'],
+                'event_name' => $appt['event_name'],
+                'location' => $appt['location'],
+                'event_type' => $appt['event_type'] ?? 'consultation',
+                'meeting_mode' => $appt['meeting_mode'] ?? 'google_meet',
+                'agenda' => $appt['agenda'] ?? '',
+                'appointment_status' => $appt['appointment_status']
+            ];
+        }
+
+        $totalCount = count($enriched);
+        $pendingCount = 0;
+        $approvedCount = 0;
+        $cancelledCount = 0;
+        foreach ($enriched as $a) {
+            $st = strtolower(trim($a['appointment_status'] ?? 'pending'));
+            if ($st === 'approved') $approvedCount++;
+            elseif ($st === 'cancel' || $st === 'denied') $cancelledCount++;
+            else $pendingCount++;
+        }
+
+        $filtered = $enriched;
+        if ($statusFilter !== 'all' && !empty($statusFilter)) {
+            $filtered = array_values(array_filter($filtered, function($a) use ($statusFilter) {
+                $st = strtolower(trim($a['appointment_status'] ?? 'pending'));
+                if ($statusFilter === 'pending') return in_array($st, ['pending', '']);
+                if ($statusFilter === 'approved') return $st === 'approved';
+                if ($statusFilter === 'cancel') return in_array($st, ['cancel', 'denied']);
+                return true;
+            }));
+        }
+
+        if (!empty($searchQuery)) {
+            $qLower = mb_strtolower($searchQuery);
+            $filtered = array_values(array_filter($filtered, function($a) use ($qLower) {
+                return str_contains(mb_strtolower($a['fullName']), $qLower)
+                    || str_contains(mb_strtolower($a['event_name']), $qLower)
+                    || str_contains(mb_strtolower($a['location']), $qLower)
+                    || str_contains(mb_strtolower($a['agenda']), $qLower);
+            }));
+        }
+
+        usort($filtered, function($a, $b) use ($sort) {
+            return match ($sort) {
+                'date_desc' => strcmp($b['appointment_date'], $a['appointment_date']) ?: strcmp($b['appointment_time'], $a['appointment_time']),
+                'name_asc' => strcasecmp($a['fullName'], $b['fullName']),
+                'name_desc' => strcasecmp($b['fullName'], $a['fullName']),
+                'status_pending' => self::statusWeight($a['appointment_status'], 'pending') <=> self::statusWeight($b['appointment_status'], 'pending') ?: strcmp($a['appointment_date'], $b['appointment_date']),
+                'status_approved' => self::statusWeight($a['appointment_status'], 'approved') <=> self::statusWeight($b['appointment_status'], 'approved') ?: strcmp($a['appointment_date'], $b['appointment_date']),
+                default => strcmp($a['appointment_date'], $b['appointment_date']) ?: strcmp($a['appointment_time'], $b['appointment_time']),
+            };
+        });
+
+        return [
+            'filtered' => $filtered,
+            'all' => $enriched,
+            'total' => $totalCount,
+            'pending' => $pendingCount,
+            'approved' => $approvedCount,
+            'cancelled' => $cancelledCount
+        ];
+    }
+
     public function panel() {
         $this->requireAuth();
         $userId = $_SESSION["userId"];
         
-        $appointments = $this->appointmentModel->getReceivedAppointments($userId);
-        
-        $enrichedAppointments = [];
-        foreach ($appointments as $appt) {
-            $fullName = strtoupper(trim(($appt["first_name"] ?? '') . " " . ($appt["last_name"] ?? '')));
-            if (empty($fullName)) {
-                $fullName = "UNKNOWN";
-            }
-            
-            $enrichedAppointments[] = [
-                'appointment_id' => $appt['appointment_id'],
-                'fullName' => $fullName,
-                'appointment_date' => $appt['appointment_date'],
-                'appointment_time' => $appt['appointment_time'],
-                'event_name' => $appt['event_name'],
-                'location' => $appt['location'],
-                'event_type' => $appt['event_type'] ?? 'consultation',
-                'meeting_mode' => $appt['meeting_mode'] ?? 'google_meet',
-                'agenda' => $appt['agenda'] ?? '',
-                'appointment_status' => $appt['appointment_status']
-            ];
+        $currentUser = $this->appointmentModel->getUserDetails($userId) ?: [];
+        $activeTab = strtolower(trim($_GET['tab'] ?? 'received'));
+        if (!in_array($activeTab, ['received', 'sent'], true)) {
+            $activeTab = 'received';
         }
 
-        $this->renderView('Appointment/Views/panel', ['appointments' => $enrichedAppointments]);
+        $sort = $_GET['sort'] ?? 'date_asc';
+        $statusFilter = strtolower(trim($_GET['status'] ?? 'all'));
+        $searchQuery = trim($_GET['q'] ?? '');
+
+        $rawReceived = $this->appointmentModel->getReceivedAppointments($userId);
+        $rawSent = $this->appointmentModel->getSentAppointments($userId);
+
+        $processedReceived = $this->processAppointments($rawReceived, $sort, $statusFilter, $searchQuery);
+        $processedSent = $this->processAppointments($rawSent, $sort, $statusFilter, $searchQuery);
+
+        $this->renderView('Appointment/Views/panel', [
+            'currentUser' => $currentUser,
+            'activeTab' => $activeTab,
+
+            // Received Appointments
+            'appointments' => $processedReceived['filtered'],
+            'allAppointments' => $processedReceived['all'],
+            'totalCount' => $processedReceived['total'],
+            'pendingCount' => $processedReceived['pending'],
+            'approvedCount' => $processedReceived['approved'],
+            'cancelledCount' => $processedReceived['cancelled'],
+
+            // Sent Appointments
+            'sentAppointments' => $processedSent['filtered'],
+            'allSentAppointments' => $processedSent['all'],
+            'sentTotalCount' => $processedSent['total'],
+            'sentPendingCount' => $processedSent['pending'],
+            'sentApprovedCount' => $processedSent['approved'],
+            'sentCancelledCount' => $processedSent['cancelled'],
+
+            // Filter/Sort State
+            'currentSort' => $sort,
+            'currentStatus' => $statusFilter,
+            'currentQuery' => $searchQuery
+        ]);
     }
 
     public function sent() {
-        $this->requireAuth();
-        $userId = $_SESSION["userId"];
-        
-        $appointments = $this->appointmentModel->getSentAppointments($userId);
-        
-        $enrichedAppointments = [];
-        foreach ($appointments as $appt) {
-            $fullName = strtoupper(trim(($appt["first_name"] ?? '') . " " . ($appt["last_name"] ?? '')));
-            if (empty($fullName)) {
-                $fullName = "UNKNOWN";
-            }
-            
-            $enrichedAppointments[] = [
-                'appointment_id' => $appt['appointment_id'],
-                'fullName' => $fullName,
-                'appointment_date' => $appt['appointment_date'],
-                'appointment_time' => $appt['appointment_time'],
-                'event_name' => $appt['event_name'],
-                'location' => $appt['location'],
-                'event_type' => $appt['event_type'] ?? 'consultation',
-                'meeting_mode' => $appt['meeting_mode'] ?? 'google_meet',
-                'agenda' => $appt['agenda'] ?? '',
-                'appointment_status' => $appt['appointment_status']
-            ];
-        }
+        $_GET['tab'] = 'sent';
+        return $this->panel();
+    }
 
-        $this->renderView('Appointment/Views/sent', ['appointments' => $enrichedAppointments]);
+    public function markAllNotificationsRead() {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        if (isset($_SESSION['userId'])) {
+            $notifs = $this->appointmentModel->getUserNotifications($_SESSION['userId']);
+            $_SESSION['read_notifications'] = array_map(fn($n) => $n['id'], $notifs);
+        }
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'ok']);
+        exit;
+    }
+
+    public function markNotificationRead() {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $id = scalarString($_POST['id'] ?? '');
+        if ($id && isset($_SESSION['userId'])) {
+            if (!isset($_SESSION['read_notifications']) || !is_array($_SESSION['read_notifications'])) {
+                $_SESSION['read_notifications'] = [];
+            }
+            if (!in_array($id, $_SESSION['read_notifications'], true)) {
+                $_SESSION['read_notifications'][] = $id;
+            }
+        }
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'ok']);
+        exit;
+    }
+
+    private static function statusWeight($status, $priority = 'pending') {
+        $st = strtolower(trim((string)$status));
+        if ($priority === 'pending') {
+            return match ($st) {
+                'pending', '' => 1,
+                'approved' => 2,
+                'denied' => 3,
+                'cancel' => 4,
+                default => 5,
+            };
+        }
+        return match ($st) {
+            'approved' => 1,
+            'pending', '' => 2,
+            'denied' => 3,
+            'cancel' => 4,
+            default => 5,
+        };
     }
 
     public function bookForm($params = []) {
@@ -105,10 +221,7 @@ class AppointmentController extends BaseController {
             $this->redirect(isset($_SESSION['userId']) ? '/search' : '/login');
         }
 
-        if (isset($_SESSION["userId"]) && $id === $_SESSION["userId"]) {
-            $this->setFlash('warning', 'You cannot book an appointment with yourself.');
-            $this->redirect('/search');
-        }
+        $isOwner = (isset($_SESSION["userId"]) && $id === $_SESSION["userId"]);
 
         $account = $this->appointmentModel->getUserDetails($id);
         if (!$account) {
@@ -142,7 +255,8 @@ class AppointmentController extends BaseController {
             'websiteUrl' => $account['website_url'] ?? '',
             'initialDate' => $initialDate,
             'initialSlots' => $initialSlots,
-            'isAuthenticated' => isset($_SESSION['userId'])
+            'isAuthenticated' => isset($_SESSION['userId']),
+            'isOwner' => $isOwner
         ]);
     }
 
@@ -288,6 +402,14 @@ class AppointmentController extends BaseController {
             $this->redirect('/received');
         }
 
+        // Auto-mark notification for this appointment as read
+        if (!isset($_SESSION['read_notifications']) || !is_array($_SESSION['read_notifications'])) {
+            $_SESSION['read_notifications'] = [];
+        }
+        if (!in_array($id, $_SESSION['read_notifications'], true)) {
+            $_SESSION['read_notifications'][] = $id;
+        }
+
         $isSender = ($appt['sender_id'] === $userId);
         $displayName = $isSender 
             ? strtoupper(($appt['receiver_first_name'] ?? '') . ' ' . ($appt['receiver_last_name'] ?? ''))
@@ -352,6 +474,14 @@ class AppointmentController extends BaseController {
         if (!$appt) {
             $this->setFlash('danger', 'Appointment not found or unauthorized access.');
             $this->redirect('/received');
+        }
+
+        // Auto-mark notification for this appointment as read
+        if (!isset($_SESSION['read_notifications']) || !is_array($_SESSION['read_notifications'])) {
+            $_SESSION['read_notifications'] = [];
+        }
+        if (!in_array($id, $_SESSION['read_notifications'], true)) {
+            $_SESSION['read_notifications'][] = $id;
         }
 
         $isSender = ($appt['sender_id'] === $userId);
@@ -425,6 +555,14 @@ class AppointmentController extends BaseController {
         if (!$appt) {
             $this->setFlash('danger', 'Appointment not found or unauthorized access.');
             $this->redirect('/received');
+        }
+
+        // Auto-mark notification for this appointment as read
+        if (!isset($_SESSION['read_notifications']) || !is_array($_SESSION['read_notifications'])) {
+            $_SESSION['read_notifications'] = [];
+        }
+        if (!in_array($id, $_SESSION['read_notifications'], true)) {
+            $_SESSION['read_notifications'][] = $id;
         }
 
         $this->renderView('Appointment/Views/edit', [

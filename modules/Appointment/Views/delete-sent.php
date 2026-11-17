@@ -4,7 +4,7 @@
  */
 $appointmentId = $appointmentId ?? '';
 ?>
-<div class="container-xl my-5">
+<div class="container-xl my-2 my-lg-4">
   <div class="row justify-content-center">
     <div class="col-11 col-sm-8 col-md-6 col-lg-5">
       <div class="card rounded-0 shadow-sm border-0 text-center">

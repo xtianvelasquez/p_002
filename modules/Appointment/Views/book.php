@@ -13,6 +13,7 @@
  * @var string $initialDate
  * @var array $initialSlots
  * @var bool $isAuthenticated
+ * @var bool $isOwner
  * @var string|null $headline
  * @var string|null $jobTitle
  * @var string|null $company
@@ -37,6 +38,7 @@ $slotDuration = $slotDuration ?? 30;
 $initialDate = $initialDate ?? date('Y-m-d');
 $initialSlots = $initialSlots ?? [];
 $isAuthenticated = !empty($isAuthenticated);
+$isOwner = !empty($isOwner);
 
 $fullName = trim($firstName . ' ' . $lastName);
 $headline = trim($headline ?? '');
@@ -52,6 +54,26 @@ $githubUrl = trim($githubUrl ?? '');
 $websiteUrl = trim($websiteUrl ?? '');
 ?>
 <div class="container-xl my-4">
+  <?php if ($isOwner): ?>
+    <!-- Owner Preview Banner -->
+    <div class="alert alert-primary border-0 shadow-sm rounded-3 d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 p-3 bg-primary-subtle text-primary-emphasis">
+      <div class="d-flex align-items-center gap-3">
+        <div class="rounded-circle bg-white p-2 d-flex align-items-center justify-content-center shadow-sm" style="width: 42px; height: 42px;">
+          <i class="bi bi-eye-fill fs-5 text-primary"></i>
+        </div>
+        <div>
+          <div class="fw-bold">Profile Preview Mode</div>
+          <div class="small text-secondary">This is how your profile and availability appear to clients and visitors. Self-booking is disabled.</div>
+        </div>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <a href="<?= routeUrl('/profile') ?>" class="btn btn-primary btn-sm rounded-2 fw-semibold">
+          <i class="bi bi-pencil-square me-1"></i> Back to Profile Settings
+        </a>
+      </div>
+    </div>
+  <?php endif; ?>
+
   <!-- 1. LINKEDIN-STYLE PROFILE HERO CARD -->
   <div class="card rounded-3 shadow-sm border-0 overflow-hidden mb-4 bg-white">
     <!-- Banner Header -->
@@ -360,8 +382,10 @@ $websiteUrl = trim($websiteUrl ?? '');
               </div>
 
               <div class="col-12 mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
-                <a href="<?= routeUrl(isset($_SESSION['userId']) ? '/search' : '/') ?>" class="btn btn-outline-secondary rounded-2 px-4">&larr; Back</a>
-                <?php if ($isAuthenticated): ?>
+                <a href="<?= routeUrl(isset($_SESSION['userId']) ? ($isOwner ? '/profile' : '/search') : '/') ?>" class="btn btn-outline-secondary rounded-2 px-4">&larr; <?= $isOwner ? 'Back to Settings' : 'Back' ?></a>
+                <?php if ($isOwner): ?>
+                  <button type="button" class="btn btn-secondary rounded-2 px-4 shadow-sm fw-bold disabled" disabled title="Self-booking is disabled in preview mode">Self-Booking Disabled (Preview Mode)</button>
+                <?php elseif ($isAuthenticated): ?>
                   <button type="submit" name="submit" id="submitBtn" class="btn btn-primary rounded-2 px-4 shadow-sm fw-bold" disabled>Confirm Booking</button>
                 <?php else: ?>
                   <a href="<?= routeUrl('/login') ?>" class="btn btn-primary rounded-2 px-4 shadow-sm fw-bold">Sign In to Book</a>

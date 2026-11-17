@@ -1,15 +1,27 @@
 <div class="auth-shell">
-  <aside class="auth-aside"><img class="auth-undraw" src="<?= assetUrl('images/illustrations/online-meetings.svg') ?>" alt="People meeting online"><div class="auth-aside-copy"><div class="auth-aside-mark">◷</div><h2>Make time for what matters.</h2><p>Your schedule, your availability, and the people you want to meet—all in one thoughtful place.</p><div class="hero-proof"><div class="proof-avatars"><span>MT</span><span>CV</span><span>JD</span></div><span style="color:#d9e8f5">A little more space in your day</span></div></div></aside>
-  <section class="auth-main"><div class="auth-card">
+  <aside class="auth-aside">
+    <img class="auth-undraw" src="<?= assetUrl('images/illustrations/online-meetings.svg') ?>" alt="People meeting online">
+    <div class="auth-aside-copy">
+      <div class="auth-aside-mark">◷</div>
+      <h2>Make time for what matters.</h2>
+      <p>Your schedule, your availability, and the people you want to meet—all in one thoughtful place.</p>
+      <div class="hero-proof">
+        <div class="proof-avatars"><span>MT</span><span>CV</span><span>JD</span></div>
+        <span style="color:#d9e8f5">A little more space in your day</span>
+      </div>
+    </div>
+  </aside>
+  <section class="auth-main">
+    <div class="auth-card">
       <div class="card rounded-3 shadow-sm border-0 bg-white">
-        <div class="card-header bg-white py-4 border-bottom text-center">
-          <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-subtle text-primary mb-2" style="width: 48px; height: 48px;">
+        <div class="card-header bg-white py-3 py-lg-4 border-bottom text-center">
+          <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-subtle text-primary mb-2" style="width: 44px; height: 44px;">
             <i class="bi bi-person fs-4"></i>
           </div>
-          <h4 class="card-title mb-1 fw-bold text-dark">Sign In to Your Account</h4>
+          <h4 class="card-title mb-1 fw-bold text-dark fs-4">Sign In to Your Account</h4>
           <p class="text-secondary small mb-0">Welcome back to More Than Blue</p>
         </div>
-        <div class="card-body p-4 p-md-4">
+        <div class="card-body p-3 p-md-4">
           <!-- Google OAuth Sign-in Button -->
           <a href="<?= routeUrl('/auth/google') ?>" class="btn btn-outline-dark w-100 py-2 d-flex align-items-center justify-content-center gap-2 mb-3 rounded-2 shadow-sm border bg-white text-dark hover-shadow" style="transition: all 0.2s ease;">
             <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
@@ -21,30 +33,32 @@
             <span class="fw-semibold small">Continue with Google</span>
           </a>
 
-          <div class="position-relative text-center my-3">
-            <hr class="text-muted opacity-25">
-            <span class="position-absolute top-50 start-50 translate-middle bg-white px-2 text-muted small">or sign in with email</span>
+          <div class="d-flex align-items-center my-3 text-muted">
+            <div class="flex-grow-1 border-bottom opacity-25"></div>
+            <span class="px-2 text-muted small" style="font-size: 0.76rem;">or sign in with email</span>
+            <div class="flex-grow-1 border-bottom opacity-25"></div>
           </div>
 
           <form action="<?= routeUrl('/login') ?>" method="post">
             <?= csrfField() ?>
-            <div class="mb-3">
+            <div class="mb-2 mb-lg-3">
               <label for="emailAddress" class="form-label text-secondary small fw-semibold">Email Address</label>
               <input type="email" name="emailAddress" id="emailAddress" class="form-control rounded-2" placeholder="name@example.com" required autofocus>
             </div>
-            <div class="mb-3">
+            <div class="mb-2 mb-lg-3">
               <label for="password" class="form-label text-secondary small fw-semibold">Password</label>
               <input type="password" name="password" id="password" class="form-control rounded-2" placeholder="••••••••" required>
             </div>
-            <div class="d-grid mt-4">
+            <div class="d-grid mt-3 mt-lg-4">
               <button type="submit" name="login" class="btn btn-primary rounded-2 py-2 fw-semibold shadow-sm">Sign In</button>
             </div>
           </form>
         </div>
-        <div class="card-footer bg-light text-center py-3 border-top rounded-bottom-3">
+        <div class="card-footer bg-light text-center py-2 py-lg-3 border-top rounded-bottom-3">
           <span class="text-muted small">Don't have an account? </span>
           <a href="<?= routeUrl('/signup') ?>" class="text-decoration-none small fw-semibold">Sign Up</a>
         </div>
       </div>
-  </div></section>
+    </div>
+  </section>
 </div>

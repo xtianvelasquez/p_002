@@ -1,203 +1,636 @@
 <?php
 /**
+ * Unified Appointments & Schedule Dashboard
+ * 
+ * @var array $currentUser
+ * @var string $activeTab
  * @var array $appointments
+ * @var array|null $allAppointments
+ * @var int|null $totalCount
+ * @var int|null $pendingCount
+ * @var int|null $approvedCount
+ * @var int|null $cancelledCount
+ * @var array $sentAppointments
+ * @var array|null $allSentAppointments
+ * @var int|null $sentTotalCount
+ * @var int|null $sentPendingCount
+ * @var int|null $sentApprovedCount
+ * @var int|null $sentCancelledCount
+ * @var string|null $currentSort
+ * @var string|null $currentStatus
+ * @var string|null $currentQuery
  */
-$appointments = $appointments ?? [];
-$totalCount = count($appointments);
-$approvedCount = 0;
-$pendingCount = 0;
-foreach ($appointments as $a) {
-    $st = strtolower(trim($a['appointment_status'] ?? ''));
-    if ($st === 'approved') $approvedCount++;
-    elseif ($st === 'pending') $pendingCount++;
+
+$currentUser = $currentUser ?? [];
+$myFullName = trim(($currentUser['first_name'] ?? '') . ' ' . ($currentUser['last_name'] ?? ''));
+$myHeadline = $currentUser['headline'] ?? ($currentUser['job_title'] ?? 'Professional Member');
+$myAvatar = $currentUser['profile_picture'] ?? 'images/logo.png';
+
+$activeTab = $activeTab ?? 'received';
+if (!in_array($activeTab, ['received', 'sent'], true)) {
+    $activeTab = 'received';
 }
+
+// Received appointments state
+$appointments = $appointments ?? [];
+$allAppointments = $allAppointments ?? $appointments;
+$totalCount = $totalCount ?? count($allAppointments);
+$pendingCount = $pendingCount ?? 0;
+$approvedCount = $approvedCount ?? 0;
+$cancelledCount = $cancelledCount ?? 0;
+
+// Sent appointments state
+$sentAppointments = $sentAppointments ?? [];
+$allSentAppointments = $allSentAppointments ?? $sentAppointments;
+$sentTotalCount = $sentTotalCount ?? count($allSentAppointments);
+$sentPendingCount = $sentPendingCount ?? 0;
+$sentApprovedCount = $sentApprovedCount ?? 0;
+$sentCancelledCount = $sentCancelledCount ?? 0;
+
+$currentSort = $currentSort ?? 'date_asc';
+$currentStatus = $currentStatus ?? 'all';
+$currentQuery = $currentQuery ?? '';
 ?>
-<div class="page-shell">
-  <div class="page-heading"><div><div class="eyebrow mb-2">Your workspace</div><h1>Received appointments</h1><p>Review requests and keep your availability organized.</p></div><a href="<?= routeUrl('/profile') ?>" class="btn btn-outline-primary btn-sm app-nav-action">Availability settings</a></div>
-  <!-- Dashboard Stats Banner -->
-  <div class="row g-3 mb-4 dashboard-stats">
-    <div class="col-12 col-md-4">
-      <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
-        <div class="d-flex justify-content-between align-items-center">
-          <div>
-            <div class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.04em;">Total Received</div>
-            <div class="fs-3 fw-bold text-dark mt-1"><?= $totalCount ?></div>
-          </div>
-          <div class="rounded-circle bg-primary-subtle p-3 text-primary fs-4 d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
-            <i class="bi bi-inbox"></i>
-          </div>
-        </div>
-      </div>
+<div class="page-shell panel-shell profile-shell">
+  <!-- Page Header -->
+  <div class="page-heading mb-2">
+    <div>
+      <div class="eyebrow mb-1">Your workspace</div>
+      <h1 class="fs-4 fw-bold mb-0">Appointments & Schedule</h1>
+      <p class="small text-secondary mb-0">Review incoming requests and manage your booked sessions in one place.</p>
     </div>
-    <div class="col-12 col-md-4">
-      <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
-        <div class="d-flex justify-content-between align-items-center">
-          <div>
-            <div class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.04em;">Confirmed</div>
-            <div class="fs-3 fw-bold text-success mt-1"><?= $approvedCount ?></div>
-          </div>
-          <div class="rounded-circle bg-success-subtle p-3 text-success fs-4 d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
-            <i class="bi bi-check-circle"></i>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-12 col-md-4">
-      <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
-        <div class="d-flex justify-content-between align-items-center">
-          <div>
-            <div class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.04em;">Pending Action</div>
-            <div class="fs-3 fw-bold text-warning mt-1"><?= $pendingCount ?></div>
-          </div>
-          <div class="rounded-circle bg-warning-subtle p-3 text-warning fs-4 d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
-            <i class="bi bi-hourglass-split"></i>
-          </div>
-        </div>
-      </div>
+    <div class="d-flex align-items-center gap-2">
+      <button type="button" class="btn btn-primary btn-sm rounded-2" onclick="const input = document.getElementById('headerSearchInput'); if (input) { input.focus(); input.dispatchEvent(new Event('focus')); }">
+        <i class="bi bi-plus-lg me-1"></i> New Booking
+      </button>
+      <a href="<?= routeUrl('/profile') ?>" class="btn btn-outline-primary btn-sm rounded-2">
+        <i class="bi bi-sliders me-1"></i> Availability Settings
+      </a>
     </div>
   </div>
 
-  <div class="row justify-content-center">
-    <div class="col-12">
-      <div class="card rounded-3 shadow-sm border-0 dashboard-main">
-        <!-- Card Header with View Switcher -->
-        <div class="card-header bg-white py-3 px-4 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+  <!-- Two-Pane Layout (Profile Style) -->
+  <div class="profile-layout appointments-layout">
+    <!-- LEFT SIDEBAR -->
+    <div class="profile-sidebar">
+      <div class="position-relative d-inline-block mb-2 text-center">
+        <img src="<?= htmlspecialchars(userAvatarUrl($myAvatar, $myFullName, 80), ENT_QUOTES, 'UTF-8') ?>" alt="Profile" class="rounded-circle border shadow-sm" style="width: 72px; height: 72px; object-fit: cover;" onerror="this.onerror=null; this.src='<?= getInitialsAvatarDataUri($myFullName, 80) ?>';">
+      </div>
+      <h2 class="fs-6 fw-bold mb-1 text-center"><?= htmlspecialchars($myFullName, ENT_QUOTES, 'UTF-8') ?></h2>
+      <p class="text-muted small mb-3 text-center"><?= htmlspecialchars($myHeadline, ENT_QUOTES, 'UTF-8') ?></p>
+      
+      <!-- Nav Tabs -->
+      <nav class="nav nav-pills flex-column profile-nav-tabs" role="tablist" id="appointmentsTabList">
+        <button class="nav-link <?= ($activeTab === 'received') ? 'active' : '' ?> text-start d-flex align-items-center justify-content-between" id="tabBtnReceived" data-bs-toggle="pill" data-bs-target="#tab-received" type="button" role="tab" aria-controls="tab-received" aria-selected="<?= ($activeTab === 'received') ? 'true' : 'false' ?>">
           <div class="d-flex align-items-center gap-2">
-            <h5 class="card-title mb-0 fw-bold text-dark">Schedule & Appointments</h5>
-            <span class="badge bg-light text-secondary border"><?= $totalCount ?> Bookings</span>
+            <i class="bi bi-inbox-fill text-primary"></i> <span>Received</span>
           </div>
-          
-          <!-- View Toggle Pills -->
-          <div class="btn-group p-1 bg-light rounded-pill border" role="group">
-            <button type="button" class="btn btn-sm rounded-pill px-3 active fw-semibold" id="btnTableView">
-              <i class="bi bi-table me-1"></i> List View
-            </button>
-            <button type="button" class="btn btn-sm rounded-pill px-3 fw-semibold text-secondary" id="btnCalendarView">
-              <i class="bi bi-calendar3 me-1"></i> Calendar View
-            </button>
+          <?php if ($pendingCount > 0): ?>
+            <span class="badge bg-warning text-dark rounded-pill" style="font-size: 0.7rem;"><?= $pendingCount ?> pending</span>
+          <?php else: ?>
+            <span class="badge bg-light text-secondary border rounded-pill" style="font-size: 0.7rem;"><?= $totalCount ?></span>
+          <?php endif; ?>
+        </button>
+
+        <button class="nav-link <?= ($activeTab === 'sent') ? 'active' : '' ?> text-start d-flex align-items-center justify-content-between" id="tabBtnSent" data-bs-toggle="pill" data-bs-target="#tab-sent" type="button" role="tab" aria-controls="tab-sent" aria-selected="<?= ($activeTab === 'sent') ? 'true' : 'false' ?>">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-send-fill text-primary"></i> <span>Sent</span>
           </div>
-        </div>
+          <span class="badge bg-light text-secondary border rounded-pill" style="font-size: 0.7rem;"><?= $sentTotalCount ?></span>
+        </button>
+      </nav>
 
-        <div class="card-body p-0">
-          <!-- 1. TABLE VIEW SECTION -->
-          <div id="tableViewSection">
-            <?php if (count($appointments) > 0): ?>
-              <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                  <thead class="table-light">
-                    <tr>
-                      <th scope="col" class="ps-4">Sender</th>
-                      <th scope="col">Schedule</th>
-                      <th scope="col">Meeting Format</th>
-                      <th scope="col">Event & Mode</th>
-                      <th scope="col">Status</th>
-                      <th scope="col" class="text-end pe-4">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <?php foreach ($appointments as $appt): ?>
-                      <?php
-                        $status = strtolower(trim($appt['appointment_status'] ?? 'pending'));
-                        $badgeClass = match ($status) {
-                            'approved' => 'bg-success',
-                            'denied'   => 'bg-danger',
-                            'cancel'   => 'bg-secondary',
-                            default    => 'bg-warning text-dark'
-                        };
+      <hr class="my-3 text-muted opacity-25">
 
-                        $evType = $appt['event_type'] ?? 'consultation';
-                        $evTypeBadge = match ($evType) {
-                            'quick_sync' => '<span class="badge bg-info-subtle text-info border">⚡ 15m Sync</span>',
-                            'deep_dive' => '<span class="badge bg-primary-subtle text-primary border">🚀 60m Deep Dive</span>',
-                            default => '<span class="badge bg-secondary-subtle text-secondary border">💼 30m Consult</span>'
-                        };
+      <div class="small text-muted text-start mb-2 px-1 fw-semibold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.04em;">Quick Shortcuts</div>
+      <div class="d-flex flex-column gap-1">
+        <button type="button" class="btn btn-outline-primary btn-sm rounded-2 text-start d-flex align-items-center gap-2 py-1 px-2 border-0" onclick="const input = document.getElementById('headerSearchInput'); if (input) { input.focus(); input.dispatchEvent(new Event('focus')); }" style="font-size: 0.78rem;">
+          <i class="bi bi-search"></i> <span>Find a Professional</span>
+        </button>
+        <a href="<?= routeUrl('/profile') ?>" class="btn btn-light btn-sm rounded-2 text-start text-secondary d-flex align-items-center gap-2 py-1 px-2 border" style="font-size: 0.78rem;">
+          <i class="bi bi-clock-history"></i> <span>Set Working Hours</span>
+        </a>
+      </div>
+    </div>
 
-                        $modeIcon = match ($appt['meeting_mode'] ?? 'google_meet') {
-                            'zoom' => '💻 Zoom',
-                            'in_person' => '🏢 Office',
-                            'phone' => '📞 Phone',
-                            default => '🎥 Meet'
-                        };
-                      ?>
-                      <tr>
-                        <td class="ps-4">
-                          <div class="fw-bold text-dark"><?= htmlspecialchars($appt['fullName'], ENT_QUOTES, 'UTF-8') ?></div>
-                          <?php if (!empty($appt['agenda'])): ?>
-                            <small class="text-muted d-block text-truncate" style="max-width: 220px;" title="<?= htmlspecialchars($appt['agenda'], ENT_QUOTES, 'UTF-8') ?>">
-                              <?= htmlspecialchars($appt['agenda'], ENT_QUOTES, 'UTF-8') ?>
-                            </small>
+    <!-- RIGHT CONTENT PANE (Unboxed modules) -->
+    <div class="appointments-content flex-grow-1 min-h-0 d-flex flex-column h-100">
+      <div class="tab-content flex-grow-1 h-100 min-h-0 d-flex flex-column">
+        
+        <!-- ========================================== -->
+        <!-- TAB 1: RECEIVED APPOINTMENTS               -->
+        <!-- ========================================== -->
+        <div class="tab-pane fade <?= ($activeTab === 'received') ? 'show active' : '' ?> flex-grow-1 h-100 min-h-0 d-flex flex-column" id="tab-received" role="tabpanel" aria-labelledby="tabBtnReceived">
+          <!-- Stats Banner: Own Separate Cards -->
+          <div class="row g-2 mb-2 dashboard-stats flex-shrink-0">
+            <div class="col-12 col-md-4">
+              <div class="card border shadow-sm rounded-3 px-3 py-2 bg-white" style="border-color: var(--line) !important;">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <div class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.04em; font-size: 0.72rem;">Total Received</div>
+                    <div class="fs-5 fw-bold text-dark mt-0"><?= $totalCount ?></div>
+                  </div>
+                  <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 1.05rem;">
+                    <i class="bi bi-inbox"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="card border shadow-sm rounded-3 px-3 py-2 bg-white" style="border-color: var(--line) !important;">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <div class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.04em; font-size: 0.72rem;">Confirmed</div>
+                    <div class="fs-5 fw-bold text-success mt-0"><?= $approvedCount ?></div>
+                  </div>
+                  <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 1.05rem;">
+                    <i class="bi bi-check-circle"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="card border shadow-sm rounded-3 px-3 py-2 bg-white" style="border-color: var(--line) !important;">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <div class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.04em; font-size: 0.72rem;">Pending Action</div>
+                    <div class="fs-5 fw-bold text-warning mt-0"><?= $pendingCount ?></div>
+                  </div>
+                  <div class="rounded-circle bg-warning-subtle text-warning d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 1.05rem;">
+                    <i class="bi bi-hourglass-split"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Received Card: Own Separate Box -->
+          <div class="card rounded-3 shadow-sm border dashboard-main flex-grow-1 min-h-0 bg-white" style="border-color: var(--line) !important;">
+            <!-- Header with View Switcher -->
+            <div class="card-header bg-white py-2 px-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2 flex-shrink-0">
+              <div class="d-flex align-items-center gap-2">
+                <h5 class="card-title mb-0 fw-bold text-dark fs-6">Incoming Requests</h5>
+                <span class="badge bg-light text-secondary border"><?= $totalCount ?> Bookings</span>
+              </div>
+              
+              <!-- View Toggle Pills -->
+              <div class="btn-group p-1 bg-light rounded-pill border" role="group">
+                <button type="button" class="btn btn-sm rounded-pill px-3 active fw-semibold" id="btnTableView">
+                  <i class="bi bi-table me-1"></i> List View
+                </button>
+                <button type="button" class="btn btn-sm rounded-pill px-3 fw-semibold text-secondary" id="btnCalendarView">
+                  <i class="bi bi-calendar3 me-1"></i> Calendar View
+                </button>
+              </div>
+            </div>
+
+            <div class="card-body p-0 d-flex flex-column flex-grow-1 min-h-0">
+              <!-- Sorting & Filtering Navigation Toolbar -->
+              <div class="px-3 py-2 bg-light border-bottom dashboard-toolbar flex-shrink-0">
+                <div class="row g-2 align-items-center">
+                  <!-- Filter Tabs -->
+                  <div class="col-12 col-xl-auto">
+                    <div class="d-flex flex-wrap gap-1">
+                      <a href="<?= routeUrl('/appointments?tab=received&status=all&sort=' . urlencode($currentSort) . '&q=' . urlencode($currentQuery)) ?>" 
+                         class="btn btn-sm rounded-pill <?= ($currentStatus === 'all') ? 'btn-primary' : 'btn-outline-secondary bg-white' ?>" style="font-size: 0.78rem;">
+                        All <span class="badge rounded-pill <?= ($currentStatus === 'all') ? 'bg-white text-primary' : 'bg-light text-secondary border' ?> ms-1"><?= $totalCount ?></span>
+                      </a>
+                      <a href="<?= routeUrl('/appointments?tab=received&status=pending&sort=' . urlencode($currentSort) . '&q=' . urlencode($currentQuery)) ?>" 
+                         class="btn btn-sm rounded-pill <?= ($currentStatus === 'pending') ? 'btn-warning text-dark fw-bold' : 'btn-outline-secondary bg-white' ?>" style="font-size: 0.78rem;">
+                        <i class="bi bi-hourglass-split me-1"></i>Pending <span class="badge rounded-pill <?= ($currentStatus === 'pending') ? 'bg-dark text-white' : 'bg-light text-secondary border' ?> ms-1"><?= $pendingCount ?></span>
+                      </a>
+                      <a href="<?= routeUrl('/appointments?tab=received&status=approved&sort=' . urlencode($currentSort) . '&q=' . urlencode($currentQuery)) ?>" 
+                         class="btn btn-sm rounded-pill <?= ($currentStatus === 'approved') ? 'btn-success' : 'btn-outline-secondary bg-white' ?>" style="font-size: 0.78rem;">
+                        <i class="bi bi-check-circle me-1"></i>Confirmed <span class="badge rounded-pill <?= ($currentStatus === 'approved') ? 'bg-white text-success' : 'bg-light text-secondary border' ?> ms-1"><?= $approvedCount ?></span>
+                      </a>
+                      <a href="<?= routeUrl('/appointments?tab=received&status=cancel&sort=' . urlencode($currentSort) . '&q=' . urlencode($currentQuery)) ?>" 
+                         class="btn btn-sm rounded-pill <?= ($currentStatus === 'cancel') ? 'btn-secondary text-white' : 'btn-outline-secondary bg-white' ?>" style="font-size: 0.78rem;">
+                        Cancelled <span class="badge rounded-pill <?= ($currentStatus === 'cancel') ? 'bg-white text-dark' : 'bg-light text-secondary border' ?> ms-1"><?= $cancelledCount ?></span>
+                      </a>
+                    </div>
+                  </div>
+
+                  <!-- Search & Sort Controls -->
+                  <div class="col-12 col-xl ms-xl-auto">
+                    <form method="get" action="<?= routeUrl('/appointments') ?>" class="row g-2 align-items-center justify-content-xl-end m-0">
+                      <input type="hidden" name="tab" value="received">
+                      <input type="hidden" name="status" value="<?= htmlspecialchars($currentStatus, ENT_QUOTES, 'UTF-8') ?>">
+                      
+                      <!-- Live search input -->
+                      <div class="col-12 col-sm-auto">
+                        <div class="input-group input-group-sm">
+                          <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                          <input type="text" name="q" id="receivedSearchInput" class="form-control border-start-0 bg-white" placeholder="Search sender/event..." value="<?= htmlspecialchars($currentQuery, ENT_QUOTES, 'UTF-8') ?>" style="max-width: 180px;">
+                          <?php if (!empty($currentQuery)): ?>
+                            <a href="<?= routeUrl('/appointments?tab=received&status=' . urlencode($currentStatus) . '&sort=' . urlencode($currentSort)) ?>" class="input-group-text bg-white text-muted text-decoration-none" title="Clear search">&times;</a>
                           <?php endif; ?>
-                        </td>
-                        <td>
-                          <div class="fw-semibold text-dark"><?= htmlspecialchars($appt['appointment_date'], ENT_QUOTES, 'UTF-8') ?></div>
-                          <small class="text-primary fw-semibold"><?= htmlspecialchars($appt['appointment_time'], ENT_QUOTES, 'UTF-8') ?></small>
-                        </td>
-                        <td><?= $evTypeBadge ?></td>
-                        <td>
-                          <div class="fw-semibold small text-dark"><?= htmlspecialchars($appt['event_name'], ENT_QUOTES, 'UTF-8') ?></div>
-                          <span class="badge bg-light text-secondary border" style="font-size: 0.72rem;"><?= htmlspecialchars($modeIcon, ENT_QUOTES, 'UTF-8') ?></span>
-                        </td>
-                        <td><span class="badge rounded-pill <?= $badgeClass ?> px-2 py-1"><?= htmlspecialchars(ucfirst($status), ENT_QUOTES, 'UTF-8') ?></span></td>
-                        <td class="text-end pe-4">
-                          <div class="btn-group btn-group-sm" role="group">
-                            <a href="<?= routeUrl('/appointment/view?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-secondary" title="View details">View</a>
-                            <a href="<?= routeUrl('/appointment/export-ics?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-secondary" title="Download iCal (.ics)">
-                              <i class="bi bi-calendar-arrow-down me-1"></i>iCal
+                        </div>
+                      </div>
+
+                      <!-- Sort dropdown -->
+                      <div class="col-12 col-sm-auto d-flex align-items-center gap-1">
+                        <label for="receivedSortSelect" class="small text-secondary fw-semibold text-nowrap mb-0"><i class="bi bi-arrow-down-up me-1"></i>Sort:</label>
+                        <select name="sort" id="receivedSortSelect" class="form-select form-select-sm bg-white" onchange="this.form.submit()" style="min-width: 175px;">
+                          <option value="date_asc" <?= $currentSort === 'date_asc' ? 'selected' : '' ?>>📅 Soonest first</option>
+                          <option value="date_desc" <?= $currentSort === 'date_desc' ? 'selected' : '' ?>>📅 Latest first</option>
+                          <option value="name_asc" <?= $currentSort === 'name_asc' ? 'selected' : '' ?>>🔤 Sender: A to Z</option>
+                          <option value="name_desc" <?= $currentSort === 'name_desc' ? 'selected' : '' ?>>🔤 Sender: Z to A</option>
+                          <option value="status_pending" <?= $currentSort === 'status_pending' ? 'selected' : '' ?>>⏳ Pending first</option>
+                          <option value="status_approved" <?= $currentSort === 'status_approved' ? 'selected' : '' ?>>✅ Confirmed first</option>
+                        </select>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 1. TABLE VIEW SECTION -->
+              <div id="tableViewSection" class="flex-grow-1 min-h-0 d-flex flex-column">
+                <?php if (count($appointments) > 0): ?>
+                  <div class="table-responsive dashboard-table-wrap flex-grow-1 min-h-0">
+                    <table class="table table-hover align-middle mb-0">
+                      <thead class="table-light">
+                        <tr>
+                          <th scope="col" class="ps-3">
+                            <a href="<?= routeUrl('/appointments?tab=received&status=' . urlencode($currentStatus) . '&q=' . urlencode($currentQuery) . '&sort=' . ($currentSort === 'name_asc' ? 'name_desc' : 'name_asc')) ?>" class="text-decoration-none text-dark d-inline-flex align-items-center gap-1">
+                              Sender 
+                              <?php if ($currentSort === 'name_asc'): ?><i class="bi bi-sort-alpha-down text-primary"></i><?php elseif ($currentSort === 'name_desc'): ?><i class="bi bi-sort-alpha-down-alt text-primary"></i><?php else: ?><i class="bi bi-arrow-down-up text-muted opacity-50 small"></i><?php endif; ?>
                             </a>
-                            <a href="<?= routeUrl('/appointment/edit?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-primary" title="Update status">Status</a>
-                            <a href="<?= routeUrl('/appointment/delete?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-danger" title="Delete record">Delete</a>
-                          </div>
-                        </td>
-                      </tr>
-                    <?php endforeach; ?>
-                  </tbody>
-                </table>
-              </div>
-            <?php else: ?>
-              <div class="text-center py-5">
-                <img class="empty-state-illustration" src="<?= assetUrl('images/illustrations/online-calendar.svg') ?>" alt="A calendar ready for appointments">
-                <h6 class="text-dark fw-bold">No received appointments yet</h6>
-                <p class="text-muted small mb-0">Share your public link to start receiving appointment requests.</p>
-              </div>
-            <?php endif; ?>
-          </div>
+                          </th>
+                          <th scope="col">
+                            <a href="<?= routeUrl('/appointments?tab=received&status=' . urlencode($currentStatus) . '&q=' . urlencode($currentQuery) . '&sort=' . ($currentSort === 'date_asc' ? 'date_desc' : 'date_asc')) ?>" class="text-decoration-none text-dark d-inline-flex align-items-center gap-1">
+                              Schedule 
+                              <?php if ($currentSort === 'date_asc'): ?><i class="bi bi-sort-numeric-down text-primary"></i><?php elseif ($currentSort === 'date_desc'): ?><i class="bi bi-sort-numeric-down-alt text-primary"></i><?php else: ?><i class="bi bi-arrow-down-up text-muted opacity-50 small"></i><?php endif; ?>
+                            </a>
+                          </th>
+                          <th scope="col">Format</th>
+                          <th scope="col">Event & Mode</th>
+                          <th scope="col">Status</th>
+                          <th scope="col" class="text-end pe-3">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <?php foreach ($appointments as $appt): ?>
+                          <?php
+                            $status = strtolower(trim($appt['appointment_status'] ?? 'pending'));
+                            $badgeClass = match ($status) {
+                                'approved' => 'bg-success',
+                                'denied'   => 'bg-danger',
+                                'cancel'   => 'bg-secondary',
+                                default    => 'bg-warning text-dark'
+                            };
 
-          <!-- 2. CALENDAR VIEW SECTION -->
-          <div id="calendarViewSection" class="p-4 d-none">
-            <!-- Calendar Navigation Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-              <div>
-                <h4 class="fw-bold mb-0 text-dark" id="calCurrentMonthYear">Month Year</h4>
-                <small class="text-muted">Click any appointment to preview details or download calendar invites.</small>
+                            $evType = $appt['event_type'] ?? 'consultation';
+                            $evTypeBadge = match ($evType) {
+                                'quick_sync' => '<span class="badge bg-info-subtle text-info border">⚡ 15m Sync</span>',
+                                'deep_dive' => '<span class="badge bg-primary-subtle text-primary border">🚀 60m Deep Dive</span>',
+                                default => '<span class="badge bg-secondary-subtle text-secondary border">💼 30m Consult</span>'
+                            };
+
+                            $modeIcon = match ($appt['meeting_mode'] ?? 'google_meet') {
+                                'zoom' => '💻 Zoom',
+                                'in_person' => '🏢 Office',
+                                'phone' => '📞 Phone',
+                                default => '🎥 Meet'
+                            };
+                          ?>
+                          <tr>
+                            <td class="ps-3">
+                              <div class="fw-bold text-dark"><?= htmlspecialchars($appt['fullName'], ENT_QUOTES, 'UTF-8') ?></div>
+                              <?php if (!empty($appt['agenda'])): ?>
+                                <small class="text-muted d-block text-truncate" style="max-width: 200px;" title="<?= htmlspecialchars($appt['agenda'], ENT_QUOTES, 'UTF-8') ?>">
+                                  <?= htmlspecialchars($appt['agenda'], ENT_QUOTES, 'UTF-8') ?>
+                                </small>
+                              <?php endif; ?>
+                            </td>
+                            <td>
+                              <div class="fw-semibold text-dark"><?= htmlspecialchars($appt['appointment_date'], ENT_QUOTES, 'UTF-8') ?></div>
+                              <small class="text-primary fw-semibold"><?= htmlspecialchars($appt['appointment_time'], ENT_QUOTES, 'UTF-8') ?></small>
+                            </td>
+                            <td><?= $evTypeBadge ?></td>
+                            <td>
+                              <div class="fw-semibold small text-dark"><?= htmlspecialchars($appt['event_name'], ENT_QUOTES, 'UTF-8') ?></div>
+                              <span class="badge bg-light text-secondary border" style="font-size: 0.72rem;"><?= htmlspecialchars($modeIcon, ENT_QUOTES, 'UTF-8') ?></span>
+                            </td>
+                            <td><span class="badge rounded-pill <?= $badgeClass ?> px-2 py-1"><?= htmlspecialchars(ucfirst($status), ENT_QUOTES, 'UTF-8') ?></span></td>
+                            <td class="text-end pe-3">
+                              <div class="btn-group btn-group-sm" role="group">
+                                <?php if ($status === 'pending'): ?>
+                                  <form action="<?= routeUrl('/appointment/status') ?>" method="post" class="d-inline">
+                                    <?= csrfField() ?>
+                                    <input type="hidden" name="id" value="<?= htmlspecialchars($appt['appointment_id'], ENT_QUOTES, 'UTF-8') ?>">
+                                    <input type="hidden" name="status" value="approved">
+                                    <input type="hidden" name="redirect" value="/appointments?tab=received">
+                                    <button type="submit" class="btn btn-outline-success btn-sm" title="Accept appointment"><i class="bi bi-check-lg"></i></button>
+                                  </form>
+                                  <form action="<?= routeUrl('/appointment/status') ?>" method="post" class="d-inline">
+                                    <?= csrfField() ?>
+                                    <input type="hidden" name="id" value="<?= htmlspecialchars($appt['appointment_id'], ENT_QUOTES, 'UTF-8') ?>">
+                                    <input type="hidden" name="status" value="cancel">
+                                    <input type="hidden" name="redirect" value="/appointments?tab=received">
+                                    <button type="submit" class="btn btn-outline-warning btn-sm" title="Decline appointment"><i class="bi bi-x-lg"></i></button>
+                                  </form>
+                                <?php endif; ?>
+                                <a href="<?= routeUrl('/appointment/view?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-secondary" title="View details">View</a>
+                                <a href="<?= routeUrl('/appointment/export-ics?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-secondary" title="Download iCal (.ics)">
+                                  <i class="bi bi-calendar-arrow-down"></i>
+                                </a>
+                                <a href="<?= routeUrl('/appointment/delete?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-danger" title="Delete record"><i class="bi bi-trash3"></i></a>
+                              </div>
+                            </td>
+                          </tr>
+                        <?php endforeach; ?>
+                      </tbody>
+                    </table>
+                  </div>
+                <?php else: ?>
+                  <div class="text-center py-5">
+                    <?php if ($totalCount > 0): ?>
+                      <i class="bi bi-funnel fs-1 text-muted d-block mb-2"></i>
+                      <h6 class="text-dark fw-bold">No appointments match your filters</h6>
+                      <p class="text-muted small mb-3">Try choosing a different status filter or clearing your search term.</p>
+                      <a href="<?= routeUrl('/appointments?tab=received') ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3">Clear filters</a>
+                    <?php else: ?>
+                      <img class="empty-state-illustration" src="<?= assetUrl('images/illustrations/online-calendar.svg') ?>" alt="Calendar ready" style="max-width: 140px; margin-bottom: 12px;">
+                      <h6 class="text-dark fw-bold">No received appointments yet</h6>
+                      <p class="text-muted small mb-0">Share your public link to start receiving appointment requests.</p>
+                    <?php endif; ?>
+                  </div>
+                <?php endif; ?>
               </div>
-              <div class="btn-group">
-                <button type="button" class="btn btn-outline-secondary btn-sm" id="calPrevBtn">&larr; Prev</button>
-                <button type="button" class="btn btn-outline-primary btn-sm" id="calTodayBtn">Today</button>
-                <button type="button" class="btn btn-outline-secondary btn-sm" id="calNextBtn">Next &rarr;</button>
+
+              <!-- 2. CALENDAR VIEW SECTION -->
+              <div id="calendarViewSection" class="p-2 p-md-3 d-none dashboard-cal-wrap flex-grow-1 min-h-0" style="display: none !important;">
+                <!-- Calendar Navigation Header -->
+                <div class="d-flex justify-content-between align-items-center mb-2 flex-shrink-0">
+                  <div>
+                    <h5 class="fw-bold mb-0 text-dark" id="calCurrentMonthYear">Month Year</h5>
+                    <small class="text-muted d-none d-sm-inline">Click any appointment to preview details or download calendar invites.</small>
+                  </div>
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="calPrevBtn">&larr; Prev</button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="calTodayBtn">Today</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="calNextBtn">Next &rarr;</button>
+                  </div>
+                </div>
+
+                <!-- Calendar Days of Week Header -->
+                <div class="cal-dow-grid text-center fw-semibold text-secondary small border-bottom pb-2 mb-2">
+                  <div>Sun</div>
+                  <div>Mon</div>
+                  <div>Tue</div>
+                  <div>Wed</div>
+                  <div>Thu</div>
+                  <div>Fri</div>
+                  <div>Sat</div>
+                </div>
+
+                <!-- Calendar Days Grid Container -->
+                <div id="calGrid" class="flex-grow-1 min-h-0"></div>
               </div>
             </div>
-
-            <!-- Calendar Days of Week Header -->
-            <div class="row g-1 text-center fw-semibold text-secondary small mb-2 border-bottom pb-2">
-              <div class="col">Sun</div>
-              <div class="col">Mon</div>
-              <div class="col">Tue</div>
-              <div class="col">Wed</div>
-              <div class="col">Thu</div>
-              <div class="col">Fri</div>
-              <div class="col">Sat</div>
-            </div>
-
-            <!-- Calendar Days Grid Container -->
-            <div id="calGrid" class="row g-1"></div>
           </div>
         </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 2: SENT APPOINTMENTS                   -->
+        <!-- ========================================== -->
+        <div class="tab-pane fade <?= ($activeTab === 'sent') ? 'show active' : '' ?> flex-grow-1 h-100 min-h-0 d-flex flex-column" id="tab-sent" role="tabpanel" aria-labelledby="tabBtnSent">
+          <!-- Stats Banner: Own Separate Cards -->
+          <div class="row g-2 mb-2 dashboard-stats flex-shrink-0">
+            <div class="col-12 col-md-4">
+              <div class="card border shadow-sm rounded-3 px-3 py-2 bg-white" style="border-color: var(--line) !important;">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <div class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.04em; font-size: 0.72rem;">Total Outgoing</div>
+                    <div class="fs-5 fw-bold text-dark mt-0"><?= $sentTotalCount ?></div>
+                  </div>
+                  <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 1.05rem;">
+                    <i class="bi bi-send"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="card border shadow-sm rounded-3 px-3 py-2 bg-white" style="border-color: var(--line) !important;">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <div class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.04em; font-size: 0.72rem;">Confirmed</div>
+                    <div class="fs-5 fw-bold text-success mt-0"><?= $sentApprovedCount ?></div>
+                  </div>
+                  <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 1.05rem;">
+                    <i class="bi bi-check-circle"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="card border shadow-sm rounded-3 px-3 py-2 bg-white" style="border-color: var(--line) !important;">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <div class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.04em; font-size: 0.72rem;">Awaiting Confirmation</div>
+                    <div class="fs-5 fw-bold text-warning mt-0"><?= $sentPendingCount ?></div>
+                  </div>
+                  <div class="rounded-circle bg-warning-subtle text-warning d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 1.05rem;">
+                    <i class="bi bi-hourglass-split"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Sent Card: Own Separate Box -->
+          <div class="card rounded-3 shadow-sm border dashboard-main flex-grow-1 min-h-0 bg-white" style="border-color: var(--line) !important;">
+            <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center flex-shrink-0">
+              <div class="d-flex align-items-center gap-2">
+                <h5 class="card-title mb-0 fw-bold text-dark fs-6">Outgoing Bookings</h5>
+                <span class="badge bg-light text-secondary border"><?= $sentTotalCount ?> Booked</span>
+              </div>
+              <button type="button" class="btn btn-primary btn-sm rounded-2" onclick="const input = document.getElementById('headerSearchInput'); if (input) { input.focus(); input.dispatchEvent(new Event('focus')); }">
+                <i class="bi bi-plus-lg me-1"></i> New Booking
+              </button>
+            </div>
+
+            <div class="card-body p-0 d-flex flex-column flex-grow-1 min-h-0">
+              <!-- Toolbar -->
+              <div class="px-3 py-2 bg-light border-bottom dashboard-toolbar flex-shrink-0">
+                <div class="row g-2 align-items-center">
+                  <!-- Filter Tabs -->
+                  <div class="col-12 col-xl-auto">
+                    <div class="d-flex flex-wrap gap-1">
+                      <a href="<?= routeUrl('/appointments?tab=sent&status=all&sort=' . urlencode($currentSort) . '&q=' . urlencode($currentQuery)) ?>" 
+                         class="btn btn-sm rounded-pill <?= ($currentStatus === 'all') ? 'btn-primary' : 'btn-outline-secondary bg-white' ?>" style="font-size: 0.78rem;">
+                        All <span class="badge rounded-pill <?= ($currentStatus === 'all') ? 'bg-white text-primary' : 'bg-light text-secondary border' ?> ms-1"><?= $sentTotalCount ?></span>
+                      </a>
+                      <a href="<?= routeUrl('/appointments?tab=sent&status=pending&sort=' . urlencode($currentSort) . '&q=' . urlencode($currentQuery)) ?>" 
+                         class="btn btn-sm rounded-pill <?= ($currentStatus === 'pending') ? 'btn-warning text-dark fw-bold' : 'btn-outline-secondary bg-white' ?>" style="font-size: 0.78rem;">
+                        <i class="bi bi-hourglass-split me-1"></i>Pending <span class="badge rounded-pill <?= ($currentStatus === 'pending') ? 'bg-dark text-white' : 'bg-light text-secondary border' ?> ms-1"><?= $sentPendingCount ?></span>
+                      </a>
+                      <a href="<?= routeUrl('/appointments?tab=sent&status=approved&sort=' . urlencode($currentSort) . '&q=' . urlencode($currentQuery)) ?>" 
+                         class="btn btn-sm rounded-pill <?= ($currentStatus === 'approved') ? 'btn-success' : 'btn-outline-secondary bg-white' ?>" style="font-size: 0.78rem;">
+                        <i class="bi bi-check-circle me-1"></i>Confirmed <span class="badge rounded-pill <?= ($currentStatus === 'approved') ? 'bg-white text-success' : 'bg-light text-secondary border' ?> ms-1"><?= $sentApprovedCount ?></span>
+                      </a>
+                      <a href="<?= routeUrl('/appointments?tab=sent&status=cancel&sort=' . urlencode($currentSort) . '&q=' . urlencode($currentQuery)) ?>" 
+                         class="btn btn-sm rounded-pill <?= ($currentStatus === 'cancel') ? 'btn-secondary text-white' : 'btn-outline-secondary bg-white' ?>" style="font-size: 0.78rem;">
+                        Cancelled <span class="badge rounded-pill <?= ($currentStatus === 'cancel') ? 'bg-white text-dark' : 'bg-light text-secondary border' ?> ms-1"><?= $sentCancelledCount ?></span>
+                      </a>
+                    </div>
+                  </div>
+
+                  <!-- Search & Sort Controls -->
+                  <div class="col-12 col-xl ms-xl-auto">
+                    <form method="get" action="<?= routeUrl('/appointments') ?>" class="row g-2 align-items-center justify-content-xl-end m-0">
+                      <input type="hidden" name="tab" value="sent">
+                      <input type="hidden" name="status" value="<?= htmlspecialchars($currentStatus, ENT_QUOTES, 'UTF-8') ?>">
+                      
+                      <!-- Live search input -->
+                      <div class="col-12 col-sm-auto">
+                        <div class="input-group input-group-sm">
+                          <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                          <input type="text" name="q" id="sentSearchInput" class="form-control border-start-0 bg-white" placeholder="Search recipient/event..." value="<?= htmlspecialchars($currentQuery, ENT_QUOTES, 'UTF-8') ?>" style="max-width: 180px;">
+                          <?php if (!empty($currentQuery)): ?>
+                            <a href="<?= routeUrl('/appointments?tab=sent&status=' . urlencode($currentStatus) . '&sort=' . urlencode($currentSort)) ?>" class="input-group-text bg-white text-muted text-decoration-none" title="Clear search">&times;</a>
+                          <?php endif; ?>
+                        </div>
+                      </div>
+
+                      <!-- Sort dropdown -->
+                      <div class="col-12 col-sm-auto d-flex align-items-center gap-1">
+                        <label for="sentSortSelect" class="small text-secondary fw-semibold text-nowrap mb-0"><i class="bi bi-arrow-down-up me-1"></i>Sort:</label>
+                        <select name="sort" id="sentSortSelect" class="form-select form-select-sm bg-white" onchange="this.form.submit()" style="min-width: 175px;">
+                          <option value="date_asc" <?= $currentSort === 'date_asc' ? 'selected' : '' ?>>📅 Soonest first</option>
+                          <option value="date_desc" <?= $currentSort === 'date_desc' ? 'selected' : '' ?>>📅 Latest first</option>
+                          <option value="name_asc" <?= $currentSort === 'name_asc' ? 'selected' : '' ?>>🔤 Recipient: A to Z</option>
+                          <option value="name_desc" <?= $currentSort === 'name_desc' ? 'selected' : '' ?>>🔤 Recipient: Z to A</option>
+                          <option value="status_pending" <?= $currentSort === 'status_pending' ? 'selected' : '' ?>>⏳ Pending first</option>
+                          <option value="status_approved" <?= $currentSort === 'status_approved' ? 'selected' : '' ?>>✅ Confirmed first</option>
+                        </select>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sent Table -->
+              <div class="flex-grow-1 min-h-0 d-flex flex-column">
+                <?php if (count($sentAppointments) > 0): ?>
+                  <div class="table-responsive dashboard-table-wrap flex-grow-1 min-h-0">
+                    <table class="table table-hover align-middle mb-0">
+                      <thead class="table-light">
+                        <tr>
+                          <th scope="col" class="ps-3">
+                            <a href="<?= routeUrl('/appointments?tab=sent&status=' . urlencode($currentStatus) . '&q=' . urlencode($currentQuery) . '&sort=' . ($currentSort === 'name_asc' ? 'name_desc' : 'name_asc')) ?>" class="text-decoration-none text-dark d-inline-flex align-items-center gap-1">
+                              Recipient 
+                              <?php if ($currentSort === 'name_asc'): ?><i class="bi bi-sort-alpha-down text-primary"></i><?php elseif ($currentSort === 'name_desc'): ?><i class="bi bi-sort-alpha-down-alt text-primary"></i><?php else: ?><i class="bi bi-arrow-down-up text-muted opacity-50 small"></i><?php endif; ?>
+                            </a>
+                          </th>
+                          <th scope="col">
+                            <a href="<?= routeUrl('/appointments?tab=sent&status=' . urlencode($currentStatus) . '&q=' . urlencode($currentQuery) . '&sort=' . ($currentSort === 'date_asc' ? 'date_desc' : 'date_asc')) ?>" class="text-decoration-none text-dark d-inline-flex align-items-center gap-1">
+                              Schedule 
+                              <?php if ($currentSort === 'date_asc'): ?><i class="bi bi-sort-numeric-down text-primary"></i><?php elseif ($currentSort === 'date_desc'): ?><i class="bi bi-sort-numeric-down-alt text-primary"></i><?php else: ?><i class="bi bi-arrow-down-up text-muted opacity-50 small"></i><?php endif; ?>
+                            </a>
+                          </th>
+                          <th scope="col">Format</th>
+                          <th scope="col">Event & Mode</th>
+                          <th scope="col">Status</th>
+                          <th scope="col" class="text-end pe-3">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <?php foreach ($sentAppointments as $appt): ?>
+                          <?php
+                            $status = strtolower(trim($appt['appointment_status'] ?? 'pending'));
+                            $badgeClass = match ($status) {
+                                'approved' => 'bg-success',
+                                'denied'   => 'bg-danger',
+                                'cancel'   => 'bg-secondary',
+                                default    => 'bg-warning text-dark'
+                            };
+
+                            $evType = $appt['event_type'] ?? 'consultation';
+                            $evTypeBadge = match ($evType) {
+                                'quick_sync' => '<span class="badge bg-info-subtle text-info border">⚡ 15m Sync</span>',
+                                'deep_dive' => '<span class="badge bg-primary-subtle text-primary border">🚀 60m Deep Dive</span>',
+                                default => '<span class="badge bg-secondary-subtle text-secondary border">💼 30m Consult</span>'
+                            };
+
+                            $modeIcon = match ($appt['meeting_mode'] ?? 'google_meet') {
+                                'zoom' => '💻 Zoom',
+                                'in_person' => '🏢 Office',
+                                'phone' => '📞 Phone',
+                                default => '🎥 Meet'
+                            };
+                          ?>
+                          <tr>
+                            <td class="ps-3">
+                              <div class="fw-bold text-dark"><?= htmlspecialchars($appt['fullName'], ENT_QUOTES, 'UTF-8') ?></div>
+                              <?php if (!empty($appt['agenda'])): ?>
+                                <small class="text-muted d-block text-truncate" style="max-width: 200px;" title="<?= htmlspecialchars($appt['agenda'], ENT_QUOTES, 'UTF-8') ?>">
+                                  <?= htmlspecialchars($appt['agenda'], ENT_QUOTES, 'UTF-8') ?>
+                                </small>
+                              <?php endif; ?>
+                            </td>
+                            <td>
+                              <div class="fw-semibold text-dark"><?= htmlspecialchars($appt['appointment_date'], ENT_QUOTES, 'UTF-8') ?></div>
+                              <small class="text-primary fw-semibold"><?= htmlspecialchars($appt['appointment_time'], ENT_QUOTES, 'UTF-8') ?></small>
+                            </td>
+                            <td><?= $evTypeBadge ?></td>
+                            <td>
+                              <div class="fw-semibold small text-dark"><?= htmlspecialchars($appt['event_name'], ENT_QUOTES, 'UTF-8') ?></div>
+                              <span class="badge bg-light text-secondary border" style="font-size: 0.72rem;"><?= htmlspecialchars($modeIcon, ENT_QUOTES, 'UTF-8') ?></span>
+                            </td>
+                            <td><span class="badge rounded-pill <?= $badgeClass ?> px-2 py-1"><?= htmlspecialchars(ucfirst($status), ENT_QUOTES, 'UTF-8') ?></span></td>
+                            <td class="text-end pe-3">
+                              <div class="btn-group btn-group-sm" role="group">
+                                <?php if ($status === 'pending' || $status === 'approved'): ?>
+                                  <form action="<?= routeUrl('/appointment/status') ?>" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this scheduled appointment?');">
+                                    <?= csrfField() ?>
+                                    <input type="hidden" name="id" value="<?= htmlspecialchars($appt['appointment_id'], ENT_QUOTES, 'UTF-8') ?>">
+                                    <input type="hidden" name="status" value="cancel">
+                                    <input type="hidden" name="redirect" value="/appointments?tab=sent">
+                                    <button type="submit" class="btn btn-outline-warning btn-sm" title="Cancel appointment">Cancel</button>
+                                  </form>
+                                <?php endif; ?>
+                                <a href="<?= routeUrl('/appointment/view?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-secondary" title="View details">View</a>
+                                <a href="<?= routeUrl('/appointment/export-ics?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-secondary" title="Download iCal (.ics)">
+                                  <i class="bi bi-calendar-arrow-down"></i>
+                                </a>
+                                <a href="<?= routeUrl('/appointment/delete-sent?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-danger" title="Delete record"><i class="bi bi-trash3"></i></a>
+                              </div>
+                            </td>
+                          </tr>
+                        <?php endforeach; ?>
+                      </tbody>
+                    </table>
+                  </div>
+                <?php else: ?>
+                  <div class="text-center py-5">
+                    <?php if ($sentTotalCount > 0): ?>
+                      <i class="bi bi-funnel fs-1 text-muted d-block mb-2"></i>
+                      <h6 class="text-dark fw-bold">No appointments match your filters</h6>
+                      <p class="text-muted small mb-3">Try choosing a different status filter or clearing your search term.</p>
+                      <a href="<?= routeUrl('/appointments?tab=sent') ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3">Clear filters</a>
+                    <?php else: ?>
+                      <img class="empty-state-illustration" src="<?= assetUrl('images/illustrations/online-calendar.svg') ?>" alt="Calendar ready" style="max-width: 140px; margin-bottom: 12px;">
+                      <h6 class="text-dark fw-bold">No outgoing bookings yet</h6>
+                      <p class="text-muted small mb-3">Discover colleagues and mentors to book your first appointment.</p>
+                      <button type="button" class="btn btn-primary btn-sm rounded-pill px-3" onclick="const input = document.getElementById('headerSearchInput'); if (input) { input.focus(); input.dispatchEvent(new Event('focus')); }">
+                        <i class="bi bi-search me-1"></i> Browse Professionals
+                      </button>
+                    <?php endif; ?>
+                  </div>
+                <?php endif; ?>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
 </div>
 
-<!-- Quick Event Modal -->
+<!-- Quick Event Modal (Calendar Previews) -->
 <div class="modal fade" id="eventQuickModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content rounded-3 border-0 shadow">
@@ -245,6 +678,23 @@ foreach ($appointments as $a) {
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+  // Sync tab clicks with URL ?tab=received / ?tab=sent
+  const tabList = document.getElementById('appointmentsTabList');
+  if (tabList) {
+    tabList.querySelectorAll('button[data-bs-toggle="pill"]').forEach(btn => {
+      btn.addEventListener('shown.bs.tab', function (e) {
+        const target = e.target.getAttribute('data-bs-target');
+        const tabKey = (target === '#tab-sent') ? 'sent' : 'received';
+        if (window.history && window.history.replaceState) {
+          const url = new URL(window.location.href);
+          url.searchParams.set('tab', tabKey);
+          window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+        }
+      });
+    });
+  }
+
+  // Calendar Logic for Received Tab
   const appointments = <?= json_encode($appointments, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
   const btnTable = document.getElementById('btnTableView');
   const btnCalendar = document.getElementById('btnCalendarView');
@@ -253,32 +703,49 @@ document.addEventListener('DOMContentLoaded', function () {
   const calGrid = document.getElementById('calGrid');
   const calTitle = document.getElementById('calCurrentMonthYear');
 
-  // View toggle logic
-  btnTable.addEventListener('click', function () {
-    btnTable.classList.add('active');
-    btnTable.classList.remove('text-secondary');
-    btnCalendar.classList.remove('active');
-    btnCalendar.classList.add('text-secondary');
-    tableViewSection.classList.remove('d-none');
-    calendarViewSection.classList.add('d-none');
-  });
+  if (btnTable && btnCalendar) {
+    btnTable.addEventListener('click', function () {
+      btnTable.classList.add('active');
+      btnTable.classList.remove('text-secondary');
+      btnCalendar.classList.remove('active');
+      btnCalendar.classList.add('text-secondary');
+      if (tableViewSection) {
+        tableViewSection.classList.remove('d-none');
+        tableViewSection.classList.add('d-flex');
+        tableViewSection.style.setProperty('display', 'flex', 'important');
+      }
+      if (calendarViewSection) {
+        calendarViewSection.classList.add('d-none');
+        calendarViewSection.classList.remove('d-flex');
+        calendarViewSection.style.setProperty('display', 'none', 'important');
+      }
+    });
 
-  btnCalendar.addEventListener('click', function () {
-    btnCalendar.classList.add('active');
-    btnCalendar.classList.remove('text-secondary');
-    btnTable.classList.remove('active');
-    btnTable.classList.add('text-secondary');
-    calendarViewSection.classList.remove('d-none');
-    tableViewSection.classList.add('d-none');
-    renderCalendar();
-  });
+    btnCalendar.addEventListener('click', function () {
+      btnCalendar.classList.add('active');
+      btnCalendar.classList.remove('text-secondary');
+      btnTable.classList.remove('active');
+      btnTable.classList.add('text-secondary');
+      if (calendarViewSection) {
+        calendarViewSection.classList.remove('d-none');
+        calendarViewSection.classList.add('d-flex');
+        calendarViewSection.style.setProperty('display', 'flex', 'important');
+      }
+      if (tableViewSection) {
+        tableViewSection.classList.add('d-none');
+        tableViewSection.classList.remove('d-flex');
+        tableViewSection.style.setProperty('display', 'none', 'important');
+      }
+      renderCalendar();
+    });
+  }
 
   // Calendar State
   let currentDate = new Date();
   let currentMonth = currentDate.getMonth();
   let currentYear = currentDate.getFullYear();
 
-  document.getElementById('calPrevBtn').addEventListener('click', () => {
+  document.getElementById('calPrevBtn')?.addEventListener('click', () => {
     currentMonth--;
     if (currentMonth < 0) {
       currentMonth = 11;
@@ -287,7 +754,7 @@ document.addEventListener('DOMContentLoaded', function () {
     renderCalendar();
   });
 
-  document.getElementById('calNextBtn').addEventListener('click', () => {
+  document.getElementById('calNextBtn')?.addEventListener('click', () => {
     currentMonth++;
     if (currentMonth > 11) {
       currentMonth = 0;
@@ -296,7 +763,7 @@ document.addEventListener('DOMContentLoaded', function () {
     renderCalendar();
   });
 
-  document.getElementById('calTodayBtn').addEventListener('click', () => {
+  document.getElementById('calTodayBtn')?.addEventListener('click', () => {
     const today = new Date();
     currentMonth = today.getMonth();
     currentYear = today.getFullYear();
@@ -304,6 +771,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   function renderCalendar() {
+    if (!calTitle || !calGrid) return;
     const monthNames = [
       "January", "February", "March", "April", "May", "June",
       "July", "August", "September", "October", "November", "December"
@@ -330,9 +798,8 @@ document.addEventListener('DOMContentLoaded', function () {
     for (let i = firstDayIndex; i > 0; i--) {
       const dayNum = prevMonthLastDate - i + 1;
       const col = document.createElement('div');
-      col.className = 'col p-2 border bg-light text-muted opacity-50 text-start';
-      col.style.cssText = 'flex: 0 0 14.2857%; max-width: 14.2857%; min-height: 105px;';
-      col.innerHTML = `<span class="small fw-semibold">${dayNum}</span>`;
+      col.className = 'calendar-cell rounded-2 text-start bg-light text-muted opacity-50';
+      col.innerHTML = `<span class="small fw-semibold text-secondary">${dayNum}</span>`;
       calGrid.appendChild(col);
     }
 
@@ -344,22 +811,20 @@ document.addEventListener('DOMContentLoaded', function () {
       const isToday = (dateString === todayStr);
 
       const col = document.createElement('div');
-      col.className = 'col p-2 border position-relative text-start ' + (isToday ? 'bg-primary-subtle border-primary' : 'bg-white');
-      col.style.cssText = 'flex: 0 0 14.2857%; max-width: 14.2857%; min-height: 105px;';
+      col.className = 'calendar-cell rounded-2 text-start ' + (isToday ? 'bg-primary-subtle border-primary' : 'bg-white');
 
       const dayHeading = document.createElement('div');
-      dayHeading.className = 'd-flex justify-content-between align-items-center mb-1';
+      dayHeading.className = 'd-flex justify-content-between align-items-center mb-1 flex-shrink-0';
       const dayLabel = document.createElement('span');
       dayLabel.className = `small fw-bold ${isToday ? 'badge bg-primary text-white rounded-circle p-1' : 'text-dark'}`;
-      dayLabel.style.cssText = 'width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;';
+      dayLabel.style.cssText = 'width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.72rem;';
       dayLabel.textContent = String(d);
       dayHeading.appendChild(dayLabel);
       col.appendChild(dayHeading);
 
       if (apptMap[dateString] && apptMap[dateString].length > 0) {
         const eventList = document.createElement('div');
-        eventList.className = 'd-flex flex-column gap-1 overflow-hidden';
-        eventList.style.cssText = 'max-height: 80px; overflow-y: auto;';
+        eventList.className = 'cal-cell-events';
         apptMap[dateString].forEach(appt => {
           const status = (appt.appointment_status || 'pending').toLowerCase();
           let bgPill = 'bg-warning text-dark';
@@ -368,9 +833,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
           const pill = document.createElement('button');
           pill.type = 'button';
-          pill.className = `btn btn-sm text-truncate text-start p-1 border-0 cal-event-pill ${bgPill}`;
+          pill.className = `btn btn-sm text-truncate text-start p-1 border-0 cal-event-pill ${bgPill} flex-shrink-0`;
           pill.dataset.id = String(appt.appointment_id);
-          pill.style.cssText = 'font-size: 0.72rem; line-height: 1.2; border-radius: 4px;';
+          pill.style.cssText = 'font-size: 0.7rem; line-height: 1.2; border-radius: 4px; width: 100%;';
           pill.textContent = `${appt.appointment_time} ${appt.fullName}`;
           eventList.appendChild(pill);
         });
@@ -385,9 +850,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const nextDays = (7 - (totalCells % 7)) % 7;
     for (let j = 1; j <= nextDays; j++) {
       const col = document.createElement('div');
-      col.className = 'col p-2 border bg-light text-muted opacity-50 text-start';
-      col.style.cssText = 'flex: 0 0 14.2857%; max-width: 14.2857%; min-height: 105px;';
-      col.innerHTML = `<span class="small fw-semibold">${j}</span>`;
+      col.className = 'calendar-cell rounded-2 text-start bg-light text-muted opacity-50';
+      col.innerHTML = `<span class="small fw-semibold text-secondary">${j}</span>`;
       calGrid.appendChild(col);
     }
 

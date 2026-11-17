@@ -406,4 +406,31 @@ if (!empty($appConfig['google_redirect_uri']) &&
     exit(1);
 }
 
-echo "--- ALL CHECKS PASSED (21/21) ---\n";
+// 22. Test Header Notification Feed Generation
+$notifs = $apptModel->getUserNotifications('Z4whw2o3jDnHkyQA7tIR');
+if (!empty($notifs) && isset($notifs[0]['title']) && isset($notifs[0]['message']) && isset($notifs[0]['badge_color'])) {
+    echo "[PASS] Header notifications engine correctly aggregated schedule events (" . count($notifs) . " items).\n";
+} else {
+    echo "[FAIL] Header notification generator returned empty or malformed payload.\n";
+    exit(1);
+}
+
+// 23. Test Schedule Sorting & Filtering Engine
+$_GET['sort'] = 'name_desc';
+$_GET['status'] = 'all';
+$_SESSION['userId'] = 'Z4whw2o3jDnHkyQA7tIR';
+$apptCtrl = new class extends \App\Modules\Appointment\Controllers\AppointmentController {
+    public $viewData = [];
+    protected function renderView($viewName, $data = [], $layout = 'main') {
+        $this->viewData = $data;
+    }
+};
+$apptCtrl->panel();
+if (!empty($apptCtrl->viewData['appointments']) && $apptCtrl->viewData['currentSort'] === 'name_desc') {
+    echo "[PASS] Schedule sorting and filtering engine properly processed parameters.\n";
+} else {
+    echo "[FAIL] Schedule sorting engine failed to process sort parameter.\n";
+    exit(1);
+}
+
+echo "--- ALL CHECKS PASSED (23/23) ---\n";

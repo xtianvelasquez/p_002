@@ -8,16 +8,16 @@ $searchTerm = $searchTerm ?? '';
 $searched = !empty($searched);
 $searchResults = $searchResults ?? null;
 ?>
-<div class="page-shell">
-  <div class="page-heading"><div><div class="eyebrow mb-2">Find your next conversation</div><h1>Search professionals</h1><p>Discover people and book a time that works for both of you.</p></div><span class="text-secondary small">Thoughtful meetings start here</span></div>
-  <div class="row justify-content-center">
-    <div class="col-12">
-      <div class="card rounded-3 shadow-sm border-0 mb-4">
-        <div class="card-header bg-white py-3 px-4 border-bottom">
-                  <h5 class="card-title mb-0 fw-bold text-dark">Find the right person</h5>
+<div class="page-shell search-shell">
+  <div class="page-heading mb-2"><div><div class="eyebrow mb-1">Find your next conversation</div><h1 class="fs-4 fw-bold mb-0">Search professionals</h1><p class="small text-secondary mb-0">Discover people and book a time that works for both of you.</p></div><span class="text-secondary small d-none d-md-inline">Thoughtful meetings start here</span></div>
+  <div class="row justify-content-center flex-grow-1 min-h-0">
+    <div class="col-12 d-flex flex-column h-100 min-h-0">
+      <div class="card rounded-3 shadow-sm border-0 mb-2 search-panel-card flex-grow-1 min-h-0 d-flex flex-column">
+        <div class="card-header bg-white py-2 px-3 px-md-4 border-bottom flex-shrink-0">
+          <h5 class="card-title mb-0 fw-bold text-dark fs-6">Find the right person</h5>
         </div>
-        <div class="card-body p-4">
-          <form action="<?= routeUrl('/search') ?>" method="get">
+        <div class="card-body p-3 p-md-4 d-flex flex-column flex-grow-1 min-h-0">
+          <form action="<?= routeUrl('/search') ?>" method="get" class="flex-shrink-0">
             <div class="input-group">
               <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
               <input type="text" name="name" id="name" class="form-control border-start-0 py-2" placeholder="Search by name, role, company, or skills (e.g. Stacy, Architect, Cloud, PHP)..." value="<?= htmlspecialchars($searchTerm ?? '', ENT_QUOTES, 'UTF-8') ?>" required autofocus>
@@ -26,15 +26,16 @@ $searchResults = $searchResults ?? null;
           </form>
 
           <?php if ($searched && $searchResults !== null): ?>
-            <div class="mt-4 pt-3 border-top">
-              <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="mt-3 pt-2 border-top d-flex flex-column flex-grow-1 min-h-0">
+              <div class="d-flex justify-content-between align-items-center mb-2 flex-shrink-0">
                 <h6 class="text-secondary small fw-bold text-uppercase mb-0" style="letter-spacing: 0.04em;">
                   Professionals Found (<?= count($searchResults) ?>)
                 </h6>
               </div>
 
               <?php if (count($searchResults) > 0): ?>
-                <div class="row g-3">
+                <div class="search-results-wrap flex-grow-1 min-h-0">
+                  <div class="row g-3">
                   <?php foreach ($searchResults as $user): ?>
                     <?php 
                       $uid = htmlspecialchars($user['user_id'], ENT_QUOTES, 'UTF-8');
@@ -78,12 +79,12 @@ $searchResults = $searchResults ?? null;
                             <?php endif; ?>
 
                             <?php if (!empty($skillTags)): ?>
-                              <div class="professional-skills d-flex flex-wrap gap-1 mt-2 mb-2">
-                                <?php foreach (array_slice($skillTags, 0, 5) as $skill): ?>
-                                  <span class="badge bg-light text-secondary border fw-normal" style="font-size: 0.72rem;"><?= htmlspecialchars($skill, ENT_QUOTES, 'UTF-8') ?></span>
+                              <div class="professional-skills d-flex flex-wrap gap-1 mb-2">
+                                <?php foreach (array_slice($skillTags, 0, 4) as $tag): ?>
+                                  <span class="badge bg-light text-secondary border fw-normal"><?= htmlspecialchars($tag, ENT_QUOTES, 'UTF-8') ?></span>
                                 <?php endforeach; ?>
-                                <?php if (count($skillTags) > 5): ?>
-                                  <span class="badge bg-light text-muted border fw-normal" style="font-size: 0.72rem;">+<?= count($skillTags) - 5 ?> more</span>
+                                <?php if (count($skillTags) > 4): ?>
+                                  <span class="badge bg-light text-muted border fw-normal">+<?= count($skillTags) - 4 ?></span>
                                 <?php endif; ?>
                               </div>
                             <?php endif; ?>
@@ -98,6 +99,7 @@ $searchResults = $searchResults ?? null;
                       </div>
                     </div>
                   <?php endforeach; ?>
+                  </div>
                 </div>
               <?php else: ?>
                 <div class="alert alert-light border rounded-3 text-center py-5 mb-0">

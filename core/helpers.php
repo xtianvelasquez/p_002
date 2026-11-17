@@ -204,3 +204,46 @@ if (!function_exists('validateUploadedImage')) {
         return false;
     }
 }
+
+if (!function_exists('formatRelativeNotificationTime')) {
+    function formatRelativeNotificationTime($date, $time = '00:00') {
+        $cleanDate = trim((string)$date);
+        $cleanTime = trim((string)$time);
+        if (empty($cleanDate)) {
+            return 'Recently';
+        }
+        $ts = strtotime($cleanDate . ' ' . $cleanTime);
+        if (!$ts) {
+            $ts = strtotime($cleanDate);
+        }
+        if (!$ts) {
+            return $cleanDate;
+        }
+
+        $now = time();
+        $diff = $now - $ts;
+
+        if ($diff < 0) {
+            return date('M j, Y', $ts) . ' at ' . date('g:i A', $ts);
+        }
+        if ($diff < 60) {
+            return 'Just now';
+        }
+        if ($diff < 3600) {
+            $mins = max(1, (int)floor($diff / 60));
+            return $mins . 'm ago';
+        }
+        if ($diff < 86400) {
+            $hours = (int)floor($diff / 3600);
+            return $hours . 'h ago';
+        }
+        if ($diff < 172800) {
+            return 'Yesterday at ' . date('g:i A', $ts);
+        }
+        if ($diff < 604800) {
+            $days = (int)floor($diff / 86400);
+            return $days . 'd ago';
+        }
+        return date('M j, Y', $ts);
+    }
+}

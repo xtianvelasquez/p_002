@@ -73,10 +73,15 @@ $router->add('GET', '/profile', 'User\Controllers\UserController@profile');
 $router->add('POST', '/profile', 'User\Controllers\UserController@profileUpdate');
 $router->add('GET', '/search', 'User\Controllers\UserController@search');
 $router->add('POST', '/search', 'User\Controllers\UserController@searchSubmit');
+$router->add('GET', '/api/search', 'User\Controllers\UserController@apiSearch');
 
 // Appointment routes
+$router->add('GET', '/appointments', 'Appointment\Controllers\AppointmentController@panel');
+$router->add('GET', '/schedule', 'Appointment\Controllers\AppointmentController@panel');
 $router->add('GET', '/received', 'Appointment\Controllers\AppointmentController@panel');
 $router->add('GET', '/sent', 'Appointment\Controllers\AppointmentController@sent');
+$router->add('POST', '/notifications/mark-all-read', 'Appointment\Controllers\AppointmentController@markAllNotificationsRead');
+$router->add('POST', '/notifications/mark-read', 'Appointment\Controllers\AppointmentController@markNotificationRead');
 $router->add('GET', '/u/{account}', 'Appointment\Controllers\AppointmentController@bookForm');
 $router->add('GET', '/user/{account}', 'Appointment\Controllers\AppointmentController@bookForm');
 $router->add('GET', '/appointment/book', 'Appointment\Controllers\AppointmentController@bookForm');

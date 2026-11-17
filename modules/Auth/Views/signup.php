@@ -1,15 +1,27 @@
 <div class="auth-shell">
-  <aside class="auth-aside"><img class="auth-undraw" src="<?= assetUrl('images/illustrations/online-meetings.svg') ?>" alt="People meeting online"><div class="auth-aside-copy"><div class="auth-aside-mark">✳</div><h2>A simpler way to bring people together.</h2><p>Create your profile, share when you’re free, and let meaningful conversations find a time.</p><div class="hero-proof"><div class="proof-avatars"><span>MT</span><span>CV</span><span>JD</span></div><span style="color:#d9e8f5">Your next great conversation starts here</span></div></div></aside>
-  <section class="auth-main"><div class="auth-card">
+  <aside class="auth-aside">
+    <img class="auth-undraw" src="<?= assetUrl('images/illustrations/online-meetings.svg') ?>" alt="People meeting online">
+    <div class="auth-aside-copy">
+      <div class="auth-aside-mark">✳</div>
+      <h2>A simpler way to bring people together.</h2>
+      <p>Create your profile, share when you’re free, and let meaningful conversations find a time.</p>
+      <div class="hero-proof">
+        <div class="proof-avatars"><span>MT</span><span>CV</span><span>JD</span></div>
+        <span style="color:#d9e8f5">Your next great conversation starts here</span>
+      </div>
+    </div>
+  </aside>
+  <section class="auth-main">
+    <div class="auth-card" style="width: min(100%, 540px);">
       <div class="card rounded-3 shadow-sm border-0 bg-white">
-        <div class="card-header bg-white py-4 border-bottom text-center">
-          <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-subtle text-primary mb-2" style="width: 48px; height: 48px;">
+        <div class="card-header bg-white py-2 py-lg-3 border-bottom text-center">
+          <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-subtle text-primary mb-1" style="width: 40px; height: 40px;">
             <i class="bi bi-person-plus fs-4"></i>
           </div>
-          <h4 class="card-title mb-1 fw-bold text-dark">Create Your Account</h4>
+          <h4 class="card-title mb-1 fw-bold text-dark fs-4">Create Your Account</h4>
           <p class="text-secondary small mb-0">Join More Than Blue for smart appointment scheduling</p>
         </div>
-        <div class="card-body p-4 p-md-4">
+        <div class="card-body p-3 p-md-4">
           <!-- Google OAuth Signup Button -->
           <a href="<?= routeUrl('/auth/google') ?>" class="btn btn-outline-dark w-100 py-2 d-flex align-items-center justify-content-center gap-2 mb-3 rounded-2 shadow-sm border bg-white text-dark hover-shadow" style="transition: all 0.2s ease;">
             <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
@@ -21,14 +33,15 @@
             <span class="fw-semibold small">Sign up with Google</span>
           </a>
 
-          <div class="position-relative text-center my-3">
-            <hr class="text-muted opacity-25">
-            <span class="position-absolute top-50 start-50 translate-middle bg-white px-2 text-muted small">or register with email</span>
+          <div class="d-flex align-items-center my-3 text-muted">
+            <div class="flex-grow-1 border-bottom opacity-25"></div>
+            <span class="px-2 text-muted small" style="font-size: 0.76rem;">or register with email</span>
+            <div class="flex-grow-1 border-bottom opacity-25"></div>
           </div>
 
           <form action="<?= routeUrl('/signup') ?>" method="post" enctype="multipart/form-data">
             <?= csrfField() ?>
-            <div class="row g-3">
+            <div class="row g-2">
               <div class="col-12 col-sm-6">
                 <label for="firstName" class="form-label text-secondary small fw-semibold">First Name</label>
                 <input type="text" name="firstName" id="firstName" class="form-control rounded-2" required autofocus>
@@ -37,39 +50,40 @@
                 <label for="middleName" class="form-label text-secondary small fw-semibold">Middle Name</label>
                 <input type="text" name="middleName" id="middleName" class="form-control rounded-2">
               </div>
-              <div class="col-12">
+              <div class="col-12 col-sm-6">
                 <label for="lastName" class="form-label text-secondary small fw-semibold">Last Name</label>
                 <input type="text" name="lastName" id="lastName" class="form-control rounded-2" required>
               </div>
-              <div class="col-12">
+              <div class="col-12 col-sm-6">
                 <label for="contactNumber" class="form-label text-secondary small fw-semibold">Contact Number</label>
                 <div class="input-group">
                   <span class="input-group-text rounded-start-2">+63</span>
                   <input type="text" name="contactNumber" id="contactNumber" pattern="\d{10,11}" minlength="10" maxlength="11" placeholder="9123456789" class="form-control rounded-end-2" required>
                 </div>
               </div>
-              <div class="col-12">
+              <div class="col-12 col-sm-6">
                 <label for="emailAddress" class="form-label text-secondary small fw-semibold">Email Address</label>
                 <input type="email" name="emailAddress" id="emailAddress" class="form-control rounded-2" placeholder="name@example.com" required>
               </div>
-              <div class="col-12">
-                <label for="password" class="form-label text-secondary small fw-semibold">Password (12 characters minimum)</label>
+              <div class="col-12 col-sm-6">
+                <label for="password" class="form-label text-secondary small fw-semibold">Password (min 12 chars)</label>
                 <input type="password" name="password" id="password" minlength="12" maxlength="72" autocomplete="new-password" class="form-control rounded-2" required>
               </div>
               <div class="col-12">
                 <label for="profilePicture" class="form-label text-secondary small fw-semibold">Profile Picture (Optional, PNG/JPG max 10MB)</label>
                 <input type="file" name="profilePicture" id="profilePicture" accept="image/png, image/jpeg" class="form-control rounded-2">
               </div>
-              <div class="col-12 mt-4">
+              <div class="col-12 mt-2 mt-lg-3">
                 <button type="submit" name="signup" class="btn btn-primary rounded-2 w-100 py-2 fw-semibold shadow-sm">Create Account</button>
               </div>
             </div>
           </form>
         </div>
-        <div class="card-footer bg-light text-center py-3 border-top rounded-bottom-3">
+        <div class="card-footer bg-light text-center py-2 border-top rounded-bottom-3">
           <span class="text-muted small">Already have an account? </span>
           <a href="<?= routeUrl('/login') ?>" class="text-decoration-none small fw-semibold">Sign In</a>
         </div>
       </div>
-  </div></section>
+    </div>
+  </section>
 </div>

@@ -229,24 +229,50 @@ class UserController extends BaseController {
         }
     }
 
-    public function search($params = []) {
+    public function apiSearch() {
         $this->requireAuth();
-        
-        $name = trim(scalarString($params['name'] ?? $_GET['name'] ?? $_POST['name'] ?? ''));
-        $name = substr($name, 0, 100);
-        $searchResults = null;
-        $searched = false;
+        $q = trim(scalarString($_GET['q'] ?? ''));
+        $q = substr($q, 0, 100);
 
-        if ($name !== '') {
-            $searchResults = $this->userModel->searchUsers($name);
-            $searched = true;
+        if ($q === '') {
+            return $this->jsonResponse(['results' => [], 'count' => 0]);
         }
 
-        $this->renderView('User/Views/search', [
-            'searchTerm' => $name,
-            'searchResults' => $searchResults,
-            'searched' => $searched
-        ]);
+        $rawResults = $this->userModel->searchUsers($q);
+        $results = [];
+        $currentUserId = $_SESSION['userId'] ?? null;
+
+        foreach ($rawResults as $u) {
+            $fullName = trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? ''));
+            $isSelf = ($currentUserId && $u['user_id'] === $currentUserId);
+            
+            $skillsRaw = trim($u['skills'] ?? '');
+            $skillTags = array_slice(array_filter(array_map('trim', explode(',', $skillsRaw))), 0, 3);
+
+            $results[] = [
+                'user_id' => $u['user_id'],
+                'fullName' => $fullName,
+                'avatarUrl' => userAvatarUrl($u['profile_picture'] ?? 'images/logo.png', $fullName, 60),
+                'avatarFallback' => getInitialsAvatarDataUri($fullName, 60),
+                'headline' => $u['headline'] ?: ($u['job_title'] ?: ($u['company'] ?: 'Professional Member')),
+                'company' => $u['company'] ?? '',
+                'skills' => $skillTags,
+                'url' => routeUrl('/u/' . rawurlencode($u['user_id'])),
+                'isSelf' => $isSelf
+            ];
+        }
+
+        return $this->jsonResponse(['results' => $results, 'count' => count($results)]);
+    }
+
+    public function search($params = []) {
+        $this->requireAuth();
+        $name = trim(scalarString($params['name'] ?? $_GET['name'] ?? $_POST['name'] ?? ''));
+        if (!empty($name)) {
+            $this->redirect('/appointments?focus_search=1&q=' . urlencode($name));
+        } else {
+            $this->redirect('/appointments?focus_search=1');
+        }
     }
 
     public function searchSubmit($params = []) {
