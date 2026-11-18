@@ -121,49 +121,6 @@ $currentQuery = $currentQuery ?? '';
         <!-- TAB 1: RECEIVED APPOINTMENTS               -->
         <!-- ========================================== -->
         <div class="tab-pane fade <?= ($activeTab === 'received') ? 'show active' : '' ?> flex-grow-1 h-100 min-h-0 d-flex flex-column" id="tab-received" role="tabpanel" aria-labelledby="tabBtnReceived">
-          <!-- Stats Banner: Own Separate Cards -->
-          <div class="row g-2 mb-2 dashboard-stats flex-shrink-0">
-            <div class="col-12 col-md-4">
-              <div class="card border shadow-sm rounded-3 px-3 py-2 bg-white" style="border-color: var(--line) !important;">
-                <div class="d-flex justify-content-between align-items-center">
-                  <div>
-                    <div class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.04em; font-size: 0.72rem;">Total Received</div>
-                    <div class="fs-5 fw-bold text-dark mt-0"><?= $totalCount ?></div>
-                  </div>
-                  <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 1.05rem;">
-                    <i class="bi bi-inbox"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col-12 col-md-4">
-              <div class="card border shadow-sm rounded-3 px-3 py-2 bg-white" style="border-color: var(--line) !important;">
-                <div class="d-flex justify-content-between align-items-center">
-                  <div>
-                    <div class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.04em; font-size: 0.72rem;">Confirmed</div>
-                    <div class="fs-5 fw-bold text-success mt-0"><?= $approvedCount ?></div>
-                  </div>
-                  <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 1.05rem;">
-                    <i class="bi bi-check-circle"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col-12 col-md-4">
-              <div class="card border shadow-sm rounded-3 px-3 py-2 bg-white" style="border-color: var(--line) !important;">
-                <div class="d-flex justify-content-between align-items-center">
-                  <div>
-                    <div class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.04em; font-size: 0.72rem;">Pending Action</div>
-                    <div class="fs-5 fw-bold text-warning mt-0"><?= $pendingCount ?></div>
-                  </div>
-                  <div class="rounded-circle bg-warning-subtle text-warning d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 1.05rem;">
-                    <i class="bi bi-hourglass-split"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <!-- Main Received Card: Own Separate Box -->
           <div class="card rounded-3 shadow-sm border dashboard-main flex-grow-1 min-h-0 bg-white" style="border-color: var(--line) !important;">
             <!-- Header with View Switcher -->
@@ -396,49 +353,6 @@ $currentQuery = $currentQuery ?? '';
         <!-- TAB 2: SENT APPOINTMENTS                   -->
         <!-- ========================================== -->
         <div class="tab-pane fade <?= ($activeTab === 'sent') ? 'show active' : '' ?> flex-grow-1 h-100 min-h-0 d-flex flex-column" id="tab-sent" role="tabpanel" aria-labelledby="tabBtnSent">
-          <!-- Stats Banner: Own Separate Cards -->
-          <div class="row g-2 mb-2 dashboard-stats flex-shrink-0">
-            <div class="col-12 col-md-4">
-              <div class="card border shadow-sm rounded-3 px-3 py-2 bg-white" style="border-color: var(--line) !important;">
-                <div class="d-flex justify-content-between align-items-center">
-                  <div>
-                    <div class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.04em; font-size: 0.72rem;">Total Outgoing</div>
-                    <div class="fs-5 fw-bold text-dark mt-0"><?= $sentTotalCount ?></div>
-                  </div>
-                  <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 1.05rem;">
-                    <i class="bi bi-send"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col-12 col-md-4">
-              <div class="card border shadow-sm rounded-3 px-3 py-2 bg-white" style="border-color: var(--line) !important;">
-                <div class="d-flex justify-content-between align-items-center">
-                  <div>
-                    <div class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.04em; font-size: 0.72rem;">Confirmed</div>
-                    <div class="fs-5 fw-bold text-success mt-0"><?= $sentApprovedCount ?></div>
-                  </div>
-                  <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 1.05rem;">
-                    <i class="bi bi-check-circle"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col-12 col-md-4">
-              <div class="card border shadow-sm rounded-3 px-3 py-2 bg-white" style="border-color: var(--line) !important;">
-                <div class="d-flex justify-content-between align-items-center">
-                  <div>
-                    <div class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.04em; font-size: 0.72rem;">Awaiting Confirmation</div>
-                    <div class="fs-5 fw-bold text-warning mt-0"><?= $sentPendingCount ?></div>
-                  </div>
-                  <div class="rounded-circle bg-warning-subtle text-warning d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 1.05rem;">
-                    <i class="bi bi-hourglass-split"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <!-- Main Sent Card: Own Separate Box -->
           <div class="card rounded-3 shadow-sm border dashboard-main flex-grow-1 min-h-0 bg-white" style="border-color: var(--line) !important;">
             <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center flex-shrink-0">
@@ -703,6 +617,49 @@ document.addEventListener('DOMContentLoaded', function () {
   const calGrid = document.getElementById('calGrid');
   const calTitle = document.getElementById('calCurrentMonthYear');
 
+  function matchAppointmentViewToSidebar() {
+    const sidebar = document.querySelector('.appointments-layout > .profile-sidebar');
+    if (!sidebar) return;
+
+    const panes = document.querySelectorAll('.appointments-layout > .appointments-content .tab-pane');
+    if (window.innerWidth < 992) {
+      panes.forEach(pane => {
+        pane.style.removeProperty('height');
+        pane.style.removeProperty('min-height');
+        const dash = pane.querySelector('.dashboard-main');
+        if (dash) {
+          dash.style.removeProperty('height');
+          dash.style.removeProperty('min-height');
+          dash.style.removeProperty('flex');
+        }
+      });
+      return;
+    }
+
+    const sidebarHeight = Math.round(sidebar.getBoundingClientRect().height);
+    if (sidebarHeight > 0) {
+      panes.forEach(pane => {
+        pane.style.setProperty('height', `${sidebarHeight}px`, 'important');
+        pane.style.setProperty('min-height', `${sidebarHeight}px`, 'important');
+        const dash = pane.querySelector('.dashboard-main');
+        if (dash) {
+          dash.style.setProperty('height', `${sidebarHeight}px`, 'important');
+          dash.style.setProperty('min-height', `${sidebarHeight}px`, 'important');
+          dash.style.setProperty('flex', '1 1 auto', 'important');
+        }
+      });
+    }
+  }
+  requestAnimationFrame(matchAppointmentViewToSidebar);
+  window.addEventListener('resize', matchAppointmentViewToSidebar);
+  document.getElementById('appointmentsTabList')?.addEventListener('shown.bs.tab', () => {
+    requestAnimationFrame(matchAppointmentViewToSidebar);
+  });
+  const sidebarForSizing = document.querySelector('.appointments-layout > .profile-sidebar');
+  if (sidebarForSizing && 'ResizeObserver' in window) {
+    new ResizeObserver(() => requestAnimationFrame(matchAppointmentViewToSidebar)).observe(sidebarForSizing);
+  }
+
   if (btnTable && btnCalendar) {
     btnTable.addEventListener('click', function () {
       btnTable.classList.add('active');
@@ -854,6 +811,8 @@ document.addEventListener('DOMContentLoaded', function () {
       col.innerHTML = `<span class="small fw-semibold text-secondary">${j}</span>`;
       calGrid.appendChild(col);
     }
+
+    calGrid.style.setProperty('--calendar-weeks', String(Math.ceil(calGrid.children.length / 7)));
 
     // Attach listeners to calendar pills
     document.querySelectorAll('.cal-event-pill').forEach(pill => {

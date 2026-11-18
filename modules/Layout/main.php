@@ -47,7 +47,7 @@ $isAppFitPage = in_array(rtrim($subPath, '/'), [
   <link rel="icon" type="image/png" href="<?= assetUrl('images/logo.png') ?>">
   <link rel="stylesheet" href="<?= assetUrl('bootstrap/css/bootstrap.min.css?v=5.3') ?>">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="<?= assetUrl('css/app.css?v=13') ?>">
+  <link rel="stylesheet" href="<?= assetUrl('css/app.css?v=31') ?>">
 </head>
 <body class="app-body <?= $isAppFitPage ? 'app-fit-screen' : '' ?>">
 <header class="app-header">
