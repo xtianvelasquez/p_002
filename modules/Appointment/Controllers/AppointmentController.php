@@ -433,11 +433,14 @@ class AppointmentController extends BaseController {
         $_SESSION['read_notifications'] = array_slice($_SESSION['read_notifications'], -500);
 
         $isSender = ($appt['sender_id'] === $userId);
-        $displayName = $isSender 
-            ? strtoupper(($appt['receiver_first_name'] ?? '') . ' ' . ($appt['receiver_last_name'] ?? ''))
-            : strtoupper(($appt['sender_first_name'] ?? '') . ' ' . ($appt['sender_last_name'] ?? ''));
+        $partnerId = $isSender ? ($appt['receiver_id'] ?? null) : ($appt['sender_id'] ?? null);
+        $rawPartnerName = $isSender 
+            ? trim(($appt['receiver_first_name'] ?? '') . ' ' . ($appt['receiver_last_name'] ?? ''))
+            : trim(($appt['sender_first_name'] ?? '') . ' ' . ($appt['sender_last_name'] ?? ''));
+        $displayName = !empty($rawPartnerName) ? strtoupper($rawPartnerName) : ($isSender ? 'RECIPIENT' : 'SENDER');
         $displayContact = $isSender ? ($appt['receiver_contact'] ?? '') : ($appt['sender_contact'] ?? '');
         $displayEmail = $isSender ? ($appt['receiver_email'] ?? '') : ($appt['sender_email'] ?? '');
+        $partnerAvatar = $isSender ? ($appt['receiver_avatar'] ?? null) : ($appt['sender_avatar'] ?? null);
 
         // Determine meeting duration
         $durationMinutes = 30;
@@ -480,7 +483,10 @@ class AppointmentController extends BaseController {
             'agenda' => $appt['agenda'] ?? '',
             'duration_minutes' => $durationMinutes,
             'googleCalUrl' => $googleCalUrl,
-            'appointment_status' => $appt['appointment_status']
+            'appointment_status' => $appt['appointment_status'],
+            'participantId' => $partnerId,
+            'participantAvatarUrl' => userAvatarUrl($partnerAvatar, $displayName, 32),
+            'participantAvatarFallback' => getInitialsAvatarDataUri($displayName, 32)
         ]);
     }
 

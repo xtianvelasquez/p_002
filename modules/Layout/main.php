@@ -32,12 +32,8 @@ $isAppFitPage = in_array(rtrim($subPath, '/'), [
     '/received',
     '/sent',
     '/search',
-    '/profile',
-    '/appointment/view',
-    '/appointment/edit',
-    '/appointment/delete',
-    '/appointment/delete-sent'
-], true) || str_starts_with($subPath, '/appointment/view') || str_starts_with($subPath, '/appointment/edit') || str_starts_with($subPath, '/appointment/delete');
+    '/profile'
+], true);
 ?>
 <!doctype html>
 <html lang="en">
@@ -47,7 +43,7 @@ $isAppFitPage = in_array(rtrim($subPath, '/'), [
   <link rel="icon" type="image/png" href="<?= assetUrl('images/logo.png') ?>">
   <link rel="stylesheet" href="<?= assetUrl('bootstrap/css/bootstrap.min.css?v=5.3') ?>">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="<?= assetUrl('css/app.css?v=38') ?>">
+  <link rel="stylesheet" href="<?= assetUrl('css/app.css?v=39') ?>">
 </head>
 <body class="app-body <?= $isAppFitPage ? 'app-fit-screen' : '' ?>">
 <header class="app-header">

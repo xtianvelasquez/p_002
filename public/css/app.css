@@ -68,7 +68,7 @@
   body.app-fit-screen{height:100vh!important;height:100dvh!important;overflow:hidden!important;display:flex!important;flex-direction:column!important}
   body.app-fit-screen .app-header{flex-shrink:0!important}
   body.app-fit-screen .app-nav{min-height:56px!important;padding:.35rem 0!important}
-  body.app-fit-screen .app-main{flex:1 1 auto!important;min-height:0!important;overflow:hidden!important;display:flex!important;flex-direction:column!important}
+  body.app-fit-screen .app-main{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;display:flex!important;flex-direction:column!important}
   body.app-fit-screen .app-footer{flex-shrink:0!important;margin-top:auto!important;padding:6px 0!important;font-size:11px!important;background:#fff!important;border-top:1px solid var(--line)!important}
   body.app-fit-screen .app-flashes{padding-top:6px!important;margin-bottom:0!important}
   body.app-fit-screen .app-flashes .alert{padding:6px 14px!important;margin-bottom:6px!important;font-size:13px!important}

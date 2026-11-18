@@ -35,8 +35,8 @@ class AppointmentModel extends BaseModel {
     public function getAppointmentForUser($id, $userId) {
         $stmt = $this->db->prepare("
             SELECT a.*, 
-                   s.first_name AS sender_first_name, s.last_name AS sender_last_name, s.contact_number AS sender_contact, s.email_address AS sender_email,
-                   r.first_name AS receiver_first_name, r.last_name AS receiver_last_name, r.contact_number AS receiver_contact, r.email_address AS receiver_email
+                   s.first_name AS sender_first_name, s.last_name AS sender_last_name, s.contact_number AS sender_contact, s.email_address AS sender_email, s.profile_picture AS sender_avatar,
+                   r.first_name AS receiver_first_name, r.last_name AS receiver_last_name, r.contact_number AS receiver_contact, r.email_address AS receiver_email, r.profile_picture AS receiver_avatar
             FROM appointment_details a
             LEFT JOIN user_account s ON a.sender_id = s.user_id
             LEFT JOIN user_account r ON a.receiver_id = r.user_id

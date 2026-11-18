@@ -14,6 +14,9 @@
  * @var int $duration_minutes
  * @var string $googleCalUrl
  * @var string $appointment_status
+ * @var string|null $participantId
+ * @var string|null $participantAvatarUrl
+ * @var string|null $participantAvatarFallback
  */
 $appointmentId = $appointmentId ?? '';
 $fullName = $fullName ?? '';
@@ -24,6 +27,9 @@ $appointment_time = $appointment_time ?? '';
 $event_name = $event_name ?? '';
 $location = $location ?? '';
 $googleCalUrl = $googleCalUrl ?? '#';
+$participantId = $participantId ?? null;
+$participantAvatarUrl = $participantAvatarUrl ?? null;
+$participantAvatarFallback = $participantAvatarFallback ?? null;
 
 $status = strtolower(trim($appointment_status ?? 'pending'));
 $badgeClass = match ($status) {
@@ -48,10 +54,10 @@ $meetingModeLabel = match ($meetingMode) {
     default => '🎥 Google Meet'
 };
 ?>
-<div class="container-xl my-2 my-lg-3">
+<div class="container-xl py-3 py-lg-4 mb-5">
   <div class="row justify-content-center">
-    <div class="col-11 col-sm-9 col-md-8 col-lg-7">
-      <div class="card rounded-3 shadow border-0 overflow-hidden">
+    <div class="col-12 col-sm-10 col-md-9 col-lg-8 col-xl-7">
+      <div class="card rounded-3 shadow-sm border-0 overflow-hidden mb-4">
         <div class="card-header bg-primary text-white py-3 px-4 d-flex justify-content-between align-items-center">
           <div>
             <span class="badge bg-white text-primary text-uppercase me-2" style="letter-spacing: 0.05em; font-size: 0.72rem;">More Than Blue</span>
@@ -94,7 +100,19 @@ $meetingModeLabel = match ($meetingMode) {
             <tbody>
               <tr>
                 <th scope="row" class="text-secondary small fw-semibold ps-0" style="width: 32%;">Participant</th>
-                <td class="fw-bold text-dark"><?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?></td>
+                <td class="fw-bold text-dark">
+                  <?php if (!empty($participantId)): ?>
+                    <a href="<?= routeUrl('/u/' . rawurlencode($participantId)) ?>" class="text-primary text-decoration-none d-inline-flex align-items-center gap-2 link-primary fw-bold" title="View <?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?>'s profile">
+                      <?php if (!empty($participantAvatarUrl)): ?>
+                        <img src="<?= htmlspecialchars($participantAvatarUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" class="rounded-circle border" style="width: 28px; height: 28px; object-fit: cover;" onerror="this.onerror=null; this.src='<?= htmlspecialchars($participantAvatarFallback ?? '', ENT_QUOTES, 'UTF-8') ?>';">
+                      <?php endif; ?>
+                      <span><?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?></span>
+                      <i class="bi bi-box-arrow-up-right text-muted" style="font-size: 0.72rem;"></i>
+                    </a>
+                  <?php else: ?>
+                    <?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?>
+                  <?php endif; ?>
+                </td>
               </tr>
               <tr>
                 <th scope="row" class="text-secondary small fw-semibold ps-0">Email</th>
@@ -125,8 +143,8 @@ $meetingModeLabel = match ($meetingMode) {
         </div>
 
         <div class="card-footer bg-light py-3 px-4 border-top d-flex justify-content-between align-items-center">
-          <a href="<?= routeUrl('/received') ?>" class="btn btn-outline-secondary btn-sm rounded-2 px-3">&larr; Back to Dashboard</a>
-          <a href="<?= routeUrl('/appointment/edit?id=' . $appointmentId) ?>" class="btn btn-outline-primary btn-sm rounded-2 px-3">Update Status</a>
+          <a href="<?= routeUrl('/appointments') ?>" class="btn btn-outline-secondary btn-sm rounded-2 px-3">&larr; Back to Dashboard</a>
+          <a href="<?= routeUrl('/appointment/edit?id=' . $appointmentId) ?>" class="btn btn-primary btn-sm rounded-2 px-3">Update Status</a>
         </div>
       </div>
     </div>
