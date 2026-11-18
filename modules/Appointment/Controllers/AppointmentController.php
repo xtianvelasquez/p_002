@@ -123,14 +123,18 @@ class AppointmentController extends BaseController {
         $userId = $_SESSION["userId"];
         
         $currentUser = $this->appointmentModel->getUserDetails($userId) ?: [];
-        $activeTab = strtolower(trim($_GET['tab'] ?? 'received'));
+        $activeTab = strtolower(trim(scalarString($_GET['tab'] ?? 'received')));
         if (!in_array($activeTab, ['received', 'sent'], true)) {
             $activeTab = 'received';
         }
 
-        $sort = $_GET['sort'] ?? 'date_asc';
-        $statusFilter = strtolower(trim($_GET['status'] ?? 'all'));
-        $searchQuery = trim($_GET['q'] ?? '');
+        $allowedSorts = ['date_asc', 'date_desc', 'name_asc', 'name_desc', 'status_pending', 'status_approved'];
+        $sort = scalarString($_GET['sort'] ?? 'date_asc');
+        if (!in_array($sort, $allowedSorts, true)) $sort = 'date_asc';
+        $statusFilter = strtolower(trim(scalarString($_GET['status'] ?? 'all')));
+        if (!in_array($statusFilter, ['all', 'pending', 'approved', 'cancel'], true)) $statusFilter = 'all';
+        $searchQuery = trim(scalarString($_GET['q'] ?? ''));
+        $searchQuery = function_exists('mb_substr') ? mb_substr($searchQuery, 0, 100) : substr($searchQuery, 0, 100);
 
         $rawReceived = $this->appointmentModel->getReceivedAppointments($userId);
         $rawSent = $this->appointmentModel->getSentAppointments($userId);
@@ -171,7 +175,8 @@ class AppointmentController extends BaseController {
     }
 
     public function markAllNotificationsRead() {
-        if (session_status() === PHP_SESSION_NONE) session_start();
+        $this->requireAuth();
+        $this->validateCsrf();
         if (isset($_SESSION['userId'])) {
             $notifs = $this->appointmentModel->getUserNotifications($_SESSION['userId']);
             $_SESSION['read_notifications'] = array_map(fn($n) => $n['id'], $notifs);
@@ -182,14 +187,18 @@ class AppointmentController extends BaseController {
     }
 
     public function markNotificationRead() {
-        if (session_status() === PHP_SESSION_NONE) session_start();
+        $this->requireAuth();
+        $this->validateCsrf();
         $id = scalarString($_POST['id'] ?? '');
         if ($id && isset($_SESSION['userId'])) {
-            if (!isset($_SESSION['read_notifications']) || !is_array($_SESSION['read_notifications'])) {
-                $_SESSION['read_notifications'] = [];
-            }
-            if (!in_array($id, $_SESSION['read_notifications'], true)) {
-                $_SESSION['read_notifications'][] = $id;
+            if ($this->appointmentModel->getAppointmentForUser($id, $_SESSION['userId'])) {
+                if (!isset($_SESSION['read_notifications']) || !is_array($_SESSION['read_notifications'])) {
+                    $_SESSION['read_notifications'] = [];
+                }
+                if (!in_array($id, $_SESSION['read_notifications'], true)) {
+                    $_SESSION['read_notifications'][] = $id;
+                }
+                $_SESSION['read_notifications'] = array_slice($_SESSION['read_notifications'], -500);
             }
         }
         header('Content-Type: application/json');
@@ -241,8 +250,8 @@ class AppointmentController extends BaseController {
             'firstName' => $account['first_name'],
             'middleName' => $account['middle_name'],
             'lastName' => $account['last_name'],
-            'contactNumber' => $account['contact_number'],
-            'emailAddress' => $account['email_address'],
+            'contactNumber' => '',
+            'emailAddress' => '',
             'profilePicture' => $account['profile_picture'],
             'workStartTime' => $account['work_start_time'] ?? '09:00',
             'workEndTime' => $account['work_end_time'] ?? '17:00',
@@ -276,6 +285,10 @@ class AppointmentController extends BaseController {
         $parsedDate = \DateTime::createFromFormat('!Y-m-d', $date);
         if (!$parsedDate || $parsedDate->format('Y-m-d') !== $date) {
             return $this->jsonResponse(['error' => 'Invalid date format (expected YYYY-MM-DD)'], 400);
+        }
+        $maxDate = (new \DateTimeImmutable('today'))->modify('+1 year')->format('Y-m-d');
+        if ($date < date('Y-m-d') || $date > $maxDate) {
+            return $this->jsonResponse(['error' => 'Date must be within the next year.'], 400);
         }
 
         $durationInput = $_GET['duration'] ?? null;
@@ -342,6 +355,10 @@ class AppointmentController extends BaseController {
 
             if ($appointmentDate < date('Y-m-d')) {
                 $this->setFlash('danger', 'Cannot schedule appointments in the past.');
+                $this->redirect('/appointment/book?account=' . rawurlencode($receiverId));
+            }
+            if ($appointmentDate > (new \DateTimeImmutable('today'))->modify('+1 year')->format('Y-m-d')) {
+                $this->setFlash('danger', 'Appointments can only be scheduled within the next year.');
                 $this->redirect('/appointment/book?account=' . rawurlencode($receiverId));
             }
 
@@ -413,6 +430,7 @@ class AppointmentController extends BaseController {
         if (!in_array($id, $_SESSION['read_notifications'], true)) {
             $_SESSION['read_notifications'][] = $id;
         }
+        $_SESSION['read_notifications'] = array_slice($_SESSION['read_notifications'], -500);
 
         $isSender = ($appt['sender_id'] === $userId);
         $displayName = $isSender 
@@ -444,6 +462,7 @@ class AppointmentController extends BaseController {
         $googleCalUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE"
             . "&text=" . urlencode($title)
             . "&dates=" . $datesParam
+            . "&ctz=" . urlencode(date_default_timezone_get())
             . "&details=" . urlencode($desc)
             . "&location=" . urlencode($loc);
 
@@ -487,6 +506,7 @@ class AppointmentController extends BaseController {
         if (!in_array($id, $_SESSION['read_notifications'], true)) {
             $_SESSION['read_notifications'][] = $id;
         }
+        $_SESSION['read_notifications'] = array_slice($_SESSION['read_notifications'], -500);
 
         $isSender = ($appt['sender_id'] === $userId);
         $partnerName = $isSender 
@@ -509,8 +529,9 @@ class AppointmentController extends BaseController {
         $endDT = clone $startDT;
         $endDT->modify("+{$durationMinutes} minutes");
 
-        $dtStart = $startDT->format('Ymd\THis');
-        $dtEnd = $endDT->format('Ymd\THis');
+        $utc = new \DateTimeZone('UTC');
+        $dtStart = (clone $startDT)->setTimezone($utc)->format('Ymd\THis\Z');
+        $dtEnd = (clone $endDT)->setTimezone($utc)->format('Ymd\THis\Z');
         $dtStamp = gmdate('Ymd\THis\Z');
         $uid = $appt['appointment_id'] . '@morethanblue.local';
         $escapeIcsText = static function ($value) {
@@ -521,22 +542,31 @@ class AppointmentController extends BaseController {
             );
         };
 
-        $ics = "BEGIN:VCALENDAR\r\n"
-            . "VERSION:2.0\r\n"
-            . "PRODID:-//More Than Blue//Appointment Scheduler//EN\r\n"
-            . "CALSCALE:GREGORIAN\r\n"
-            . "METHOD:PUBLISH\r\n"
-            . "BEGIN:VEVENT\r\n"
-            . "UID:" . $uid . "\r\n"
-            . "DTSTAMP:" . $dtStamp . "\r\n"
-            . "DTSTART:" . $dtStart . "\r\n"
-            . "DTEND:" . $dtEnd . "\r\n"
-            . "SUMMARY:" . $escapeIcsText($title) . "\r\n"
-            . "DESCRIPTION:" . $escapeIcsText($description) . "\r\n"
-            . "LOCATION:" . $escapeIcsText($location) . "\r\n"
-            . "STATUS:CONFIRMED\r\n"
-            . "END:VEVENT\r\n"
-            . "END:VCALENDAR\r\n";
+        $foldIcsLine = static function (string $line): string {
+            $parts = [];
+            while (strlen($line) > 75) {
+                $cut = 75;
+                while ($cut > 0 && (ord($line[$cut]) & 0xC0) === 0x80) $cut--;
+                $parts[] = substr($line, 0, $cut);
+                $line = ' ' . substr($line, $cut);
+            }
+            $parts[] = $line;
+            return implode("\r\n", $parts);
+        };
+        $status = match (strtolower(trim($appt['appointment_status'] ?? 'pending'))) {
+            'approved' => 'CONFIRMED',
+            'pending' => 'TENTATIVE',
+            default => 'CANCELLED',
+        };
+        $icsLines = [
+            'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//More Than Blue//Appointment Scheduler//EN',
+            'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'BEGIN:VEVENT',
+            'UID:' . $uid, 'DTSTAMP:' . $dtStamp, 'DTSTART:' . $dtStart, 'DTEND:' . $dtEnd,
+            'SUMMARY:' . $escapeIcsText($title), 'DESCRIPTION:' . $escapeIcsText($description),
+            'LOCATION:' . $escapeIcsText($location), 'STATUS:' . $status,
+            'END:VEVENT', 'END:VCALENDAR'
+        ];
+        $ics = implode("\r\n", array_map($foldIcsLine, $icsLines)) . "\r\n";
 
         header('Content-Type: text/calendar; charset=utf-8');
         $downloadId = preg_replace('/[^A-Za-z0-9_-]/', '', substr((string)$appt['appointment_id'], 0, 8));
@@ -568,6 +598,7 @@ class AppointmentController extends BaseController {
         if (!in_array($id, $_SESSION['read_notifications'], true)) {
             $_SESSION['read_notifications'][] = $id;
         }
+        $_SESSION['read_notifications'] = array_slice($_SESSION['read_notifications'], -500);
 
         $this->renderView('Appointment/Views/edit', [
             'appointmentId' => $id,

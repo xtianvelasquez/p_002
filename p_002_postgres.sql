@@ -1,6 +1,7 @@
 -- PostgreSQL Dump of More Than Blue Database (3NF Normalized)
 
 DROP TABLE IF EXISTS appointment_details CASCADE;
+DROP TABLE IF EXISTS login_attempt_bucket CASCADE;
 DROP TABLE IF EXISTS user_profile CASCADE;
 DROP TABLE IF EXISTS user_availability CASCADE;
 DROP TABLE IF EXISTS user_account CASCADE;
@@ -14,7 +15,7 @@ CREATE TABLE user_account (
   middle_name varchar(100) DEFAULT NULL,
   last_name varchar(100) NOT NULL,
   search_name varchar(200) NOT NULL,
-  contact_number varchar(25) NOT NULL,
+  contact_number varchar(25) DEFAULT NULL,
   email_address varchar(100) NOT NULL,
   user_password varchar(200) NOT NULL,
   profile_picture text NOT NULL,
@@ -22,6 +23,14 @@ CREATE TABLE user_account (
   last_update date DEFAULT NULL,
   PRIMARY KEY (user_id)
 );
+
+CREATE TABLE login_attempt_bucket (
+  bucket_key varchar(64) NOT NULL PRIMARY KEY,
+  attempt_count smallint NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
+  window_started_at timestamptz NOT NULL DEFAULT NOW(),
+  blocked_until timestamptz DEFAULT NULL
+);
+CREATE INDEX idx_login_attempt_window ON login_attempt_bucket (window_started_at);
 
 --
 -- Table structure for table user_profile (LinkedIn Dossier & Professional Details)
@@ -47,10 +56,11 @@ CREATE TABLE user_profile (
 --
 CREATE TABLE user_availability (
   user_id varchar(50) NOT NULL,
-  work_start_time varchar(10) NOT NULL DEFAULT '09:00',
-  work_end_time varchar(10) NOT NULL DEFAULT '17:00',
-  slot_duration_minutes int NOT NULL DEFAULT 30,
+  work_start_time varchar(5) NOT NULL DEFAULT '09:00' CHECK (work_start_time ~ '^(?:[01][0-9]|2[0-3]):[0-5][0-9]$'),
+  work_end_time varchar(5) NOT NULL DEFAULT '17:00' CHECK (work_end_time ~ '^(?:[01][0-9]|2[0-3]):[0-5][0-9]$'),
+  slot_duration_minutes int NOT NULL DEFAULT 30 CHECK (slot_duration_minutes IN (15, 30, 45, 60)),
   PRIMARY KEY (user_id),
+  CONSTRAINT user_availability_hours_valid CHECK (work_end_time > work_start_time),
   CONSTRAINT fk_user_availability FOREIGN KEY (user_id) REFERENCES user_account (user_id) ON DELETE CASCADE
 );
 
@@ -62,13 +72,13 @@ CREATE TABLE appointment_details (
   receiver_id varchar(50) NOT NULL,
   sender_id varchar(50) NOT NULL,
   appointment_date date NOT NULL,
-  appointment_time varchar(50) NOT NULL DEFAULT '',
+  appointment_time varchar(5) NOT NULL CHECK (appointment_time ~ '^(?:[01][0-9]|2[0-3]):[0-5][0-9]$'),
   event_name varchar(100) NOT NULL,
   location varchar(100) NOT NULL,
-  event_type varchar(50) DEFAULT 'consultation',
-  meeting_mode varchar(50) DEFAULT 'google_meet',
+  event_type varchar(50) NOT NULL DEFAULT 'consultation' CHECK (event_type IN ('quick_sync', 'consultation', 'deep_dive')),
+  meeting_mode varchar(50) NOT NULL DEFAULT 'google_meet' CHECK (meeting_mode IN ('google_meet', 'zoom', 'in_person', 'phone')),
   agenda text DEFAULT NULL,
-  appointment_status char(50) DEFAULT NULL,
+  appointment_status varchar(20) NOT NULL DEFAULT 'pending' CHECK (appointment_status IN ('pending', 'approved', 'denied', 'cancel')),
   PRIMARY KEY (appointment_id),
   CONSTRAINT fk_receiver FOREIGN KEY (receiver_id) REFERENCES user_account (user_id) ON DELETE CASCADE,
   CONSTRAINT fk_sender FOREIGN KEY (sender_id) REFERENCES user_account (user_id) ON DELETE CASCADE

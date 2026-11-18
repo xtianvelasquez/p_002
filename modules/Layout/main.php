@@ -204,7 +204,12 @@ $isAppFitPage = in_array(rtrim($subPath, '/'), [
             </li>
 
             <li class="nav-item"><a class="nav-link <?= isNavActive('/profile', $subPath) ?>" href="<?= routeUrl('/profile') ?>">Profile settings</a></li>
-            <li class="nav-item"><a class="nav-link" href="<?= routeUrl('/logout') ?>">Logout</a></li>
+            <li class="nav-item">
+              <form method="post" action="<?= routeUrl('/logout') ?>" class="m-0">
+                <?= csrfField() ?>
+                <button type="submit" class="nav-link border-0 bg-transparent">Logout</button>
+              </form>
+            </li>
           <?php else: ?>
             <?php if (rtrim($subPath, '/') === '/'): ?>
               <li class="nav-item"><a class="nav-link" href="#how-it-works">Schedule</a></li>
@@ -428,7 +433,10 @@ document.addEventListener('DOMContentLoaded', function() {
       });
 
       updateUnreadBadges();
-      fetch('<?= routeUrl('/notifications/mark-all-read') ?>', { method: 'POST' }).catch(function() {});
+      fetch('<?= routeUrl('/notifications/mark-all-read') ?>', {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': '<?= htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8') ?>' }
+      }).catch(function() {});
     });
   }
 
@@ -451,6 +459,7 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('id', notifId);
         fetch('<?= routeUrl('/notifications/mark-read') ?>', {
           method: 'POST',
+          headers: { 'X-CSRF-Token': '<?= htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8') ?>' },
           body: formData
         }).catch(function() {});
 

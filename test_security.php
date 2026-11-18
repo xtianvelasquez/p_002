@@ -3,8 +3,14 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once __DIR__ . '/config/config.php';
+$appConfig = require __DIR__ . '/config/config.php';
 require_once __DIR__ . '/core/helpers.php';
+
+if (($appConfig['app_env'] ?? '') !== 'test'
+    || !preg_match('/_test$/', (string)($appConfig['dbname'] ?? ''))) {
+    fwrite(STDERR, "Refusing to run the database-mutating suite unless APP_ENV=test and DB_NAME ends with _test.\n");
+    exit(2);
+}
 
 spl_autoload_register(function ($class) {
     $prefix = 'App\\';

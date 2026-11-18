@@ -6,8 +6,9 @@ use App\Core\BaseModel;
 class AppointmentModel extends BaseModel {
     public function getReceivedAppointments($userId) {
         $stmt = $this->db->prepare("
-            SELECT a.*, 
-                   u.first_name, u.middle_name, u.last_name, u.search_name, u.contact_number, u.email_address, u.profile_picture
+            SELECT a.appointment_id, a.appointment_date, a.appointment_time, a.event_name, a.location,
+                   a.event_type, a.meeting_mode, a.agenda, a.appointment_status,
+                   u.first_name, u.last_name, u.profile_picture
             FROM appointment_details a
             JOIN user_account u ON a.sender_id = u.user_id
             WHERE a.receiver_id = ?
@@ -19,8 +20,9 @@ class AppointmentModel extends BaseModel {
 
     public function getSentAppointments($userId) {
         $stmt = $this->db->prepare("
-            SELECT a.*, 
-                   u.first_name, u.middle_name, u.last_name, u.search_name, u.contact_number, u.email_address, u.profile_picture
+            SELECT a.appointment_id, a.appointment_date, a.appointment_time, a.event_name, a.location,
+                   a.event_type, a.meeting_mode, a.agenda, a.appointment_status,
+                   u.first_name, u.last_name, u.profile_picture
             FROM appointment_details a
             JOIN user_account u ON a.receiver_id = u.user_id
             WHERE a.sender_id = ?
@@ -91,9 +93,16 @@ class AppointmentModel extends BaseModel {
         $stmt = $this->db->prepare("
             UPDATE appointment_details 
             SET appointment_status = ? 
-            WHERE appointment_id = ? AND (receiver_id = ? OR (sender_id = ? AND ? = 'cancel'))
+            WHERE appointment_id = ?
+              AND (
+                (receiver_id = ? AND (
+                    (appointment_status = 'pending' AND ? IN ('approved', 'denied', 'cancel'))
+                    OR (appointment_status = 'approved' AND ? = 'cancel')
+                ))
+                OR (sender_id = ? AND ? = 'cancel' AND appointment_status IN ('pending', 'approved'))
+              )
         ");
-        $stmt->execute([$status, $id, $userId, $userId, $status]);
+        $stmt->execute([$status, $id, $userId, $status, $status, $userId, $status]);
         return $stmt->rowCount() > 0;
     }
 
@@ -220,7 +229,8 @@ class AppointmentModel extends BaseModel {
     public function getUserNotifications($userId) {
         // Fetch recent received appointments (where user is recipient)
         $stmtRec = $this->db->prepare("
-            SELECT a.*, s.first_name, s.last_name, s.profile_picture
+            SELECT a.appointment_id, a.appointment_status, a.event_name, a.appointment_date, a.appointment_time,
+                   s.first_name, s.last_name, s.profile_picture
             FROM appointment_details a
             JOIN user_account s ON a.sender_id = s.user_id
             WHERE a.receiver_id = ?
@@ -232,7 +242,8 @@ class AppointmentModel extends BaseModel {
 
         // Fetch recent sent appointments (where user is sender)
         $stmtSent = $this->db->prepare("
-            SELECT a.*, r.first_name, r.last_name, r.profile_picture
+            SELECT a.appointment_id, a.appointment_status, a.event_name, a.appointment_date, a.appointment_time,
+                   r.first_name, r.last_name, r.profile_picture
             FROM appointment_details a
             JOIN user_account r ON a.receiver_id = r.user_id
             WHERE a.sender_id = ?
@@ -244,6 +255,7 @@ class AppointmentModel extends BaseModel {
 
         $notifications = [];
         $readIds = $_SESSION['read_notifications'] ?? [];
+        if (!is_array($readIds)) $readIds = [];
 
         foreach ($received as $a) {
             $status = strtolower(trim($a['appointment_status'] ?? 'pending'));

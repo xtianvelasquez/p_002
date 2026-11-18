@@ -54,7 +54,7 @@ class BaseController {
     }
 
     protected function validateCsrf() {
-        $token = scalarString($_POST['_csrf'] ?? '');
+        $token = scalarString($_POST['_csrf'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? ''));
         if (empty($token) || empty($_SESSION['_csrf']) || !hash_equals($_SESSION['_csrf'], $token)) {
             http_response_code(403);
             die("Invalid or missing CSRF token.");

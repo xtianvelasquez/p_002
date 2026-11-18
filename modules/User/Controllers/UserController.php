@@ -99,8 +99,8 @@ class UserController extends BaseController {
             if (strlen($contactNumber) === 11 && str_starts_with($contactNumber, '0')) {
                 $contactNumber = substr($contactNumber, 1);
             }
-            if (strlen($contactNumber) < 7 || strlen($contactNumber) > 15) {
-                $this->setFlash('danger', 'Please provide a valid contact number.');
+            if (strlen($contactNumber) !== 10) {
+                $this->setFlash('danger', 'Please provide a valid 10-digit Philippine mobile number.');
                 $this->redirect('/profile');
             }
 
@@ -120,7 +120,9 @@ class UserController extends BaseController {
                 || strlen($firstName) > 100 || strlen($middleName) > 100 || strlen($lastName) > 100
                 || strlen($headline) > 200 || strlen($jobTitle) > 150 || strlen($company) > 150
                 || strlen($locationCity) > 100 || strlen($linkedinUrl) > 255
-                || strlen($githubUrl) > 255 || strlen($websiteUrl) > 255) {
+                || strlen($githubUrl) > 255 || strlen($websiteUrl) > 255
+                || strlen($bio) > 10000 || strlen($skillsRaw) > 500
+                || strlen($consultationTopics) > 3000) {
                 $this->setFlash('danger', 'Please check the required fields and their maximum lengths.');
                 $this->redirect('/profile');
             }

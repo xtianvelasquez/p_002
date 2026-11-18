@@ -26,7 +26,12 @@ final class Database {
             throw new RuntimeException('DB_PORT must be a valid TCP port.');
         }
 
-        $dsn = sprintf('pgsql:host=%s;port=%d;dbname=%s', $host, $port, $config['dbname']);
+        $sslMode = (string)($config['sslmode'] ?? 'prefer');
+        if (!in_array($sslMode, ['disable', 'allow', 'prefer', 'require', 'verify-ca', 'verify-full'], true)) {
+            throw new RuntimeException('DB_SSLMODE must be a supported PostgreSQL SSL mode.');
+        }
+
+        $dsn = sprintf('pgsql:host=%s;port=%d;dbname=%s;sslmode=%s', $host, $port, $config['dbname'], $sslMode);
         try {
             self::$instance = new PDO($dsn, $config['user'], $config['password'], [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,

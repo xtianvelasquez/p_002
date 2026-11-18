@@ -47,14 +47,22 @@ class AuthController extends BaseController {
             $this->validateCsrf();
             $emailAddress = strtolower(trim(scalarString($_POST['emailAddress'] ?? '')));
             $password = scalarString($_POST['password'] ?? '');
+            $loginBucket = hash('sha256', $emailAddress . "\0" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
+
+            if ($this->userModel->isLoginBlocked($loginBucket)) {
+                $this->setFlash('danger', 'The email or password you entered is incorrect. Please try again later.');
+                $this->redirect('/login');
+            }
 
             if (strlen($password) > 72) {
+                $this->userModel->recordLoginFailure($loginBucket);
                 $this->setFlash('danger', 'The email or password you entered is incorrect. Please try again.');
                 $this->redirect('/login');
             }
 
             $user = $this->userModel->getUserByEmailAndPassword($emailAddress, $password);
             if ($user) {
+                $this->userModel->clearLoginFailures($loginBucket);
                 session_regenerate_id(true);
                 unset($_SESSION['_csrf']);
                 $_SESSION["profilePicture"] = $user["profile_picture"];
@@ -64,6 +72,7 @@ class AuthController extends BaseController {
                 $this->setFlash('success', 'Welcome back, ' . $user['first_name'] . '!');
                 $this->redirect('/received');
             } else {
+                $this->userModel->recordLoginFailure($loginBucket);
                 $this->setFlash('danger', 'The email or password you entered is incorrect. Please try again.');
                 $this->redirect('/login');
             }
@@ -119,7 +128,7 @@ class AuthController extends BaseController {
             if (strlen($contactNumber) === 11 && str_starts_with($contactNumber, '0')) {
                 $contactNumber = substr($contactNumber, 1);
             }
-            if (strlen($contactNumber) < 7 || strlen($contactNumber) > 15) {
+            if (strlen($contactNumber) !== 10) {
                 $this->setFlash('danger', 'Please provide a valid contact number (10 digits).');
                 $this->redirect('/signup');
             }
@@ -205,9 +214,12 @@ class AuthController extends BaseController {
     }
 
     public function logout() {
-        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
-            $this->validateCsrf();
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+            http_response_code(405);
+            header('Allow: POST');
+            exit;
         }
+        $this->validateCsrf();
         $_SESSION = [];
         if (ini_get('session.use_cookies')) {
             $cookie = session_get_cookie_params();
@@ -389,7 +401,7 @@ class AuthController extends BaseController {
                 'middle_name' => null,
                 'last_name' => $lastName,
                 'search_name' => $searchName,
-                'contact_number' => '999' . str_pad((string)random_int(0, 9999999), 7, '0', STR_PAD_LEFT),
+                'contact_number' => null,
                 'email_address' => $email,
                 'user_password' => password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT),
                 'profile_picture' => $picture,

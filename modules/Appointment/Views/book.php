@@ -266,10 +266,10 @@ $websiteUrl = trim($websiteUrl ?? '');
       <!-- Contact & Working Info -->
       <div class="card rounded-3 shadow-sm border-0 bg-white">
         <div class="card-body p-4">
-          <h6 class="fw-bold text-dark mb-3 small text-uppercase" style="letter-spacing: 0.04em;">Direct Coordinates</h6>
+          <h6 class="fw-bold text-dark mb-3 small text-uppercase" style="letter-spacing: 0.04em;">Booking Details</h6>
           <div class="small text-secondary">
-            <div class="mb-2"><i class="bi bi-envelope text-primary me-2"></i><?= htmlspecialchars($emailAddress, ENT_QUOTES, 'UTF-8') ?></div>
-            <div class="mb-2"><i class="bi bi-telephone text-primary me-2"></i>+63 <?= htmlspecialchars($contactNumber, ENT_QUOTES, 'UTF-8') ?></div>
+            <?php if (!empty($emailAddress)): ?><div class="mb-2"><i class="bi bi-envelope text-primary me-2"></i><?= htmlspecialchars($emailAddress, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
+            <?php if (!empty($contactNumber)): ?><div class="mb-2"><i class="bi bi-telephone text-primary me-2"></i>+63 <?= htmlspecialchars($contactNumber, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
             <div><i class="bi bi-stopwatch text-primary me-2"></i><?= (int)$slotDuration ?> min default slots (adjustable per format)</div>
           </div>
         </div>
@@ -358,7 +358,7 @@ $websiteUrl = trim($websiteUrl ?? '');
                 <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill meeting-mode-btn" data-mode="in_person" data-default-loc="Office Room / In-Person">
                   🏢 In-Person
                 </button>
-                <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill meeting-mode-btn" data-mode="phone" data-default-loc="Phone Call (+63 <?= htmlspecialchars($contactNumber, ENT_QUOTES, 'UTF-8') ?>)">
+                <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill meeting-mode-btn" data-mode="phone" data-default-loc="Phone Call">
                   📞 Phone Call
                 </button>
               </div>
@@ -370,7 +370,7 @@ $websiteUrl = trim($websiteUrl ?? '');
                 <label for="appointmentDate" class="form-label text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.04em;">
                   3. Choose Date
                 </label>
-                <input type="date" name="appointmentDate" id="appointmentDate" min="<?= date('Y-m-d') ?>" value="<?= htmlspecialchars($initialDate, ENT_QUOTES, 'UTF-8') ?>" class="form-control rounded-2" required>
+                <input type="date" name="appointmentDate" id="appointmentDate" min="<?= date('Y-m-d') ?>" max="<?= date('Y-m-d', strtotime('+1 year')) ?>" value="<?= htmlspecialchars($initialDate, ENT_QUOTES, 'UTF-8') ?>" class="form-control rounded-2" required>
               </div>
 
               <div class="col-12 col-sm-6 d-flex align-items-end">

@@ -8,6 +8,11 @@ if (PHP_SAPI !== 'cli') {
 // preserved unless the operator explicitly passes --reset.
 $resetRequested = in_array('--reset', $argv ?? [], true);
 $config = require __DIR__ . '/config/config.php';
+$sslMode = (string)($config['sslmode'] ?? 'prefer');
+if (!in_array($sslMode, ['disable', 'allow', 'prefer', 'require', 'verify-ca', 'verify-full'], true)) {
+    fwrite(STDERR, "DB_SSLMODE must be a supported PostgreSQL SSL mode.\n");
+    exit(1);
+}
 
 if (!preg_match('/^[A-Za-z0-9_]+$/', (string)$config['dbname'])) {
     fwrite(STDERR, "DB_NAME may only contain letters, numbers, and underscores.\n");
@@ -26,7 +31,7 @@ $pdo = null;
 
 foreach ($portsToTry as $port) {
     try {
-        $dsn = "pgsql:host={$config['host']};port={$port}";
+        $dsn = "pgsql:host={$config['host']};port={$port};sslmode={$sslMode}";
         $pdo = new PDO($dsn, $config['user'], $config['password'], [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
         ]);
@@ -58,12 +63,12 @@ try {
 
 try {
     // Connect to the specific database
-    $dsn = "pgsql:host={$config['host']};port={$activePort};dbname={$config['dbname']}";
+    $dsn = "pgsql:host={$config['host']};port={$activePort};dbname={$config['dbname']};sslmode={$sslMode}";
     $dbPdo = new PDO($dsn, $config['user'], $config['password'], [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
     ]);
 
-    $existingTables = $dbPdo->query("SELECT COUNT(*) FROM pg_tables WHERE schemaname = current_schema() AND tablename IN ('user_account', 'user_profile', 'user_availability', 'appointment_details')")->fetchColumn();
+    $existingTables = $dbPdo->query("SELECT COUNT(*) FROM pg_tables WHERE schemaname = current_schema() AND tablename IN ('user_account', 'user_profile', 'user_availability', 'appointment_details', 'login_attempt_bucket')")->fetchColumn();
     if ((int)$existingTables > 0 && !$resetRequested) {
         fwrite(STDERR, "Application tables already exist. This importer replaces them and deletes their data. Pass --reset only when you intend to rebuild the database.\n");
         exit(1);

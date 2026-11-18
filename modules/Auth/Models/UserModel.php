@@ -4,6 +4,42 @@ namespace App\Modules\Auth\Models;
 use App\Core\BaseModel;
 
 class UserModel extends BaseModel {
+    public function isLoginBlocked($bucketKey) {
+        $stmt = $this->db->prepare('SELECT 1 FROM login_attempt_bucket WHERE bucket_key = ? AND blocked_until > NOW()');
+        $stmt->execute([$bucketKey]);
+        return (bool)$stmt->fetchColumn();
+    }
+
+    public function recordLoginFailure($bucketKey) {
+        if (random_int(1, 100) === 1) {
+            $this->db->exec("DELETE FROM login_attempt_bucket WHERE window_started_at < NOW() - INTERVAL '30 days'");
+        }
+        $stmt = $this->db->prepare("
+            INSERT INTO login_attempt_bucket (bucket_key, attempt_count, window_started_at, blocked_until)
+            VALUES (?, 1, NOW(), NULL)
+            ON CONFLICT (bucket_key) DO UPDATE SET
+                attempt_count = CASE
+                    WHEN login_attempt_bucket.window_started_at <= NOW() - INTERVAL '15 minutes' THEN 1
+                    ELSE LEAST(login_attempt_bucket.attempt_count + 1, 32767)
+                END,
+                window_started_at = CASE
+                    WHEN login_attempt_bucket.window_started_at <= NOW() - INTERVAL '15 minutes' THEN NOW()
+                    ELSE login_attempt_bucket.window_started_at
+                END,
+                blocked_until = CASE
+                    WHEN login_attempt_bucket.window_started_at <= NOW() - INTERVAL '15 minutes' THEN NULL
+                    WHEN login_attempt_bucket.attempt_count >= 9 THEN NOW() + INTERVAL '15 minutes'
+                    ELSE login_attempt_bucket.blocked_until
+                END
+        ");
+        $stmt->execute([$bucketKey]);
+    }
+
+    public function clearLoginFailures($bucketKey) {
+        $stmt = $this->db->prepare('DELETE FROM login_attempt_bucket WHERE bucket_key = ?');
+        $stmt->execute([$bucketKey]);
+    }
+
     public function getUserById($id) {
         $stmt = $this->db->prepare("
             SELECT u.user_id, u.first_name, u.middle_name, u.last_name, u.search_name,
@@ -93,7 +129,7 @@ class UserModel extends BaseModel {
                 $data['middle_name'] ?? null,
                 $data['last_name'],
                 $data['search_name'],
-                $data['contact_number'] ?? '0000000000',
+                $data['contact_number'] ?? null,
                 $data['email_address'],
                 $data['user_password'],
                 $data['profile_picture'] ?? 'images/logo.png',

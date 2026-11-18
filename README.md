@@ -98,6 +98,7 @@ DB_PASSWORD=your-local-postgres-password
 APP_ENV=development
 APP_TIMEZONE=Asia/Manila
 ```
+`DB_SSLMODE` is optional. It defaults to `prefer` for local development and `require` for a remote database in production.
 
 ### 4. Database Setup
 Run the database importer script against a new or empty database:
@@ -106,7 +107,7 @@ php import_db.php
 ```
 The importer refuses to replace existing application tables by default. `php import_db.php --reset` drops and rebuilds those tables, deleting their data.
 
-For an existing database, review and apply the SQL in `database/migrations/` after resolving any duplicate account identifiers.
+For an existing database, review and apply the SQL in `database/migrations/` in filename order. Resolve duplicate account identifiers before the identity migration, and repair any invalid legacy appointment or availability values before the integrity migration. The migrations run transactionally and stop with an error when they find data that needs review.
 The SQL file contains `DROP TABLE` statements. Import it directly only into a new or empty database.
 
 `p_002.sql` is a legacy MariaDB dump. The application uses the PostgreSQL schema in `p_002_postgres.sql`.
@@ -122,10 +123,11 @@ Visit `http://localhost:8000` in your web browser.
 
 ## Running Automated Tests
 
-To run the built-in unit and security regression test suite:
+The built-in suite writes and deletes database rows. Run it only against a disposable database whose name ends in `_test`:
 ```bash
-php test_security.php
+APP_ENV=test DB_NAME=blue_test DB_USER=postgres DB_PASSWORD=... php test_security.php
 ```
+The script refuses to run unless both `APP_ENV=test` and the `_test` database suffix are set.
 Test cases verify:
 1. Bcrypt password verification & wrong password rejection.
 2. Partial case-insensitive user search (`ILIKE`).
