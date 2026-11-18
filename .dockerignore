@@ -1,0 +1,16 @@
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+.vscode
+vendor
+**/vendor
+**/*.log
+public/uploads
+test_security.php
+import_db.php
+p_002_postgres.sql
+database
+README.md
+CONTRIBUTING.md
