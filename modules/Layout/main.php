@@ -1,10 +1,16 @@
 <?php
+/** @var string $content HTML rendered by BaseController before the layout is included. */
 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
 $scriptDir = dirname($_SERVER['SCRIPT_NAME'] ?? '');
 $subPath = $currentPath;
 if ($scriptDir !== '/' && strpos($subPath, $scriptDir) === 0) $subPath = substr($subPath, strlen($scriptDir));
 $subPath = '/' . ltrim($subPath, '/');
 if (!function_exists('isNavActive')) {
+    /**
+     * @param string $path
+     * @param string $subPath
+     * @return string
+     */
     function isNavActive($path, $subPath) { return rtrim($subPath, '/') === rtrim($path, '/') ? 'active' : ''; }
 }
 $isSignedIn = isset($_SESSION['userId']);

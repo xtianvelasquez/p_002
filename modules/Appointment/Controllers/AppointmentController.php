@@ -21,6 +21,12 @@ class AppointmentController extends BaseController {
         }
     }
 
+    /**
+     * @param string $receiverId
+     * @param string $senderId
+     * @param int $length
+     * @return string
+     */
     private function generateAppointmentId($receiverId, $senderId, $length = 20) {
         $characters = "00112233445566778899aabbccddeeffgghhiijjkkllmmnnooppqqrrssttuuvvwwxxyyzzAABBCCDDEEFFGGHHIIJJKKLLMMNNOOPPQQRRSSTTUUVVWWXXYYZZ";
         $generateAppointmentId = "";
@@ -37,6 +43,13 @@ class AppointmentController extends BaseController {
         return $generatedAppointmentId;
     }
 
+    /**
+     * @param array<array<string, mixed>> $rawAppointments
+     * @param string $sort
+     * @param string $statusFilter
+     * @param string $searchQuery
+     * @return array<string, mixed>
+     */
     private function processAppointments($rawAppointments, $sort, $statusFilter, $searchQuery) {
         $enriched = [];
         foreach ($rawAppointments as $appt) {
@@ -206,6 +219,11 @@ class AppointmentController extends BaseController {
         exit;
     }
 
+    /**
+     * @param string|null $status
+     * @param string $priority
+     * @return int
+     */
     private static function statusWeight($status, $priority = 'pending') {
         $st = strtolower(trim((string)$status));
         if ($priority === 'pending') {

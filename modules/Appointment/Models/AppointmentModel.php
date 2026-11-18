@@ -4,6 +4,7 @@ namespace App\Modules\Appointment\Models;
 use App\Core\BaseModel;
 
 class AppointmentModel extends BaseModel {
+    /** @param string $userId @return array<array<string, mixed>> */
     public function getReceivedAppointments($userId) {
         $stmt = $this->db->prepare("
             SELECT a.appointment_id, a.appointment_date, a.appointment_time, a.event_name, a.location,
@@ -18,6 +19,7 @@ class AppointmentModel extends BaseModel {
         return $stmt->fetchAll();
     }
 
+    /** @param string $userId @return array<array<string, mixed>> */
     public function getSentAppointments($userId) {
         $stmt = $this->db->prepare("
             SELECT a.appointment_id, a.appointment_date, a.appointment_time, a.event_name, a.location,
@@ -32,6 +34,7 @@ class AppointmentModel extends BaseModel {
         return $stmt->fetchAll();
     }
 
+    /** @param string $id @param string $userId @return array<string, mixed>|false */
     public function getAppointmentForUser($id, $userId) {
         $stmt = $this->db->prepare("
             SELECT a.*, 
@@ -47,6 +50,7 @@ class AppointmentModel extends BaseModel {
         return $stmt->fetch();
     }
 
+    /** @param array<string, mixed> $data @return bool */
     public function createAppointment($data) {
         $this->db->beginTransaction();
         try {
@@ -89,6 +93,7 @@ class AppointmentModel extends BaseModel {
         }
     }
 
+    /** @param string $id @param string $status @param string $userId @return bool */
     public function updateAppointmentStatusForUser($id, $status, $userId) {
         $stmt = $this->db->prepare("
             UPDATE appointment_details 
@@ -106,18 +111,21 @@ class AppointmentModel extends BaseModel {
         return $stmt->rowCount() > 0;
     }
 
+    /** @param string $id @param string $userId @return bool */
     public function deleteReceivedAppointment($id, $userId) {
         $stmt = $this->db->prepare("DELETE FROM appointment_details WHERE appointment_id = ? AND receiver_id = ?");
         $stmt->execute([$id, $userId]);
         return $stmt->rowCount() > 0;
     }
 
+    /** @param string $id @param string $userId @return bool */
     public function deleteSentAppointment($id, $userId) {
         $stmt = $this->db->prepare("DELETE FROM appointment_details WHERE appointment_id = ? AND sender_id = ?");
         $stmt->execute([$id, $userId]);
         return $stmt->rowCount() > 0;
     }
 
+    /** @param string $receiverId @param string $date @param string $time @param string $eventType @return bool */
     public function hasConflict($receiverId, $date, $time, $eventType = 'consultation') {
         $duration = self::durationForEventType($eventType);
         $stmt = $this->db->prepare("
@@ -135,6 +143,7 @@ class AppointmentModel extends BaseModel {
         return (bool)$stmt->fetchColumn();
     }
 
+    /** @param string $receiverId @param string $date @return array<array<string, mixed>> */
     public function getBookedSlots($receiverId, $date) {
         $stmt = $this->db->prepare("
             SELECT appointment_time, event_type
@@ -145,6 +154,7 @@ class AppointmentModel extends BaseModel {
         return $stmt->fetchAll() ?: [];
     }
 
+    /** @param string $receiverId @param string $date @param int|null $customDuration @return array<array<string, mixed>> */
     public function generateAvailableSlots($receiverId, $date, $customDuration = null) {
         $parsedDate = \DateTime::createFromFormat('!Y-m-d', (string)$date);
         if (!$parsedDate || $parsedDate->format('Y-m-d') !== $date) return [];
@@ -200,6 +210,7 @@ class AppointmentModel extends BaseModel {
         return $slots;
     }
 
+    /** @param string $eventType @return int */
     private static function durationForEventType($eventType) {
         return match ($eventType) {
             'quick_sync' => 15,
@@ -208,6 +219,7 @@ class AppointmentModel extends BaseModel {
         };
     }
 
+    /** @param string $userId @return array<string, mixed>|false */
     public function getUserDetails($userId) {
         $stmt = $this->db->prepare("
             SELECT u.user_id, u.first_name, u.middle_name, u.last_name, u.search_name, u.contact_number, u.email_address, u.profile_picture,
@@ -226,6 +238,7 @@ class AppointmentModel extends BaseModel {
         return $stmt->fetch();
     }
 
+    /** @param string $userId @return array<array<string, mixed>> */
     public function getUserNotifications($userId) {
         // Fetch recent received appointments (where user is recipient)
         $stmtRec = $this->db->prepare("
