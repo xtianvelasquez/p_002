@@ -60,9 +60,6 @@ $currentQuery = $currentQuery ?? '';
       <p class="small text-secondary mb-0">Review incoming requests and manage your booked sessions in one place.</p>
     </div>
     <div class="d-flex align-items-center gap-2">
-      <button type="button" class="btn btn-primary btn-sm rounded-2" onclick="const input = document.getElementById('headerSearchInput'); if (input) { input.focus(); input.dispatchEvent(new Event('focus')); }">
-        <i class="bi bi-plus-lg me-1"></i> New Booking
-      </button>
       <a href="<?= routeUrl('/profile') ?>" class="btn btn-outline-primary btn-sm rounded-2">
         <i class="bi bi-sliders me-1"></i> Availability Settings
       </a>
@@ -120,7 +117,7 @@ $currentQuery = $currentQuery ?? '';
         <!-- ========================================== -->
         <!-- TAB 1: RECEIVED APPOINTMENTS               -->
         <!-- ========================================== -->
-        <div class="tab-pane fade <?= ($activeTab === 'received') ? 'show active' : '' ?> flex-grow-1 h-100 min-h-0 d-flex flex-column" id="tab-received" role="tabpanel" aria-labelledby="tabBtnReceived">
+        <div class="tab-pane fade <?= ($activeTab === 'received') ? 'show active' : '' ?> flex-grow-1 h-100 min-h-0 flex-column" id="tab-received" role="tabpanel" aria-labelledby="tabBtnReceived">
           <!-- Main Received Card: Own Separate Box -->
           <div class="card rounded-3 shadow-sm border dashboard-main flex-grow-1 min-h-0 bg-white" style="border-color: var(--line) !important;">
             <!-- Header with View Switcher -->
@@ -319,20 +316,20 @@ $currentQuery = $currentQuery ?? '';
               <!-- 2. CALENDAR VIEW SECTION -->
               <div id="calendarViewSection" class="p-2 p-md-3 d-none dashboard-cal-wrap flex-grow-1 min-h-0" style="display: none !important;">
                 <!-- Calendar Navigation Header -->
-                <div class="d-flex justify-content-between align-items-center mb-2 flex-shrink-0">
+                <div class="d-flex justify-content-between align-items-center mb-1 flex-shrink-0">
                   <div>
-                    <h5 class="fw-bold mb-0 text-dark" id="calCurrentMonthYear">Month Year</h5>
-                    <small class="text-muted d-none d-sm-inline">Click any appointment to preview details or download calendar invites.</small>
+                    <h5 class="fw-bold mb-0 text-dark fs-6" id="calCurrentMonthYear">Month Year</h5>
+                    <small class="text-muted d-none d-sm-inline" style="font-size: 0.72rem;">Click any appointment to preview details or download calendar invites.</small>
                   </div>
-                  <div class="btn-group">
-                    <button type="button" class="btn btn-outline-secondary btn-sm" id="calPrevBtn">&larr; Prev</button>
-                    <button type="button" class="btn btn-outline-primary btn-sm" id="calTodayBtn">Today</button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" id="calNextBtn">Next &rarr;</button>
+                  <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" id="calPrevBtn" style="font-size: 0.75rem;">&larr; Prev</button>
+                    <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2" id="calTodayBtn" style="font-size: 0.75rem;">Today</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" id="calNextBtn" style="font-size: 0.75rem;">Next &rarr;</button>
                   </div>
                 </div>
 
                 <!-- Calendar Days of Week Header -->
-                <div class="cal-dow-grid text-center fw-semibold text-secondary small border-bottom pb-2 mb-2">
+                <div class="cal-dow-grid text-center fw-semibold text-secondary border-bottom pb-1 mb-1" style="font-size: 0.72rem;">
                   <div>Sun</div>
                   <div>Mon</div>
                   <div>Tue</div>
@@ -352,17 +349,23 @@ $currentQuery = $currentQuery ?? '';
         <!-- ========================================== -->
         <!-- TAB 2: SENT APPOINTMENTS                   -->
         <!-- ========================================== -->
-        <div class="tab-pane fade <?= ($activeTab === 'sent') ? 'show active' : '' ?> flex-grow-1 h-100 min-h-0 d-flex flex-column" id="tab-sent" role="tabpanel" aria-labelledby="tabBtnSent">
+        <div class="tab-pane fade <?= ($activeTab === 'sent') ? 'show active' : '' ?> flex-grow-1 h-100 min-h-0 flex-column" id="tab-sent" role="tabpanel" aria-labelledby="tabBtnSent">
           <!-- Main Sent Card: Own Separate Box -->
           <div class="card rounded-3 shadow-sm border dashboard-main flex-grow-1 min-h-0 bg-white" style="border-color: var(--line) !important;">
-            <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center flex-shrink-0">
+            <div class="card-header bg-white py-2 px-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2 flex-shrink-0">
               <div class="d-flex align-items-center gap-2">
                 <h5 class="card-title mb-0 fw-bold text-dark fs-6">Outgoing Bookings</h5>
                 <span class="badge bg-light text-secondary border"><?= $sentTotalCount ?> Booked</span>
               </div>
-              <button type="button" class="btn btn-primary btn-sm rounded-2" onclick="const input = document.getElementById('headerSearchInput'); if (input) { input.focus(); input.dispatchEvent(new Event('focus')); }">
-                <i class="bi bi-plus-lg me-1"></i> New Booking
-              </button>
+              <!-- View Toggle Pills -->
+              <div class="btn-group p-1 bg-light rounded-pill border" role="group">
+                <button type="button" class="btn btn-sm rounded-pill px-3 active fw-semibold" id="btnSentTableView">
+                  <i class="bi bi-table me-1"></i> List View
+                </button>
+                <button type="button" class="btn btn-sm rounded-pill px-3 fw-semibold text-secondary" id="btnSentCalendarView">
+                  <i class="bi bi-calendar3 me-1"></i> Calendar View
+                </button>
+              </div>
             </div>
 
             <div class="card-body p-0 d-flex flex-column flex-grow-1 min-h-0">
@@ -425,8 +428,8 @@ $currentQuery = $currentQuery ?? '';
                 </div>
               </div>
 
-              <!-- Sent Table -->
-              <div class="flex-grow-1 min-h-0 d-flex flex-column">
+              <!-- 1. SENT TABLE VIEW SECTION -->
+              <div id="sentTableViewSection" class="flex-grow-1 min-h-0 d-flex flex-column">
                 <?php if (count($sentAppointments) > 0): ?>
                   <div class="table-responsive dashboard-table-wrap flex-grow-1 min-h-0">
                     <table class="table table-hover align-middle mb-0">
@@ -535,6 +538,36 @@ $currentQuery = $currentQuery ?? '';
                   </div>
                 <?php endif; ?>
               </div>
+
+              <!-- 2. SENT CALENDAR VIEW SECTION -->
+              <div id="sentCalendarViewSection" class="p-2 p-md-3 d-none dashboard-cal-wrap flex-grow-1 min-h-0" style="display: none !important;">
+                <!-- Calendar Navigation Header -->
+                <div class="d-flex justify-content-between align-items-center mb-1 flex-shrink-0">
+                  <div>
+                    <h5 class="fw-bold mb-0 text-dark fs-6" id="calSentCurrentMonthYear">Month Year</h5>
+                    <small class="text-muted d-none d-sm-inline" style="font-size: 0.72rem;">Click any outgoing booking to preview details or download calendar invites.</small>
+                  </div>
+                  <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" id="calSentPrevBtn" style="font-size: 0.75rem;">&larr; Prev</button>
+                    <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2" id="calSentTodayBtn" style="font-size: 0.75rem;">Today</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" id="calSentNextBtn" style="font-size: 0.75rem;">Next &rarr;</button>
+                  </div>
+                </div>
+
+                <!-- Calendar Days of Week Header -->
+                <div class="cal-dow-grid text-center fw-semibold text-secondary border-bottom pb-1 mb-1" style="font-size: 0.72rem;">
+                  <div>Sun</div>
+                  <div>Mon</div>
+                  <div>Tue</div>
+                  <div>Wed</div>
+                  <div>Thu</div>
+                  <div>Fri</div>
+                  <div>Sat</div>
+                </div>
+
+                <!-- Calendar Days Grid Container -->
+                <div id="calSentGrid" class="flex-grow-1 min-h-0"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -608,22 +641,17 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // Calendar Logic for Received Tab
+  // Appointments Data
   const appointments = <?= json_encode($appointments, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
-  const btnTable = document.getElementById('btnTableView');
-  const btnCalendar = document.getElementById('btnCalendarView');
-  const tableViewSection = document.getElementById('tableViewSection');
-  const calendarViewSection = document.getElementById('calendarViewSection');
-  const calGrid = document.getElementById('calGrid');
-  const calTitle = document.getElementById('calCurrentMonthYear');
+  const sentAppointments = <?= json_encode($sentAppointments, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
   function matchAppointmentViewToSidebar() {
     const sidebar = document.querySelector('.appointments-layout > .profile-sidebar');
     if (!sidebar) return;
 
-    const panes = document.querySelectorAll('.appointments-layout > .appointments-content .tab-pane');
+    const allPanes = document.querySelectorAll('.appointments-layout > .appointments-content .tab-pane');
     if (window.innerWidth < 992) {
-      panes.forEach(pane => {
+      allPanes.forEach(pane => {
         pane.style.removeProperty('height');
         pane.style.removeProperty('min-height');
         const dash = pane.querySelector('.dashboard-main');
@@ -638,194 +666,263 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const sidebarHeight = Math.round(sidebar.getBoundingClientRect().height);
     if (sidebarHeight > 0) {
-      panes.forEach(pane => {
-        pane.style.setProperty('height', `${sidebarHeight}px`, 'important');
-        pane.style.setProperty('min-height', `${sidebarHeight}px`, 'important');
+      allPanes.forEach(pane => {
         const dash = pane.querySelector('.dashboard-main');
-        if (dash) {
-          dash.style.setProperty('height', `${sidebarHeight}px`, 'important');
-          dash.style.setProperty('min-height', `${sidebarHeight}px`, 'important');
-          dash.style.setProperty('flex', '1 1 auto', 'important');
+        if (pane.classList.contains('active')) {
+          pane.style.setProperty('height', `${sidebarHeight}px`, 'important');
+          pane.style.setProperty('min-height', `${sidebarHeight}px`, 'important');
+          if (dash) {
+            dash.style.setProperty('height', `${sidebarHeight}px`, 'important');
+            dash.style.setProperty('min-height', `${sidebarHeight}px`, 'important');
+            dash.style.setProperty('flex', '1 1 auto', 'important');
+          }
+        } else {
+          pane.style.removeProperty('height');
+          pane.style.removeProperty('min-height');
+          if (dash) {
+            dash.style.removeProperty('height');
+            dash.style.removeProperty('min-height');
+          }
         }
       });
     }
   }
   requestAnimationFrame(matchAppointmentViewToSidebar);
   window.addEventListener('resize', matchAppointmentViewToSidebar);
-  document.getElementById('appointmentsTabList')?.addEventListener('shown.bs.tab', () => {
-    requestAnimationFrame(matchAppointmentViewToSidebar);
-  });
+
   const sidebarForSizing = document.querySelector('.appointments-layout > .profile-sidebar');
   if (sidebarForSizing && 'ResizeObserver' in window) {
     new ResizeObserver(() => requestAnimationFrame(matchAppointmentViewToSidebar)).observe(sidebarForSizing);
   }
 
-  if (btnTable && btnCalendar) {
+  function setupCalendarController({
+    appointmentsData,
+    btnTableId,
+    btnCalId,
+    tableSecId,
+    calSecId,
+    calGridId,
+    calTitleId,
+    prevBtnId,
+    todayBtnId,
+    nextBtnId,
+    isSent = false
+  }) {
+    const btnTable = document.getElementById(btnTableId);
+    const btnCalendar = document.getElementById(btnCalId);
+    const tableViewSection = document.getElementById(tableSecId);
+    const calendarViewSection = document.getElementById(calSecId);
+    const calGrid = document.getElementById(calGridId);
+    const calTitle = document.getElementById(calTitleId);
+    const prevBtn = document.getElementById(prevBtnId);
+    const todayBtn = document.getElementById(todayBtnId);
+    const nextBtn = document.getElementById(nextBtnId);
+
+    if (!btnTable || !btnCalendar || !tableViewSection || !calendarViewSection || !calGrid || !calTitle) {
+      return null;
+    }
+
+    let currentDate = new Date();
+    let currentMonth = currentDate.getMonth();
+    let currentYear = currentDate.getFullYear();
+    let isCalendarVisible = false;
+
     btnTable.addEventListener('click', function () {
+      isCalendarVisible = false;
       btnTable.classList.add('active');
       btnTable.classList.remove('text-secondary');
       btnCalendar.classList.remove('active');
       btnCalendar.classList.add('text-secondary');
-      if (tableViewSection) {
-        tableViewSection.classList.remove('d-none');
-        tableViewSection.classList.add('d-flex');
-        tableViewSection.style.setProperty('display', 'flex', 'important');
-      }
-      if (calendarViewSection) {
-        calendarViewSection.classList.add('d-none');
-        calendarViewSection.classList.remove('d-flex');
-        calendarViewSection.style.setProperty('display', 'none', 'important');
-      }
+      tableViewSection.classList.remove('d-none');
+      tableViewSection.classList.add('d-flex');
+      tableViewSection.style.setProperty('display', 'flex', 'important');
+      calendarViewSection.classList.add('d-none');
+      calendarViewSection.classList.remove('d-flex');
+      calendarViewSection.style.setProperty('display', 'none', 'important');
+      requestAnimationFrame(matchAppointmentViewToSidebar);
     });
 
     btnCalendar.addEventListener('click', function () {
+      isCalendarVisible = true;
       btnCalendar.classList.add('active');
       btnCalendar.classList.remove('text-secondary');
       btnTable.classList.remove('active');
       btnTable.classList.add('text-secondary');
-      if (calendarViewSection) {
-        calendarViewSection.classList.remove('d-none');
-        calendarViewSection.classList.add('d-flex');
-        calendarViewSection.style.setProperty('display', 'flex', 'important');
-      }
-      if (tableViewSection) {
-        tableViewSection.classList.add('d-none');
-        tableViewSection.classList.remove('d-flex');
-        tableViewSection.style.setProperty('display', 'none', 'important');
-      }
-      renderCalendar();
-    });
-  }
-
-  // Calendar State
-  let currentDate = new Date();
-  let currentMonth = currentDate.getMonth();
-  let currentYear = currentDate.getFullYear();
-
-  document.getElementById('calPrevBtn')?.addEventListener('click', () => {
-    currentMonth--;
-    if (currentMonth < 0) {
-      currentMonth = 11;
-      currentYear--;
-    }
-    renderCalendar();
-  });
-
-  document.getElementById('calNextBtn')?.addEventListener('click', () => {
-    currentMonth++;
-    if (currentMonth > 11) {
-      currentMonth = 0;
-      currentYear++;
-    }
-    renderCalendar();
-  });
-
-  document.getElementById('calTodayBtn')?.addEventListener('click', () => {
-    const today = new Date();
-    currentMonth = today.getMonth();
-    currentYear = today.getFullYear();
-    renderCalendar();
-  });
-
-  function renderCalendar() {
-    if (!calTitle || !calGrid) return;
-    const monthNames = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-    ];
-    calTitle.textContent = `${monthNames[currentMonth]} ${currentYear}`;
-    calGrid.innerHTML = '';
-
-    const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const prevMonthLastDate = new Date(currentYear, currentMonth, 0).getDate();
-
-    // Map appointments by date (YYYY-MM-DD)
-    const apptMap = Object.create(null);
-    appointments.forEach(a => {
-      const d = a.appointment_date;
-      if (!apptMap[d]) apptMap[d] = [];
-      apptMap[d].push(a);
+      calendarViewSection.classList.remove('d-none');
+      calendarViewSection.classList.add('d-flex');
+      calendarViewSection.style.setProperty('display', 'flex', 'important');
+      tableViewSection.classList.add('d-none');
+      tableViewSection.classList.remove('d-flex');
+      tableViewSection.style.setProperty('display', 'none', 'important');
+      render();
+      requestAnimationFrame(matchAppointmentViewToSidebar);
     });
 
-    const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
-    // Leading empty/prev-month days
-    for (let i = firstDayIndex; i > 0; i--) {
-      const dayNum = prevMonthLastDate - i + 1;
-      const col = document.createElement('div');
-      col.className = 'calendar-cell rounded-2 text-start bg-light text-muted opacity-50';
-      col.innerHTML = `<span class="small fw-semibold text-secondary">${dayNum}</span>`;
-      calGrid.appendChild(col);
-    }
-
-    // Days of current month
-    for (let d = 1; d <= daysInMonth; d++) {
-      const mm = String(currentMonth + 1).padStart(2, '0');
-      const dd = String(d).padStart(2, '0');
-      const dateString = `${currentYear}-${mm}-${dd}`;
-      const isToday = (dateString === todayStr);
-
-      const col = document.createElement('div');
-      col.className = 'calendar-cell rounded-2 text-start ' + (isToday ? 'bg-primary-subtle border-primary' : 'bg-white');
-
-      const dayHeading = document.createElement('div');
-      dayHeading.className = 'd-flex justify-content-between align-items-center mb-1 flex-shrink-0';
-      const dayLabel = document.createElement('span');
-      dayLabel.className = `small fw-bold ${isToday ? 'badge bg-primary text-white rounded-circle p-1' : 'text-dark'}`;
-      dayLabel.style.cssText = 'width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.72rem;';
-      dayLabel.textContent = String(d);
-      dayHeading.appendChild(dayLabel);
-      col.appendChild(dayHeading);
-
-      if (apptMap[dateString] && apptMap[dateString].length > 0) {
-        const eventList = document.createElement('div');
-        eventList.className = 'cal-cell-events';
-        apptMap[dateString].forEach(appt => {
-          const status = (appt.appointment_status || 'pending').toLowerCase();
-          let bgPill = 'bg-warning text-dark';
-          if (status === 'approved') bgPill = 'bg-success text-white';
-          else if (status === 'denied' || status === 'cancel') bgPill = 'bg-secondary text-white';
-
-          const pill = document.createElement('button');
-          pill.type = 'button';
-          pill.className = `btn btn-sm text-truncate text-start p-1 border-0 cal-event-pill ${bgPill} flex-shrink-0`;
-          pill.dataset.id = String(appt.appointment_id);
-          pill.style.cssText = 'font-size: 0.7rem; line-height: 1.2; border-radius: 4px; width: 100%;';
-          pill.textContent = `${appt.appointment_time} ${appt.fullName}`;
-          eventList.appendChild(pill);
-        });
-        col.appendChild(eventList);
+    prevBtn?.addEventListener('click', () => {
+      currentMonth--;
+      if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
       }
+      render();
+    });
 
-      calGrid.appendChild(col);
-    }
+    nextBtn?.addEventListener('click', () => {
+      currentMonth++;
+      if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+      }
+      render();
+    });
 
-    // Trailing days to round to complete week
-    const totalCells = firstDayIndex + daysInMonth;
-    const nextDays = (7 - (totalCells % 7)) % 7;
-    for (let j = 1; j <= nextDays; j++) {
-      const col = document.createElement('div');
-      col.className = 'calendar-cell rounded-2 text-start bg-light text-muted opacity-50';
-      col.innerHTML = `<span class="small fw-semibold text-secondary">${j}</span>`;
-      calGrid.appendChild(col);
-    }
+    todayBtn?.addEventListener('click', () => {
+      const today = new Date();
+      currentMonth = today.getMonth();
+      currentYear = today.getFullYear();
+      render();
+    });
 
-    calGrid.style.setProperty('--calendar-weeks', String(Math.ceil(calGrid.children.length / 7)));
+    function render() {
+      const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ];
+      calTitle.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+      calGrid.innerHTML = '';
 
-    // Attach listeners to calendar pills
-    document.querySelectorAll('.cal-event-pill').forEach(pill => {
-      pill.addEventListener('click', function (e) {
-        e.stopPropagation();
-        const apptId = this.getAttribute('data-id');
-        const found = appointments.find(a => a.appointment_id === apptId);
-        if (found) {
-          openEventModal(found);
-        }
+      const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const prevMonthLastDate = new Date(currentYear, currentMonth, 0).getDate();
+
+      const apptMap = Object.create(null);
+      (appointmentsData || []).forEach(a => {
+        const d = a.appointment_date;
+        if (!apptMap[d]) apptMap[d] = [];
+        apptMap[d].push(a);
       });
-    });
+
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+      // Leading empty/prev-month days
+      for (let i = firstDayIndex; i > 0; i--) {
+        const dayNum = prevMonthLastDate - i + 1;
+        const col = document.createElement('div');
+        col.className = 'calendar-cell text-start bg-light text-muted opacity-50';
+        col.innerHTML = `<span class="fw-semibold text-secondary" style="font-size: 0.68rem; line-height: 1;">${dayNum}</span>`;
+        calGrid.appendChild(col);
+      }
+
+      // Days of current month
+      for (let d = 1; d <= daysInMonth; d++) {
+        const mm = String(currentMonth + 1).padStart(2, '0');
+        const dd = String(d).padStart(2, '0');
+        const dateString = `${currentYear}-${mm}-${dd}`;
+        const isToday = (dateString === todayStr);
+
+        const col = document.createElement('div');
+        col.className = 'calendar-cell text-start ' + (isToday ? 'bg-primary-subtle border-primary' : 'bg-white');
+
+        const dayHeading = document.createElement('div');
+        dayHeading.className = 'd-flex justify-content-between align-items-center flex-shrink-0';
+        dayHeading.style.cssText = 'margin-bottom: 2px; line-height: 1;';
+        const dayLabel = document.createElement('span');
+        dayLabel.className = `fw-bold ${isToday ? 'badge bg-primary text-white rounded-circle p-0' : 'text-dark'}`;
+        dayLabel.style.cssText = 'width: 17px; height: 17px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.68rem;';
+        dayLabel.textContent = String(d);
+        dayHeading.appendChild(dayLabel);
+        col.appendChild(dayHeading);
+
+        if (apptMap[dateString] && apptMap[dateString].length > 0) {
+          const eventList = document.createElement('div');
+          eventList.className = 'cal-cell-events';
+          apptMap[dateString].forEach(appt => {
+            const status = (appt.appointment_status || 'pending').toLowerCase();
+            let bgPill = 'bg-warning text-dark';
+            if (status === 'approved') bgPill = 'bg-success text-white';
+            else if (status === 'denied' || status === 'cancel') bgPill = 'bg-secondary text-white';
+
+            const pill = document.createElement('button');
+            pill.type = 'button';
+            pill.className = `btn text-truncate text-start border-0 cal-event-pill ${bgPill} flex-shrink-0`;
+            pill.dataset.id = String(appt.appointment_id);
+            pill.title = `${appt.appointment_time} ${appt.fullName} (${appt.event_name || 'Appointment'})`;
+            pill.style.cssText = 'font-size: 0.62rem; line-height: 1.15; padding: 1px 3px; border-radius: 3px; width: 100%;';
+            pill.textContent = `${appt.appointment_time} ${appt.fullName}`;
+            pill.addEventListener('click', function (e) {
+              e.stopPropagation();
+              openEventModal(appt);
+            });
+            eventList.appendChild(pill);
+          });
+          col.appendChild(eventList);
+        }
+
+        calGrid.appendChild(col);
+      }
+
+      // Trailing days
+      const totalCells = firstDayIndex + daysInMonth;
+      const nextDays = (7 - (totalCells % 7)) % 7;
+      for (let j = 1; j <= nextDays; j++) {
+        const col = document.createElement('div');
+        col.className = 'calendar-cell text-start bg-light text-muted opacity-50';
+        col.innerHTML = `<span class="fw-semibold text-secondary" style="font-size: 0.68rem; line-height: 1;">${j}</span>`;
+        calGrid.appendChild(col);
+      }
+
+      calGrid.style.setProperty('--calendar-weeks', String(Math.ceil(calGrid.children.length / 7)));
+    }
+
+    return {
+      render,
+      isCalendarVisible: () => isCalendarVisible
+    };
   }
+
+  const receivedCal = setupCalendarController({
+    appointmentsData: appointments,
+    btnTableId: 'btnTableView',
+    btnCalId: 'btnCalendarView',
+    tableSecId: 'tableViewSection',
+    calSecId: 'calendarViewSection',
+    calGridId: 'calGrid',
+    calTitleId: 'calCurrentMonthYear',
+    prevBtnId: 'calPrevBtn',
+    todayBtnId: 'calTodayBtn',
+    nextBtnId: 'calNextBtn',
+    isSent: false
+  });
+
+  const sentCal = setupCalendarController({
+    appointmentsData: sentAppointments,
+    btnTableId: 'btnSentTableView',
+    btnCalId: 'btnSentCalendarView',
+    tableSecId: 'sentTableViewSection',
+    calSecId: 'sentCalendarViewSection',
+    calGridId: 'calSentGrid',
+    calTitleId: 'calSentCurrentMonthYear',
+    prevBtnId: 'calSentPrevBtn',
+    todayBtnId: 'calSentTodayBtn',
+    nextBtnId: 'calSentNextBtn',
+    isSent: true
+  });
+
+  document.querySelectorAll('#appointmentsTabList button[data-bs-toggle="pill"]').forEach(btn => {
+    btn.addEventListener('show.bs.tab', () => {
+      requestAnimationFrame(matchAppointmentViewToSidebar);
+    });
+    btn.addEventListener('shown.bs.tab', (e) => {
+      const target = e.target.getAttribute('data-bs-target');
+      if (target === '#tab-sent' && sentCal?.isCalendarVisible()) {
+        sentCal.render();
+      } else if (target === '#tab-received' && receivedCal?.isCalendarVisible()) {
+        receivedCal.render();
+      }
+      requestAnimationFrame(matchAppointmentViewToSidebar);
+    });
+  });
 
   function openEventModal(appt) {
     document.getElementById('modalEventTitle').textContent = appt.event_name || 'Appointment';
