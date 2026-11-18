@@ -131,6 +131,7 @@
   body.app-fit-screen .dashboard-table-wrap{flex:1 1 auto!important;min-height:0!important;height:100%!important;overflow-y:auto!important}
   body.app-fit-screen .dashboard-table-wrap thead th{position:sticky!important;top:0!important;background:#fff!important;z-index:5!important;box-shadow:0 1px 0 var(--line)!important;padding-top:7px!important;padding-bottom:7px!important;font-size:11px!important}
   body.app-fit-screen .dashboard-table-wrap tbody td{padding-top:7px!important;padding-bottom:7px!important;font-size:12px!important}
+  body.app-fit-screen .dashboard-pagination{padding:5px 12px!important;flex-shrink:0!important}
   body.app-fit-screen #calendarViewSection:not(.d-none),
   body.app-fit-screen #sentCalendarViewSection:not(.d-none){flex:1 1 auto!important;min-height:0!important;height:100%!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;padding:8px 14px!important}
   body.app-fit-screen #calGrid,
@@ -169,6 +170,11 @@
 .appointments-layout #tableViewSection:not(.d-none),
 .appointments-layout #sentTableViewSection:not(.d-none){display:flex!important;flex-direction:column!important;flex:1 1 auto!important;height:100%!important;min-height:0!important;overflow:hidden!important}
 .appointments-layout .dashboard-table-wrap{flex:1 1 auto!important;height:100%!important;min-height:0!important;overflow-y:auto!important}
+.appointments-layout .dashboard-pagination{padding:6px 14px!important;background:#f8fafc!important;border-top:1px solid #e1e9f4!important;flex-shrink:0!important}
+.appointments-layout .dashboard-pagination .pagination{gap:3px!important}
+.appointments-layout .dashboard-pagination .page-link{border-radius:6px!important;font-size:0.75rem!important;padding:2px 8px!important;color:#475569!important;border-color:#e2e8f0!important;background:#fff!important;line-height:1.4!important}
+.appointments-layout .dashboard-pagination .page-item.active .page-link{background-color:#0d6efd!important;border-color:#0d6efd!important;color:#fff!important;font-weight:600!important}
+.appointments-layout .dashboard-pagination .page-item.disabled .page-link{opacity:0.5!important;cursor:not-allowed!important}
 .appointments-layout #calendarViewSection:not(.d-none),
 .appointments-layout #sentCalendarViewSection:not(.d-none){display:flex!important;flex-direction:column!important;flex:1 1 auto!important;height:100%!important;min-height:0!important;overflow:hidden!important;padding:8px 12px!important;background:#fff!important}
 .appointments-layout #calendarViewSection>.d-flex:first-child,
@@ -218,5 +224,43 @@
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
 }
+
+/* Profile Hero Card & Illustrated Avatar Styling */
+.profile-hero-card {
+  border-radius: 20px !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08) !important;
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+  overflow: hidden;
+  background: #ffffff;
+}
+.profile-hero-banner {
+  min-height: 180px;
+  background: linear-gradient(90deg, #1d4ed8 0%, #2563eb 45%, #0284c7 80%, #0d9488 100%);
+}
+.profile-avatar-wrapper {
+  position: relative;
+  display: inline-block;
+}
+.profile-avatar-sparkle {
+  filter: drop-shadow(0 2px 4px rgba(37, 99, 235, 0.35));
+  animation: sparklePulse 3s ease-in-out infinite;
+}
+@keyframes sparklePulse {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.95; }
+  50% { transform: scale(1.08) rotate(3deg); opacity: 1; }
+}
+.profile-online-dot {
+  box-shadow: 0 0 0 2px #ffffff, 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+.profile-pills-bar .badge {
+  letter-spacing: 0.01em;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+.profile-pills-bar .badge:hover {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
 
 

@@ -70,10 +70,21 @@ $currentQuery = $currentQuery ?? '';
   <div class="profile-layout appointments-layout">
     <!-- LEFT SIDEBAR -->
     <div class="profile-sidebar">
-      <div class="position-relative d-inline-block mb-2 text-center">
-        <img src="<?= htmlspecialchars(userAvatarUrl($myAvatar, $myFullName, 80), ENT_QUOTES, 'UTF-8') ?>" alt="Profile" class="rounded-circle border shadow-sm" style="width: 72px; height: 72px; object-fit: cover;" onerror="this.onerror=null; this.src='<?= getInitialsAvatarDataUri($myFullName, 80) ?>';">
+      <div class="position-relative d-inline-block mb-2 text-center profile-avatar-frame mx-auto" style="width: 76px;">
+        <div class="position-absolute" style="top: -8px; left: -8px; z-index: 4; pointer-events: none;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.6" stroke-linecap="round">
+            <line x1="3" y1="12" x2="1" y2="12"></line>
+            <line x1="6" y1="5" x2="3" y2="2"></line>
+            <line x1="12" y1="4" x2="12" y2="1"></line>
+          </svg>
+        </div>
+        <img src="<?= htmlspecialchars(userAvatarUrl($myAvatar, $myFullName, 80), ENT_QUOTES, 'UTF-8') ?>" alt="Profile" class="rounded-circle border border-3 border-white shadow-sm" style="width: 76px; height: 76px; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='<?= getInitialsAvatarDataUri($myFullName, 80) ?>';">
+        <span class="position-absolute rounded-circle border border-white border-2" style="bottom: 1px; right: 1px; width: 16px; height: 16px; background-color: #22c55e; z-index: 2;" title="Online"></span>
       </div>
-      <h2 class="fs-6 fw-bold mb-1 text-center"><?= htmlspecialchars($myFullName, ENT_QUOTES, 'UTF-8') ?></h2>
+      <h2 class="fs-6 fw-bold mb-1 text-center d-flex align-items-center justify-content-center gap-1">
+        <?= htmlspecialchars($myFullName, ENT_QUOTES, 'UTF-8') ?>
+        <i class="bi bi-patch-check-fill text-primary" style="font-size: 0.95rem;" title="Verified"></i>
+      </h2>
       <p class="text-muted small mb-3 text-center"><?= htmlspecialchars($myHeadline, ENT_QUOTES, 'UTF-8') ?></p>
       
       <!-- Nav Tabs -->
@@ -202,7 +213,7 @@ $currentQuery = $currentQuery ?? '';
               <div id="tableViewSection" class="flex-grow-1 min-h-0 d-flex flex-column">
                 <?php if (count($appointments) > 0): ?>
                   <div class="table-responsive dashboard-table-wrap flex-grow-1 min-h-0">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table table-hover align-middle mb-0" id="receivedAppointmentsTable">
                       <thead class="table-light">
                         <tr>
                           <th scope="col" class="ps-3">
@@ -293,6 +304,14 @@ $currentQuery = $currentQuery ?? '';
                         <?php endforeach; ?>
                       </tbody>
                     </table>
+                  </div>
+
+                  <!-- Pagination Footer (Displayed when multiple pages exist) -->
+                  <div class="d-flex justify-content-between align-items-center px-3 py-2 border-top bg-light flex-shrink-0 dashboard-pagination" id="receivedPagination" style="display: none !important;">
+                    <small class="text-secondary fw-semibold pagination-info" style="font-size: 0.76rem;">Showing entries</small>
+                    <nav aria-label="Received appointments pagination">
+                      <ul class="pagination pagination-sm mb-0"></ul>
+                    </nav>
                   </div>
                 <?php else: ?>
                   <div class="text-center py-5">
@@ -429,7 +448,7 @@ $currentQuery = $currentQuery ?? '';
               <div id="sentTableViewSection" class="flex-grow-1 min-h-0 d-flex flex-column">
                 <?php if (count($sentAppointments) > 0): ?>
                   <div class="table-responsive dashboard-table-wrap flex-grow-1 min-h-0">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table table-hover align-middle mb-0" id="sentAppointmentsTable">
                       <thead class="table-light">
                         <tr>
                           <th scope="col" class="ps-3">
@@ -513,6 +532,14 @@ $currentQuery = $currentQuery ?? '';
                         <?php endforeach; ?>
                       </tbody>
                     </table>
+                  </div>
+
+                  <!-- Pagination Footer (Displayed when multiple pages exist) -->
+                  <div class="d-flex justify-content-between align-items-center px-3 py-2 border-top bg-light flex-shrink-0 dashboard-pagination" id="sentPagination" style="display: none !important;">
+                    <small class="text-secondary fw-semibold pagination-info" style="font-size: 0.76rem;">Showing entries</small>
+                    <nav aria-label="Sent appointments pagination">
+                      <ul class="pagination pagination-sm mb-0"></ul>
+                    </nav>
                   </div>
                 <?php else: ?>
                   <div class="text-center py-5">
@@ -874,6 +901,134 @@ document.addEventListener('DOMContentLoaded', function () {
       isCalendarVisible: () => isCalendarVisible
     };
   }
+
+  function setupTablePagination({
+    tableId,
+    paginationId,
+    pageSize = 6,
+    itemLabel = 'appointments'
+  }) {
+    const table = document.getElementById(tableId);
+    const paginationWrap = document.getElementById(paginationId);
+    if (!table || !paginationWrap) return;
+
+    const tbody = table.querySelector('tbody');
+    if (!tbody) return;
+
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    const totalRows = rows.length;
+
+    // Only show pagination if there are too many entries
+    if (totalRows <= pageSize) {
+      paginationWrap.style.setProperty('display', 'none', 'important');
+      rows.forEach(r => r.style.removeProperty('display'));
+      return;
+    }
+
+    paginationWrap.style.removeProperty('display');
+    paginationWrap.classList.remove('d-none');
+    paginationWrap.style.setProperty('display', 'flex', 'important');
+
+    const infoEl = paginationWrap.querySelector('.pagination-info');
+    const ulEl = paginationWrap.querySelector('.pagination');
+    const totalPages = Math.ceil(totalRows / pageSize);
+    let currentPage = 1;
+
+    function renderPage(page) {
+      currentPage = Math.max(1, Math.min(page, totalPages));
+      const startIdx = (currentPage - 1) * pageSize;
+      const endIdx = Math.min(startIdx + pageSize, totalRows);
+
+      rows.forEach((row, idx) => {
+        if (idx >= startIdx && idx < endIdx) {
+          row.style.removeProperty('display');
+        } else {
+          row.style.setProperty('display', 'none', 'important');
+        }
+      });
+
+      if (infoEl) {
+        infoEl.textContent = `Showing ${startIdx + 1}–${endIdx} of ${totalRows} ${itemLabel}`;
+      }
+
+      if (ulEl) {
+        ulEl.innerHTML = '';
+
+        // Previous button
+        const prevLi = document.createElement('li');
+        prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+        prevLi.innerHTML = `<button type="button" class="page-link py-1 px-2" aria-label="Previous">&larr; Prev</button>`;
+        if (currentPage > 1) {
+          prevLi.querySelector('button').addEventListener('click', (e) => {
+            e.preventDefault();
+            renderPage(currentPage - 1);
+          });
+        }
+        ulEl.appendChild(prevLi);
+
+        // Page range
+        const range = getPaginationRange(currentPage, totalPages);
+        range.forEach(p => {
+          const li = document.createElement('li');
+          if (p === '...') {
+            li.className = 'page-item disabled';
+            li.innerHTML = `<span class="page-link py-1 px-2 border-0 bg-transparent">&hellip;</span>`;
+          } else {
+            li.className = `page-item ${p === currentPage ? 'active' : ''}`;
+            li.innerHTML = `<button type="button" class="page-link py-1 px-2">${p}</button>`;
+            li.querySelector('button').addEventListener('click', (e) => {
+              e.preventDefault();
+              renderPage(p);
+            });
+          }
+          ulEl.appendChild(li);
+        });
+
+        // Next button
+        const nextLi = document.createElement('li');
+        nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+        nextLi.innerHTML = `<button type="button" class="page-link py-1 px-2" aria-label="Next">Next &rarr;</button>`;
+        if (currentPage < totalPages) {
+          nextLi.querySelector('button').addEventListener('click', (e) => {
+            e.preventDefault();
+            renderPage(currentPage + 1);
+          });
+        }
+        ulEl.appendChild(nextLi);
+      }
+
+      requestAnimationFrame(matchAppointmentViewToSidebar);
+    }
+
+    function getPaginationRange(current, total) {
+      if (total <= 7) {
+        return Array.from({ length: total }, (_, i) => i + 1);
+      }
+      if (current <= 3) {
+        return [1, 2, 3, 4, '...', total];
+      }
+      if (current >= total - 2) {
+        return [1, '...', total - 3, total - 2, total - 1, total];
+      }
+      return [1, '...', current - 1, current, current + 1, '...', total];
+    }
+
+    renderPage(1);
+  }
+
+  setupTablePagination({
+    tableId: 'receivedAppointmentsTable',
+    paginationId: 'receivedPagination',
+    pageSize: 6,
+    itemLabel: 'appointments'
+  });
+
+  setupTablePagination({
+    tableId: 'sentAppointmentsTable',
+    paginationId: 'sentPagination',
+    pageSize: 6,
+    itemLabel: 'bookings'
+  });
 
   const receivedCal = setupCalendarController({
     appointmentsData: appointments,

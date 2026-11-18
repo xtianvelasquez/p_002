@@ -61,11 +61,22 @@ $myFullName = trim($firstName . ' ' . $lastName);
   <div class="profile-layout">
     <!-- LEFT SIDEBAR -->
     <div class="profile-sidebar">
-      <div class="position-relative d-inline-block mb-2 text-center">
-        <img src="<?= htmlspecialchars(userAvatarUrl($currentProfilePicture, $myFullName, 80), ENT_QUOTES, 'UTF-8') ?>" alt="Profile Picture" class="rounded-circle border shadow-sm" style="width: 72px; height: 72px; object-fit: cover;" onerror="this.onerror=null; this.src='<?= getInitialsAvatarDataUri($myFullName, 80) ?>';">
+      <div class="position-relative d-inline-block mb-2 text-center profile-avatar-wrapper">
+        <div class="position-absolute" style="top: -8px; left: -8px; z-index: 4; pointer-events: none;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.6" stroke-linecap="round">
+            <line x1="3" y1="12" x2="1" y2="12"></line>
+            <line x1="6" y1="5" x2="3" y2="2"></line>
+            <line x1="12" y1="4" x2="12" y2="1"></line>
+          </svg>
+        </div>
+        <img src="<?= htmlspecialchars(userAvatarUrl($currentProfilePicture, $myFullName, 80), ENT_QUOTES, 'UTF-8') ?>" alt="Profile Picture" class="rounded-circle border border-3 border-white shadow-sm" style="width: 76px; height: 76px; object-fit: cover;" onerror="this.onerror=null; this.src='<?= getInitialsAvatarDataUri($myFullName, 80) ?>';">
+        <span class="position-absolute rounded-circle border border-white border-2" style="bottom: 2px; right: 4px; width: 14px; height: 14px; background-color: #22c55e; z-index: 5;" title="Online / Active"></span>
       </div>
-      <h2 class="fs-6 fw-bold mb-1 text-center"><?= htmlspecialchars($myFullName, ENT_QUOTES, 'UTF-8') ?></h2>
-      <p class="text-muted small mb-3 text-center"><?= htmlspecialchars($headline ?: ($jobTitle ?: 'Professional Member'), ENT_QUOTES, 'UTF-8') ?></p>
+      <h2 class="fs-6 fw-bold mb-1 text-center d-flex align-items-center justify-content-center gap-1">
+        <?= htmlspecialchars($myFullName, ENT_QUOTES, 'UTF-8') ?>
+        <i class="bi bi-patch-check-fill text-primary" style="font-size: 0.95rem;" title="Verified Profile"></i>
+      </h2>
+      <p class="text-muted small mb-3 text-center"><?= htmlspecialchars($headline ?: ($jobTitle ?: 'Dream • Create • Innovate'), ENT_QUOTES, 'UTF-8') ?></p>
       
       <!-- Nav Tabs -->
       <nav class="nav nav-pills flex-column profile-nav-tabs" role="tablist">
@@ -127,8 +138,12 @@ $myFullName = trim($firstName . ' ' . $lastName);
                 <textarea name="bio" id="bio" rows="3" class="form-control rounded-2" placeholder="Write a summary about your journey, philosophy, or background..."><?= htmlspecialchars($bio ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
               </div>
               <div class="col-12">
-                <label for="skills" class="form-label text-secondary small fw-semibold">Skills & Expertise (Comma-separated)</label>
-                <input type="text" name="skills" id="skills" placeholder="e.g. PHP 8, PostgreSQL, Docker, Architecture Design" value="<?= htmlspecialchars($skills ?? '', ENT_QUOTES, 'UTF-8'); ?>" class="form-control rounded-2">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label for="skills" class="form-label text-secondary small fw-semibold mb-0">Skills & Expertise (Comma-separated)</label>
+                  <span class="badge bg-secondary-subtle text-secondary fw-medium" style="font-size: 0.68rem;">Max 5 badges</span>
+                </div>
+                <input type="text" name="skills" id="skills" placeholder="e.g. PHP 8, PostgreSQL, Docker, Architecture Design" value="<?= htmlspecialchars($skills ?? '', ENT_QUOTES, 'UTF-8'); ?>" class="form-control rounded-2" maxlength="200">
+                <div class="form-text text-muted small" style="font-size: 0.72rem;">Enter up to 5 core competencies separated by commas to keep your profile badge bar concise.</div>
               </div>
               <div class="col-12">
                 <label for="consultationTopics" class="form-label text-secondary small fw-semibold">Consultation Focus / "Why Meet With Me"</label>

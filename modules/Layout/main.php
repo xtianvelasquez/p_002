@@ -47,7 +47,7 @@ $isAppFitPage = in_array(rtrim($subPath, '/'), [
   <link rel="icon" type="image/png" href="<?= assetUrl('images/logo.png') ?>">
   <link rel="stylesheet" href="<?= assetUrl('bootstrap/css/bootstrap.min.css?v=5.3') ?>">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="<?= assetUrl('css/app.css?v=34') ?>">
+  <link rel="stylesheet" href="<?= assetUrl('css/app.css?v=36') ?>">
 </head>
 <body class="app-body <?= $isAppFitPage ? 'app-fit-screen' : '' ?>">
 <header class="app-header">
@@ -614,17 +614,14 @@ document.addEventListener('DOMContentLoaded', function() {
           let html = '<div class="py-1">';
           results.forEach(u => {
             const skillsHtml = (u.skills && u.skills.length > 0)
-              ? u.skills.map(s => `<span class="badge">${escapeHtml(s)}</span>`).join('')
+              ? u.skills.map(s => `<span class="badge">${escapeHtml(s)}</span>`).join('') + (u.extraSkills > 0 ? `<span class="badge bg-light text-muted border">+${u.extraSkills}</span>` : '')
               : '';
             
             html += `
               <a href="${escapeHtml(u.url)}" class="fb-search-item">
                 <img src="${escapeHtml(u.avatarUrl)}" alt="${escapeHtml(u.fullName)}" class="fb-search-avatar" onerror="this.onerror=null; this.src='${escapeHtml(u.avatarFallback)}';">
                 <div class="fb-search-content">
-                  <div class="d-flex align-items-center justify-content-between">
-                    <div class="fb-search-name">${escapeHtml(u.fullName)} ${u.isSelf ? '<span class="badge bg-secondary-subtle text-secondary small py-0 px-1 ms-1" style="font-size: 0.65rem;">You</span>' : ''}</div>
-                    <span class="btn btn-sm btn-outline-primary py-0 px-2 fw-semibold" style="font-size: 0.72rem;">${u.isSelf ? 'Preview' : 'Book'}</span>
-                  </div>
+                  <div class="fb-search-name">${escapeHtml(u.fullName)} ${u.isSelf ? '<span class="badge bg-secondary-subtle text-secondary small py-0 px-1 ms-1" style="font-size: 0.65rem;">You</span>' : ''}</div>
                   <div class="fb-search-headline text-truncate">${escapeHtml(u.headline)}</div>
                   ${skillsHtml ? `<div class="fb-search-skills d-flex flex-wrap gap-1">${skillsHtml}</div>` : ''}
                 </div>

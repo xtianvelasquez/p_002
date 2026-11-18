@@ -76,7 +76,10 @@ class UserController extends BaseController {
             $company = trim(scalarString($_POST['company'] ?? ''));
             $locationCity = trim(scalarString($_POST['locationCity'] ?? ''));
             $bio = trim(scalarString($_POST['bio'] ?? ''));
-            $skills = trim(scalarString($_POST['skills'] ?? ''));
+            $skillsRaw = trim(scalarString($_POST['skills'] ?? ''));
+            // Enforce maximum 5 skill badges to prevent clutter
+            $skillList = array_slice(array_filter(array_map('trim', explode(',', $skillsRaw))), 0, 5);
+            $skills = implode(', ', $skillList);
             $consultationTopics = trim(scalarString($_POST['consultationTopics'] ?? ''));
             $linkedinUrl = trim(scalarString($_POST['linkedinUrl'] ?? ''));
             $githubUrl = trim(scalarString($_POST['githubUrl'] ?? ''));
@@ -247,7 +250,9 @@ class UserController extends BaseController {
             $isSelf = ($currentUserId && $u['user_id'] === $currentUserId);
             
             $skillsRaw = trim($u['skills'] ?? '');
-            $skillTags = array_slice(array_filter(array_map('trim', explode(',', $skillsRaw))), 0, 3);
+            $allSkills = array_filter(array_map('trim', explode(',', $skillsRaw)));
+            $skillTags = array_slice($allSkills, 0, 3);
+            $extraSkills = count($allSkills) - count($skillTags);
 
             $results[] = [
                 'user_id' => $u['user_id'],
@@ -257,6 +262,7 @@ class UserController extends BaseController {
                 'headline' => $u['headline'] ?: ($u['job_title'] ?: ($u['company'] ?: 'Professional Member')),
                 'company' => $u['company'] ?? '',
                 'skills' => $skillTags,
+                'extraSkills' => $extraSkills,
                 'url' => routeUrl('/u/' . rawurlencode($u['user_id'])),
                 'isSelf' => $isSelf
             ];

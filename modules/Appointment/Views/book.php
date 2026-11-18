@@ -47,7 +47,10 @@ $company = trim($company ?? '');
 $locationCity = trim($locationCity ?? '');
 $bio = trim($bio ?? '');
 $skillsRaw = trim($skills ?? '');
-$skillTags = array_filter(array_map('trim', explode(',', $skillsRaw)));
+$allSkillTags = array_filter(array_map('trim', explode(',', $skillsRaw)));
+$maxHeaderBadges = 5;
+$skillTags = array_slice($allSkillTags, 0, $maxHeaderBadges);
+$extraBadgesCount = count($allSkillTags) - count($skillTags);
 $consultationTopics = trim($consultationTopics ?? '');
 $linkedinUrl = trim($linkedinUrl ?? '');
 $githubUrl = trim($githubUrl ?? '');
@@ -75,82 +78,124 @@ $websiteUrl = trim($websiteUrl ?? '');
   <?php endif; ?>
 
   <!-- 1. LINKEDIN-STYLE PROFILE HERO CARD -->
-  <div class="card rounded-3 shadow-sm border-0 overflow-hidden mb-4 bg-white">
-    <!-- Banner Header -->
-    <div class="position-relative" style="height: 160px; background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #0d9488 100%);">
+  <div class="card rounded-3 shadow-sm border-0 overflow-hidden mb-4 bg-white profile-hero-card">
+    <!-- Banner Header with More Than Blue Branding & Heart Wave Illustration -->
+    <div class="position-relative profile-hero-banner" style="min-height: 180px; background: linear-gradient(90deg, #1d4ed8 0%, #2563eb 45%, #0284c7 80%, #0d9488 100%);">
+      <!-- MB Logo Branding on Upper Left (matches reference banner) -->
+      <div class="position-absolute top-0 start-0 m-3 m-md-4 d-flex align-items-center gap-2 text-white" style="z-index: 2;">
+        <span class="fw-bold px-2 py-0.5 rounded bg-white text-primary fs-6 shadow-sm" style="letter-spacing: -0.05em; font-weight: 800;">MB</span>
+        <span class="border-start border-white border-opacity-50 ps-2 small text-uppercase fw-bold text-white text-shadow-sm" style="letter-spacing: 0.12em; font-size: 0.72rem;">More Than Blue</span>
+      </div>
+
+      <!-- Continuous Line Art Heart Watermark on Upper Right (matches reference banner) -->
+      <div class="position-absolute end-0 top-0 h-100 pe-3 pe-md-5 d-flex align-items-center pointer-events-none" style="opacity: 0.35; z-index: 1;">
+        <svg width="190" height="130" viewBox="0 0 160 100" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M 10 70 C 40 85, 70 85, 95 65 C 115 50, 130 30, 140 18 C 148 7, 160 14, 153 25 C 145 38, 120 70, 95 82 C 75 90, 45 75, 55 55 C 65 35, 90 28, 105 45 C 118 60, 130 75, 155 70" />
+        </svg>
+      </div>
+
+      <!-- Gentle Curved Wave Divider at Bottom (matches reference banner) -->
+      <div class="position-absolute bottom-0 start-0 w-100 overflow-hidden" style="line-height: 0; pointer-events: none; z-index: 2;">
+        <svg viewBox="0 0 1200 60" preserveAspectRatio="none" style="width: 100%; height: 35px; display: block;">
+          <path d="M0,0 C150,45 350,-20 500,25 C650,60 900,10 1200,35 L1200,60 L0,60 Z" fill="#ffffff"></path>
+        </svg>
+      </div>
     </div>
 
     <!-- Profile Header Content -->
-    <div class="card-body px-4 pb-4 pt-0">
+    <div class="card-body px-3 px-md-4 pb-4 pt-0">
       <div class="d-flex flex-column flex-md-row align-items-start justify-content-between gap-3">
         <!-- Avatar & Core Info -->
-        <div class="d-flex flex-column flex-sm-row align-items-center align-items-sm-start gap-4" style="margin-top: -65px;">
-          <div class="position-relative">
-            <img src="<?= htmlspecialchars(userAvatarUrl($profilePicture, $fullName, 130), ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?>" class="rounded-circle border border-4 border-white shadow bg-white" style="width: 130px; height: 130px; object-fit: cover;" onerror="this.onerror=null; this.src='<?= getInitialsAvatarDataUri($fullName, 130) ?>';">
-            <span class="position-absolute bottom-0 end-0 bg-success border border-white border-2 rounded-circle p-2" title="Available for Appointments"></span>
-          </div>
-
-          <div class="text-center text-sm-start mt-2 mt-sm-4">
-            <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-sm-start gap-2">
-              <h3 class="fw-bold mb-0 text-dark"><?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?></h3>
-              <?php if (!empty($middleName)): ?>
-                <span class="text-muted fs-6">(<?= htmlspecialchars($middleName, ENT_QUOTES, 'UTF-8') ?>)</span>
-              <?php endif; ?>
-              <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1" style="font-size: 0.72rem;">
-                <i class="bi bi-calendar-check me-1"></i>Open to Meetings
-              </span>
+        <div class="d-flex flex-column flex-sm-row align-items-center align-items-sm-start gap-3 gap-md-4 position-relative" style="z-index: 3;">
+          
+          <!-- Avatar Frame with Sparkle Accents & Online Dot (only avatar peeks up into banner) -->
+          <div class="position-relative profile-avatar-wrapper flex-shrink-0" style="margin-top: -65px;">
+            <!-- Sparkle Action Accents on Top-Left (matches reference) -->
+            <div class="position-absolute profile-avatar-sparkle" style="top: -12px; left: -10px; z-index: 4; pointer-events: none;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round">
+                <line x1="3" y1="12" x2="1" y2="12"></line>
+                <line x1="6" y1="5" x2="3" y2="2"></line>
+                <line x1="12" y1="4" x2="12" y2="1"></line>
+              </svg>
             </div>
 
-            <?php if (!empty($headline)): ?>
-              <p class="text-secondary fw-medium fs-6 mb-1 mt-1"><?= htmlspecialchars($headline, ENT_QUOTES, 'UTF-8') ?></p>
-            <?php endif; ?>
+            <img src="<?= htmlspecialchars(userAvatarUrl($profilePicture, $fullName, 140), ENT_QUOTES, 'UTF-8') ?>" 
+                 alt="<?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?>" 
+                 class="rounded-circle border border-4 border-white shadow bg-white profile-avatar-img" 
+                 style="width: 130px; height: 130px; object-fit: cover; display: block;" 
+                 onerror="this.onerror=null; this.src='<?= getInitialsAvatarDataUri($fullName, 140) ?>';">
+            
+            <!-- Online status indicator dot on bottom right (matches reference) -->
+            <span class="position-absolute profile-online-dot rounded-circle border border-white border-2" 
+                  style="bottom: 4px; right: 4px; width: 22px; height: 22px; background-color: #22c55e; z-index: 5;" 
+                  title="Available for Appointments"></span>
+          </div>
 
-            <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-sm-start gap-3 small text-muted mt-2">
-              <?php if (!empty($jobTitle) || !empty($company)): ?>
-                <div>
-                  <i class="bi bi-briefcase me-1 text-primary"></i>
-                  <span class="fw-semibold text-dark"><?= htmlspecialchars(trim($jobTitle . ($company ? ' at ' . $company : '')), ENT_QUOTES, 'UTF-8') ?></span>
-                </div>
+          <!-- Text Information (strictly positioned below the blue wave in the white area for pristine legibility) -->
+          <div class="text-center text-sm-start pt-2 pt-sm-3">
+            <!-- Name & Verified Check -->
+            <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-sm-start gap-2">
+              <h2 class="fw-bold mb-0 text-dark fs-4 d-inline-flex align-items-center gap-1">
+                <?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?>
+                <i class="bi bi-patch-check-fill text-primary" style="font-size: 1.15rem;" title="Verified Professional"></i>
+              </h2>
+              <?php if (!empty($middleName)): ?>
+                <span class="text-muted small">(<?= htmlspecialchars($middleName, ENT_QUOTES, 'UTF-8') ?>)</span>
               <?php endif; ?>
+            </div>
 
-              <?php if (!empty($locationCity)): ?>
-                <div>
-                  <i class="bi bi-geo-alt me-1 text-danger"></i>
-                  <span><?= htmlspecialchars($locationCity, ENT_QUOTES, 'UTF-8') ?></span>
-                </div>
+            <!-- Headline / Slogan -->
+            <p class="text-secondary fw-medium small mb-2 mt-1">
+              <?= htmlspecialchars($headline ?: 'Dream • Create • Innovate', ENT_QUOTES, 'UTF-8') ?>
+            </p>
+
+            <!-- Pill Badges (Skills & Highlights, max 5) -->
+            <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-sm-start gap-1 profile-pills-bar">
+              <?php if (!empty($skillTags)): ?>
+                <?php foreach ($skillTags as $tag): ?>
+                  <span class="badge bg-light text-secondary border px-2 py-1 rounded-pill fw-medium" style="font-size: 0.74rem;">
+                    <?= htmlspecialchars($tag, ENT_QUOTES, 'UTF-8') ?>
+                  </span>
+                <?php endforeach; ?>
+                <?php if ($extraBadgesCount > 0): ?>
+                  <span class="badge bg-light text-muted border px-2 py-1 rounded-pill fw-medium" style="font-size: 0.74rem;" title="<?= $extraBadgesCount ?> more skills">
+                    +<?= $extraBadgesCount ?> more
+                  </span>
+                <?php endif; ?>
+              <?php else: ?>
+                <span class="badge bg-light text-secondary border px-2 py-1 rounded-pill fw-medium" style="font-size: 0.74rem;">Professional Consultation</span>
+                <span class="badge bg-light text-secondary border px-2 py-1 rounded-pill fw-medium" style="font-size: 0.74rem;">Available for Booking</span>
               <?php endif; ?>
-
-              <div>
-                <i class="bi bi-clock me-1 text-primary"></i>
-                <span><?= date('g:i A', strtotime('2000-01-01 ' . $workStartTime)) ?> – <?= date('g:i A', strtotime('2000-01-01 ' . $workEndTime)) ?></span>
-              </div>
             </div>
           </div>
         </div>
 
-        <!-- Social Links & Primary CTA -->
-        <div class="align-self-center align-self-md-end mt-3 mt-md-0 d-flex flex-wrap align-items-center gap-2">
+        <!-- Action Buttons on Right (Settings & Go to Bookings / Book Time) -->
+        <div class="align-self-center align-self-md-start mt-3 mt-md-0 pt-md-3 d-flex flex-wrap align-items-center gap-2" style="position: relative; z-index: 3;">
           <?php if (!empty($linkedinUrl)): ?>
             <a href="<?= htmlspecialchars($linkedinUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm rounded-pill px-3" title="LinkedIn Profile">
-              <i class="bi bi-linkedin me-1"></i> LinkedIn
+              <i class="bi bi-linkedin"></i>
             </a>
           <?php endif; ?>
 
           <?php if (!empty($githubUrl)): ?>
             <a href="<?= htmlspecialchars($githubUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-dark btn-sm rounded-pill px-3" title="GitHub Profile">
-              <i class="bi bi-github me-1"></i> GitHub
+              <i class="bi bi-github"></i>
             </a>
           <?php endif; ?>
 
-          <?php if (!empty($websiteUrl)): ?>
-            <a href="<?= htmlspecialchars($websiteUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm rounded-pill px-3" title="Personal Website">
-              <i class="bi bi-globe me-1"></i> Portfolio
+          <?php if ($isOwner): ?>
+            <a href="<?= routeUrl('/profile') ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1 fw-semibold d-inline-flex align-items-center gap-1">
+              <i class="bi bi-gear-fill"></i> Settings
+            </a>
+            <a href="<?= routeUrl('/appointments') ?>" class="btn btn-primary btn-sm rounded-pill px-3 py-1 fw-semibold d-inline-flex align-items-center gap-1 shadow-sm">
+              <i class="bi bi-calendar3"></i> Go to Bookings &rarr;
+            </a>
+          <?php else: ?>
+            <a href="#schedulerCard" class="btn btn-primary btn-sm rounded-pill px-4 py-1.5 shadow-sm fw-bold d-inline-flex align-items-center gap-1">
+              <i class="bi bi-calendar-plus me-1"></i> Book Time
             </a>
           <?php endif; ?>
-
-          <a href="#schedulerCard" class="btn btn-primary btn-sm rounded-pill px-4 shadow-sm fw-bold">
-            <i class="bi bi-calendar-plus me-1"></i> Book Time
-          </a>
         </div>
       </div>
     </div>
