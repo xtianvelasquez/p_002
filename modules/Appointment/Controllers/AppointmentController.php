@@ -84,12 +84,16 @@ class AppointmentController extends BaseController {
         }
 
         if (!empty($searchQuery)) {
-            $qLower = mb_strtolower($searchQuery);
-            $filtered = array_values(array_filter($filtered, function($a) use ($qLower) {
-                return str_contains(mb_strtolower($a['fullName']), $qLower)
-                    || str_contains(mb_strtolower($a['event_name']), $qLower)
-                    || str_contains(mb_strtolower($a['location']), $qLower)
-                    || str_contains(mb_strtolower($a['agenda']), $qLower);
+            $toLower = function($str) {
+                $val = (string)($str ?? '');
+                return function_exists('mb_strtolower') ? mb_strtolower($val) : strtolower($val);
+            };
+            $qLower = $toLower($searchQuery);
+            $filtered = array_values(array_filter($filtered, function($a) use ($qLower, $toLower) {
+                return str_contains($toLower($a['fullName'] ?? ''), $qLower)
+                    || str_contains($toLower($a['event_name'] ?? ''), $qLower)
+                    || str_contains($toLower($a['location'] ?? ''), $qLower)
+                    || str_contains($toLower($a['agenda'] ?? ''), $qLower);
             }));
         }
 

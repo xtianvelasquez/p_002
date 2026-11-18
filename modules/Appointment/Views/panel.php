@@ -286,10 +286,7 @@ $currentQuery = $currentQuery ?? '';
                                   </form>
                                 <?php endif; ?>
                                 <a href="<?= routeUrl('/appointment/view?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-secondary" title="View details">View</a>
-                                <a href="<?= routeUrl('/appointment/export-ics?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-secondary" title="Download iCal (.ics)">
-                                  <i class="bi bi-calendar-arrow-down"></i>
-                                </a>
-                                <a href="<?= routeUrl('/appointment/delete?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-danger" title="Delete record"><i class="bi bi-trash3"></i></a>
+                                <a href="<?= routeUrl('/appointment/delete?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-danger" title="Delete record"><i class="bi bi-trash3 me-1"></i>Delete</a>
                               </div>
                             </td>
                           </tr>
@@ -509,10 +506,7 @@ $currentQuery = $currentQuery ?? '';
                                   </form>
                                 <?php endif; ?>
                                 <a href="<?= routeUrl('/appointment/view?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-secondary" title="View details">View</a>
-                                <a href="<?= routeUrl('/appointment/export-ics?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-secondary" title="Download iCal (.ics)">
-                                  <i class="bi bi-calendar-arrow-down"></i>
-                                </a>
-                                <a href="<?= routeUrl('/appointment/delete-sent?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-danger" title="Delete record"><i class="bi bi-trash3"></i></a>
+                                <a href="<?= routeUrl('/appointment/delete-sent?id=' . rawurlencode($appt['appointment_id'])) ?>" class="btn btn-outline-danger" title="Delete record"><i class="bi bi-trash3 me-1"></i>Delete</a>
                               </div>
                             </td>
                           </tr>

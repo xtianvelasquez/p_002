@@ -337,41 +337,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
   let activeFilter = 'all';
 
-  // Resilient dropdown toggling:
-  // Bootstrap 5 dropdown is attached via data-bs-toggle="dropdown".
-  // To ensure 100% reliability even if Bootstrap's event cycle is delayed:
-  if (notifBtn && notifMenu) {
-    notifBtn.addEventListener('click', function(e) {
-      // If Bootstrap doesn't toggle .show within 10ms, toggle manually
-      setTimeout(function() {
-        if (!notifMenu.classList.contains('show')) {
-          notifMenu.classList.add('show');
-          notifBtn.classList.add('show');
-          notifBtn.setAttribute('aria-expanded', 'true');
-        }
-      }, 15);
-    });
-
-    // Close on outside click
-    document.addEventListener('click', function(e) {
-      if (!notifBtn.contains(e.target) && !notifMenu.contains(e.target)) {
-        notifMenu.classList.remove('show');
-        notifBtn.classList.remove('show');
-        notifBtn.setAttribute('aria-expanded', 'false');
-      }
-    });
-
-    // Close on Escape key
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape' && notifMenu.classList.contains('show')) {
-        notifMenu.classList.remove('show');
-        notifBtn.classList.remove('show');
-        notifBtn.setAttribute('aria-expanded', 'false');
-        notifBtn.focus();
-      }
-    });
-  }
-
   function getUnreadCount() {
     return document.querySelectorAll('.fb-notif-item.is-unread').length;
   }
