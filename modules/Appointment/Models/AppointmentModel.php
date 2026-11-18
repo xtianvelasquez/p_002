@@ -238,8 +238,8 @@ class AppointmentModel extends BaseModel {
         return $stmt->fetch();
     }
 
-    /** @param string $userId @return array<array<string, mixed>> */
-    public function getUserNotifications($userId) {
+    /** @param string $userId @param array|null $readIds @return array<array<string, mixed>> */
+    public function getUserNotifications($userId, ?array $readIds = null) {
         // Fetch recent received appointments (where user is recipient)
         $stmtRec = $this->db->prepare("
             SELECT a.appointment_id, a.appointment_status, a.event_name, a.appointment_date, a.appointment_time,
@@ -267,8 +267,11 @@ class AppointmentModel extends BaseModel {
         $sent = $stmtSent->fetchAll() ?: [];
 
         $notifications = [];
-        $readIds = $_SESSION['read_notifications'] ?? [];
-        if (!is_array($readIds)) $readIds = [];
+        if ($readIds === null) {
+            $readIds = (isset($_SESSION['read_notifications']) && is_array($_SESSION['read_notifications'])) 
+                ? $_SESSION['read_notifications'] 
+                : [];
+        }
 
         foreach ($received as $a) {
             $status = strtolower(trim($a['appointment_status'] ?? 'pending'));

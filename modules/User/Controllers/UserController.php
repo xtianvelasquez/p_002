@@ -14,12 +14,6 @@ class UserController extends BaseController {
         $this->userModel = new UserModel();
     }
 
-    private function requireAuth() {
-        if (!isset($_SESSION["userId"])) {
-            $this->redirect('/login');
-        }
-    }
-
     public function profile() {
         $this->requireAuth();
         

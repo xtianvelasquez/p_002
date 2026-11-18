@@ -53,6 +53,12 @@ class BaseController {
         }
     }
 
+    protected function requireAuth() {
+        if (!isset($_SESSION["userId"])) {
+            $this->redirect('/login');
+        }
+    }
+
     protected function validateCsrf() {
         $token = scalarString($_POST['_csrf'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? ''));
         if (empty($token) || empty($_SESSION['_csrf']) || !hash_equals($_SESSION['_csrf'], $token)) {

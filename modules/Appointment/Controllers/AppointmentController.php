@@ -15,12 +15,6 @@ class AppointmentController extends BaseController {
         $this->appointmentModel = new AppointmentModel();
     }
 
-    private function requireAuth() {
-        if (!isset($_SESSION["userId"])) {
-            $this->redirect('/login');
-        }
-    }
-
     /**
      * @param string $receiverId
      * @param string $senderId
