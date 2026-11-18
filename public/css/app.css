@@ -262,5 +262,138 @@
   color: #0f172a !important;
 }
 
+/* Responsive layout guardrails */
+img,svg,video,canvas{max-width:100%}
+img,video,canvas{height:auto}
+body.app-body{overflow-x:hidden}
+.app-main,.page-shell,.profile-content,.appointments-content{min-width:0}
+
+@media (max-width: 1199.98px) and (min-width: 768px){
+  body.app-fit-screen{height:auto!important;min-height:100vh!important;overflow-x:hidden!important;overflow-y:auto!important;display:flex!important}
+  body.app-fit-screen .app-main{min-height:0!important;overflow:visible!important}
+  body.app-fit-screen .page-shell{width:calc(100% - 40px)!important;max-width:none!important;min-height:0!important;overflow:visible!important}
+  body.app-fit-screen .profile-layout{grid-template-columns:200px minmax(0,1fr)!important;height:auto!important;min-height:0!important;overflow:visible!important}
+  body.app-fit-screen .profile-sidebar,body.app-fit-screen .appointments-content{height:auto!important;min-height:0!important}
+  body.app-fit-screen .appointments-content .tab-content,body.app-fit-screen .appointments-content .tab-pane.active{height:auto!important;min-height:0!important;overflow:visible!important}
+  .appointments-layout{grid-template-columns:200px minmax(0,1fr)!important}
+  .appointments-layout .dashboard-main{height:auto!important;min-height:480px!important;flex:1 1 auto!important}
+  .appointments-layout #calendarViewSection:not(.d-none),.appointments-layout #sentCalendarViewSection:not(.d-none){min-height:460px!important;overflow:auto!important}
+  .appointments-layout #calGrid,.appointments-layout #calSentGrid{grid-template-rows:repeat(var(--calendar-weeks,5),minmax(64px,auto))!important;height:auto!important;min-height:0!important;flex:none!important}
+}
+
+@media (max-width: 900px) and (min-width: 768px){
+  .profile-layout,.appointments-layout{grid-template-columns:minmax(0,1fr)!important}
+  .appointments-layout>.profile-sidebar{height:auto!important;min-height:0!important}
+  .appointments-layout .profile-sidebar nav{display:flex!important;flex-direction:row!important;flex-wrap:wrap!important}
+}
+
+@media (max-width: 767.98px){
+  body.app-fit-screen{height:auto!important;min-height:100vh!important;overflow-x:hidden!important;overflow-y:auto!important;display:flex!important}
+  body.app-fit-screen .app-main{min-height:0!important;overflow:visible!important}
+  body.app-fit-screen .page-shell,.page-shell{width:calc(100% - 24px)!important;margin:16px auto 0!important;min-height:0!important;overflow:visible!important}
+  .page-heading{align-items:flex-start!important;flex-direction:column!important;gap:12px!important;margin-bottom:16px!important}
+  .page-heading>div:last-child{width:100%;display:flex;flex-wrap:wrap;gap:8px!important}
+  .page-heading h1{font-size:clamp(1.45rem,6vw,1.85rem)!important;line-height:1.15}
+  .hero{padding:48px 0!important}
+  .hero-inner{width:calc(100% - 32px)!important;grid-template-columns:minmax(0,1fr)!important;gap:24px!important}
+  .hero h1{font-size:clamp(2.25rem,10vw,3rem)!important;overflow-wrap:anywhere}
+  .hero-visual{min-height:260px!important}
+  .hero-visual .visual-glow{width:min(78vw,300px);height:min(78vw,300px)}
+  .section{padding:48px 16px!important}
+  .feature-grid,.professional-grid,.dashboard-stats{grid-template-columns:minmax(0,1fr)!important}
+  .search-panel form{grid-template-columns:minmax(0,1fr)!important}
+  .search-panel form>*:first-child{grid-column:auto!important}
+  .profile-layout{grid-template-columns:minmax(0,1fr)!important;gap:12px!important}
+  .profile-sidebar{width:100%;height:auto!important;min-height:0!important;padding:16px!important}
+  .profile-sidebar nav{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .appointments-layout .appointments-content,.appointments-layout .tab-content,.appointments-layout .tab-pane.active{height:auto!important;min-height:0!important;overflow:visible!important}
+  .appointments-layout .dashboard-stats{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}
+  .appointments-layout .dashboard-stats .card{padding:10px 8px!important;min-height:76px}
+  .appointments-layout .dashboard-stats .card .fs-5{font-size:1.1rem!important}
+  .appointments-layout .dashboard-stats .card .rounded-circle{width:30px!important;height:30px!important}
+  .dashboard-main{height:auto!important;min-height:0!important;overflow:hidden!important}
+  .dashboard-main>.card-header{align-items:flex-start!important}
+  .dashboard-main>.card-header .btn-group{max-width:100%;flex-wrap:wrap}
+  .dashboard-toolbar{padding:10px!important}
+  .dashboard-toolbar form,.dashboard-toolbar form>*{min-width:0!important;max-width:100%!important}
+  .dashboard-toolbar input,.dashboard-toolbar select{width:100%!important;max-width:100%!important;min-width:0!important}
+  .appointments-layout #calendarViewSection:not(.d-none),.appointments-layout #sentCalendarViewSection:not(.d-none){height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;padding:10px 8px!important}
+  .appointments-layout #calGrid,.appointments-layout #calSentGrid{grid-template-rows:repeat(var(--calendar-weeks,5),minmax(52px,auto))!important;grid-auto-rows:auto!important;height:auto!important;min-height:0!important;flex:none!important}
+  .appointments-layout .calendar-cell{min-height:52px!important;padding:4px!important;overflow:hidden!important}
+  .appointments-layout .calendar-cell .small{font-size:.7rem!important}
+  .appointments-layout .cal-event-pill{font-size:.58rem!important;line-height:1.1!important;white-space:normal!important;overflow-wrap:anywhere}
+  .dashboard-table-wrap{width:100%;max-width:100%;overflow-x:auto!important;-webkit-overflow-scrolling:touch}
+  .dashboard-table-wrap table{min-width:680px}
+  .dashboard-table-wrap th,.dashboard-table-wrap td{white-space:nowrap}
+  .dashboard-main .card-body{min-height:0!important}
+  .profile-content{padding:16px!important}
+  .profile-tab-content{min-width:0;overflow-x:auto!important}
+  .auth-shell{grid-template-columns:minmax(0,1fr)!important;min-height:0!important}
+  .auth-main{padding:28px 16px!important}
+  .auth-card{width:100%!important;max-width:470px}
+  .cta-panel{padding:22px!important}
+  .app-footer{margin-top:24px;padding:16px 12px!important}
+}
+
+@media (max-width: 428px){
+  body.app-body{font-size:14px}
+  .app-nav-inner{padding-left:12px!important;padding-right:12px!important;gap:8px}
+  .app-brand{font-size:11px!important;gap:6px!important;letter-spacing:0}
+  .brand-logo{width:28px;height:28px}
+  .app-nav .navbar-toggler{padding:6px 9px}
+  .page-shell{width:calc(100% - 20px)!important}
+  .page-heading>div:last-child .btn{flex:1 1 auto;white-space:normal}
+  .appointments-layout .dashboard-stats{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .appointments-layout .dashboard-stats .card{padding:8px 6px!important}
+  .appointments-layout .dashboard-stats .text-uppercase{font-size:.58rem!important;line-height:1.15}
+  .appointments-layout .dashboard-stats .rounded-circle{display:none!important}
+  .dashboard-main>.card-header{padding:10px!important;gap:8px}
+  .dashboard-main>.card-header h5{font-size:.95rem!important}
+  .dashboard-main>.card-header .btn{padding:6px 9px!important;font-size:.75rem!important}
+  .dashboard-toolbar .d-flex.flex-wrap{gap:4px!important}
+  .dashboard-toolbar .btn{padding:6px 8px!important;font-size:.7rem!important}
+  .appointments-layout #calendarViewSection #calCurrentMonthYear,.appointments-layout #sentCalendarViewSection #calSentCurrentMonthYear{font-size:1.1rem!important}
+  .appointments-layout .calendar-cell{min-height:46px!important;padding:3px!important}
+  .appointments-layout .calendar-cell .small{font-size:.63rem!important}
+  .appointments-layout .cal-event-pill{padding:2px!important;font-size:.52rem!important}
+}
+
+@media (max-width: 375px){
+  .app-nav-inner{flex-wrap:wrap!important}
+  .app-brand{max-width:calc(100% - 52px)}
+  .app-brand span{white-space:normal;line-height:1.1}
+  .appointments-layout .dashboard-stats .card{min-height:68px!important}
+  .appointments-layout .dashboard-stats .text-uppercase{letter-spacing:0!important}
+  .appointments-layout #calGrid,.appointments-layout #calSentGrid{grid-template-rows:repeat(var(--calendar-weeks,5),minmax(42px,auto))!important}
+  .profile-sidebar nav{gap:4px!important}
+}
+
+/* Mobile controls remain comfortable to tap even when their desktop style is compact. */
+@media(max-width:767.98px){
+  .btn,.nav-link,.form-control,.form-select,.input-group-text{min-height:44px}
+  .btn-sm{min-height:44px;padding-top:8px!important;padding-bottom:8px!important}
+  .notif-bell-btn{width:44px;height:44px}
+  .calendar-cell .cal-event-pill{min-height:28px}
+}
+
+/* Keep the appointments controls legible on narrow phones. */
+@media(max-width:575.98px){
+  .appointments-layout .dashboard-main>.card-header{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important}
+  .appointments-layout .dashboard-main>.card-header>div:first-child{width:100%;justify-content:space-between;gap:6px!important}
+  .appointments-layout .dashboard-main>.card-header>.btn-group{width:max-content;max-width:100%;align-self:flex-start;flex-wrap:nowrap!important}
+  .appointments-layout .dashboard-main>.card-header>.btn-group .btn{flex:0 0 auto!important;white-space:nowrap!important;padding-left:10px!important;padding-right:10px!important}
+  .appointments-layout .dashboard-toolbar>.row{row-gap:10px!important}
+  .appointments-layout .dashboard-toolbar .d-flex.flex-wrap{flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important;padding:2px 0 8px!important;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+  .appointments-layout .dashboard-toolbar .d-flex.flex-wrap>.btn{flex:0 0 auto!important;white-space:nowrap!important}
+  .appointments-layout .dashboard-toolbar form{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important}
+  .appointments-layout .dashboard-toolbar form>.col-12{width:100%!important;max-width:100%!important;padding:0!important}
+  .appointments-layout .dashboard-toolbar .input-group{display:flex!important;flex-wrap:nowrap!important;width:100%!important}
+  .appointments-layout .dashboard-toolbar .input-group>.input-group-text{flex:0 0 44px!important;width:44px!important;justify-content:center!important}
+  .appointments-layout .dashboard-toolbar .input-group>.form-control{flex:1 1 0!important;width:1%!important;min-width:0!important;max-width:none!important}
+  .appointments-layout .dashboard-toolbar form>.col-12.d-flex{flex-direction:row!important;flex-wrap:nowrap!important;justify-content:flex-start!important}
+  .appointments-layout .dashboard-toolbar form>.col-12.d-flex>.form-select{flex:1 1 auto!important;width:1%!important;min-width:0!important}
+  .appointments-layout .dashboard-toolbar label{flex:0 0 auto!important}
+}
+
 
 
