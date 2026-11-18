@@ -20,7 +20,7 @@ $searchResults = $searchResults ?? null;
           <form action="<?= routeUrl('/search') ?>" method="get" class="flex-shrink-0">
             <div class="input-group">
               <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
-              <input type="text" name="name" id="name" class="form-control border-start-0 py-2" placeholder="Search by name, role, company, or skills (e.g. Stacy, Architect, Cloud, PHP)..." value="<?= htmlspecialchars($searchTerm ?? '', ENT_QUOTES, 'UTF-8') ?>" required autofocus>
+              <input type="text" name="name" id="name" class="form-control border-start-0 py-2" placeholder="Search by name, role, company, or skills (e.g. Architect, Cloud, PHP)..." value="<?= htmlspecialchars($searchTerm ?? '', ENT_QUOTES, 'UTF-8') ?>" required autofocus>
               <button type="submit" class="btn btn-primary px-4 fw-semibold">Search</button>
             </div>
           </form>

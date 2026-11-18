@@ -583,7 +583,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="p-4 text-center text-muted small">
           <i class="bi bi-search fs-3 text-secondary d-block mb-2"></i>
           <div>Search colleagues, mentors, and experts</div>
-          <div class="text-secondary opacity-75 mt-1" style="font-size: 0.75rem;">Type a name, job role, company, or skill (e.g. Stacy, PHP, Cloud)...</div>
+          <div class="text-secondary opacity-75 mt-1" style="font-size: 0.75rem;">Type a name, job role, company, or skill (e.g. Architect, PHP, Cloud)...</div>
         </div>
       `;
     }

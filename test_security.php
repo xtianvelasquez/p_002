@@ -25,19 +25,73 @@ spl_autoload_register(function ($class) {
 echo "--- RUNNING TESTS ---\n";
 
 $db = \App\Core\Database::getInstance();
+$userModel = new \App\Modules\Auth\Models\UserModel();
+$apptModel = new \App\Modules\Appointment\Models\AppointmentModel();
+
+// Create isolated per-run fixtures instead of depending on imported demo users.
+$fixtureSuffix = bin2hex(random_bytes(6));
+$fixturePassword = 'fixturePassword123';
+$fixtureUserIds = [
+    'test_sender_' . $fixtureSuffix,
+    'test_receiver_' . $fixtureSuffix,
+    'test_outside_' . $fixtureSuffix,
+];
+register_shutdown_function(static function () use ($db, $fixtureUserIds): void {
+    foreach ($fixtureUserIds as $fixtureId) {
+        $db->prepare('DELETE FROM user_account WHERE user_id = ?')->execute([$fixtureId]);
+    }
+});
+$createFixtureUser = static function (string $userId, string $firstName, string $lastName) use ($userModel, $fixturePassword): bool {
+    return $userModel->createUser([
+        'user_id' => $userId,
+        'first_name' => $firstName,
+        'middle_name' => null,
+        'last_name' => $lastName,
+        'search_name' => strtoupper($firstName . ' ' . $lastName),
+        'contact_number' => '9' . str_pad((string)random_int(0, 999999999), 9, '0', STR_PAD_LEFT),
+        'email_address' => $userId . '@test.invalid',
+        'user_password' => password_hash($fixturePassword, PASSWORD_DEFAULT),
+        'profile_picture' => 'images/logo.png',
+        'work_start_time' => '09:00',
+        'work_end_time' => '17:00',
+        'slot_duration_minutes' => 30,
+    ]);
+};
+
+foreach ([
+    [$fixtureUserIds[0], 'Fixture', 'Sender' . $fixtureSuffix],
+    [$fixtureUserIds[1], 'Fixture', 'Receiver' . $fixtureSuffix],
+    [$fixtureUserIds[2], 'Fixture', 'Outside' . $fixtureSuffix],
+] as [$fixtureId, $firstName, $lastName]) {
+    if (!$createFixtureUser($fixtureId, $firstName, $lastName)) {
+        foreach ($fixtureUserIds as $createdId) {
+            $db->prepare('DELETE FROM user_account WHERE user_id = ?')->execute([$createdId]);
+        }
+        fwrite(STDERR, "Unable to create isolated test fixtures.\n");
+        exit(1);
+    }
+}
+
+[$senderId, $receiverId, $outsideId] = $fixtureUserIds;
+$fixtureEmail = $senderId . '@test.invalid';
+$fixtureAppointmentId = 'test_fixture_' . $fixtureSuffix;
+$fixtureDate = date('Y-m-d', strtotime('+10 days'));
+$db->prepare("UPDATE user_profile SET headline = ?, skills = ?, consultation_topics = ?, linkedin_url = ? WHERE user_id = ?")
+    ->execute(['Fixture profile', 'PostgreSQL, Testing', 'Fixture consultations', 'https://linkedin.com/in/fixture', $receiverId]);
+$db->prepare("INSERT INTO appointment_details (appointment_id, receiver_id, sender_id, appointment_date, appointment_time, event_name, location, event_type, meeting_mode, agenda, appointment_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    ->execute([$fixtureAppointmentId, $receiverId, $senderId, $fixtureDate, '11:00', 'Fixture Meeting', 'Online', 'consultation', 'google_meet', 'Fixture agenda', 'pending']);
 
 // 1. Test Password Verification
-$userModel = new \App\Modules\Auth\Models\UserModel();
-$user = $userModel->getUserByEmailAndPassword('stacybaluyot@example.com', 'stacybaluyot');
-if ($user && $user['first_name'] === 'Stacy') {
-    echo "[PASS] Bcrypt password verification succeeded for Stacy.\n";
+$user = $userModel->getUserByEmailAndPassword($fixtureEmail, $fixturePassword);
+if ($user && $user['user_id'] === $senderId) {
+    echo "[PASS] Bcrypt password verification succeeded for an isolated test account.\n";
 } else {
     echo "[FAIL] Bcrypt password verification failed.\n";
     exit(1);
 }
 
 // 2. Test Invalid Password
-$wrongUser = $userModel->getUserByEmailAndPassword('stacybaluyot@example.com', 'wrongpassword');
+$wrongUser = $userModel->getUserByEmailAndPassword($fixtureEmail, 'wrongpassword');
 if ($wrongUser === false) {
     echo "[PASS] Wrong password rejected.\n";
 } else {
@@ -46,8 +100,8 @@ if ($wrongUser === false) {
 }
 
 // 3. Test Partial Search (ILIKE)
-$searchResults = $userModel->searchUsers('stacy');
-if (!empty($searchResults) && $searchResults[0]['first_name'] === 'Stacy') {
+$searchResults = $userModel->searchUsers($fixtureSuffix);
+if (!empty($searchResults) && in_array($senderId, array_column($searchResults, 'user_id'), true)) {
     echo "[PASS] Partial case-insensitive search found user.\n";
 } else {
     echo "[FAIL] Partial search failed.\n";
@@ -55,8 +109,7 @@ if (!empty($searchResults) && $searchResults[0]['first_name'] === 'Stacy') {
 }
 
 // 4. Test Appointment N+1 Join Query
-$apptModel = new \App\Modules\Appointment\Models\AppointmentModel();
-$received = $apptModel->getReceivedAppointments('Z4whw2o3jDnHkyQA7tIR');
+$received = $apptModel->getReceivedAppointments($receiverId);
 if (!empty($received) && isset($received[0]['first_name'])) {
     echo "[PASS] Joined received appointments successfully fetched sender info.\n";
 } else {
@@ -65,7 +118,7 @@ if (!empty($received) && isset($received[0]['first_name'])) {
 }
 
 // 5. Test Conflict Detection
-$hasConflict = $apptModel->hasConflict('Z4whw2o3jDnHkyQA7tIR', '2024-10-05', '11:20');
+$hasConflict = $apptModel->hasConflict($receiverId, $fixtureDate, '11:00');
 if ($hasConflict) {
     echo "[PASS] Appointment slot conflict correctly detected.\n";
 } else {
@@ -74,7 +127,7 @@ if ($hasConflict) {
 }
 
 // 6. Test IDOR protection in Model
-$unauthorizedAppt = $apptModel->getAppointmentForUser('5vCkv43OD5osWdZv7BCPHYRYWIVsjWPwPHoYvdwwjyoowQyDIdgH7doHPxdW', '10BwghsSz2BD8L7Htdfd');
+$unauthorizedAppt = $apptModel->getAppointmentForUser($fixtureAppointmentId, $outsideId);
 if ($unauthorizedAppt === false) {
     echo "[PASS] IDOR blocked: Unauthorized user cannot fetch another user's appointment.\n";
 } else {
@@ -118,7 +171,7 @@ if (strpos($renderedOutput, 'Sign In to Your Account') !== false && strpos($rend
 }
 
 // 9. Test End-to-End User Registration Flow
-$testEmail = 'signup_flow_test_' . time() . '@example.com';
+$testEmail = 'signup_flow_test_' . $fixtureSuffix . '@test.invalid';
 $testPhone = '999' . rand(1000000, 9999999);
 $_SERVER['REQUEST_METHOD'] = 'POST';
 $_POST = [
@@ -152,22 +205,20 @@ if ($createdUser && $createdUser['first_name'] === 'Flow') {
 }
 
 // 10. Test Dynamic Slot Generation & Conflict Detection
-$slots = $apptModel->generateAvailableSlots('Z4whw2o3jDnHkyQA7tIR', '2024-10-05');
-$found1120 = false;
-$slot1120Available = null;
+$slots = $apptModel->generateAvailableSlots($receiverId, $fixtureDate);
+$foundBookingSlot = false;
+$bookingSlotAvailable = null;
 foreach ($slots as $s) {
-    if ($s['time'] === '11:20') {
-        $found1120 = true;
-        $slot1120Available = $s['available'];
+    if ($s['time'] === '11:00') {
+        $foundBookingSlot = true;
+        $bookingSlotAvailable = $s['available'];
         break;
     }
 }
-// Seed data has 11:20 booked on 2024-10-05 for Z4whw2o3jDnHkyQA7tIR
-if ($found1120 && $slot1120Available === false) {
-    echo "[PASS] Dynamic slot generation correctly flagged booked 11:20 slot as unavailable.\n";
+if ($foundBookingSlot && $bookingSlotAvailable === false) {
+    echo "[PASS] Dynamic slot generation correctly flagged the fixture booking as unavailable.\n";
 } else {
-    // If exact interval step doesn't land on 11:20, test direct conflict check
-    if ($apptModel->hasConflict('Z4whw2o3jDnHkyQA7tIR', '2024-10-05', '11:20')) {
+    if ($apptModel->hasConflict($receiverId, $fixtureDate, '11:00')) {
         echo "[PASS] Dynamic slot conflict successfully recognized booked appointment.\n";
     } else {
         echo "[FAIL] Dynamic slot generation failed to flag booked slot.\n";
@@ -177,7 +228,7 @@ if ($found1120 && $slot1120Available === false) {
 
 // 11. Test Future Available Slot Generation
 $futureDate = date('Y-m-d', strtotime('+7 days'));
-$futureSlots = $apptModel->generateAvailableSlots('10BwghsSz2BD8L7Htdfd', $futureDate);
+$futureSlots = $apptModel->generateAvailableSlots($senderId, $futureDate);
 if (!empty($futureSlots) && count($futureSlots) >= 8) {
     echo "[PASS] Generated " . count($futureSlots) . " working hour slots for future date.\n";
 } else {
@@ -189,8 +240,8 @@ if (!empty($futureSlots) && count($futureSlots) >= 8) {
 $testApptId = 'test_cal_exp_' . bin2hex(random_bytes(10));
 $testApptData = [
     'appointment_id' => $testApptId,
-    'receiver_id' => 'Z4whw2o3jDnHkyQA7tIR',
-    'sender_id' => '10BwghsSz2BD8L7Htdfd',
+    'receiver_id' => $receiverId,
+    'sender_id' => $senderId,
     'appointment_date' => date('Y-m-d', strtotime('+10 days')),
     'appointment_time' => '14:00',
     'event_name' => 'Architecture Deep Dive',
@@ -202,7 +253,7 @@ $testApptData = [
 ];
 
 if ($apptModel->createAppointment($testApptData)) {
-    $fetched = $apptModel->getAppointmentForUser($testApptId, 'Z4whw2o3jDnHkyQA7tIR');
+    $fetched = $apptModel->getAppointmentForUser($testApptId, $receiverId);
     if ($fetched && $fetched['event_type'] === 'deep_dive' && $fetched['meeting_mode'] === 'google_meet' && str_contains($fetched['agenda'], 'microservices')) {
         echo "[PASS] Cal.com Meeting Types, Modes, and Agenda persisted and retrieved successfully.\n";
     } else {
@@ -217,8 +268,9 @@ if ($apptModel->createAppointment($testApptData)) {
 }
 
 // 13. Test ICS Calendar Format Generation
-$sampleDtStart = '20261104T100000';
-$sampleDtEnd = '20261104T103000';
+$sampleStart = new DateTimeImmutable('tomorrow 10:00');
+$sampleDtStart = $sampleStart->format('Ymd\\THis');
+$sampleDtEnd = $sampleStart->modify('+30 minutes')->format('Ymd\\THis');
 $sampleIcs = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//More Than Blue//Appointment Scheduler//EN\r\nBEGIN:VEVENT\r\nDTSTART:{$sampleDtStart}\r\nDTEND:{$sampleDtEnd}\r\nSUMMARY:Test Consultation\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
 if (str_contains($sampleIcs, 'BEGIN:VCALENDAR') && str_contains($sampleIcs, 'PRODID:-//More Than Blue//') && str_contains($sampleIcs, 'END:VCALENDAR')) {
     echo "[PASS] ICS calendar payload conforms to RFC 5545 format.\n";
@@ -229,7 +281,7 @@ if (str_contains($sampleIcs, 'BEGIN:VCALENDAR') && str_contains($sampleIcs, 'PRO
 
 // 14. Test LinkedIn-Style Professional Search by Skill & Company
 $skillSearchResults = $userModel->searchUsers('PostgreSQL');
-if (!empty($skillSearchResults) && count($skillSearchResults) >= 1) {
+if (!empty($skillSearchResults) && in_array($receiverId, array_column($skillSearchResults, 'user_id'), true)) {
     echo "[PASS] LinkedIn-style search successfully discovered user by skill keyword 'PostgreSQL'.\n";
 } else {
     echo "[FAIL] Skill-based user search failed.\n";
@@ -237,8 +289,8 @@ if (!empty($skillSearchResults) && count($skillSearchResults) >= 1) {
 }
 
 // 15. Test LinkedIn Profile Fields Retrieval
-$stacyDetails = $apptModel->getUserDetails('10BwghsSz2BD8L7Htdfd');
-if ($stacyDetails && !empty($stacyDetails['headline']) && !empty($stacyDetails['skills']) && !empty($stacyDetails['consultation_topics']) && !empty($stacyDetails['linkedin_url'])) {
+$fixtureDetails = $apptModel->getUserDetails($receiverId);
+if ($fixtureDetails && !empty($fixtureDetails['headline']) && !empty($fixtureDetails['skills']) && !empty($fixtureDetails['consultation_topics']) && !empty($fixtureDetails['linkedin_url'])) {
     echo "[PASS] LinkedIn professional profile fields verified on user account.\n";
 } else {
     echo "[FAIL] LinkedIn profile fields missing or unpopulated.\n";
@@ -248,14 +300,14 @@ if ($stacyDetails && !empty($stacyDetails['headline']) && !empty($stacyDetails['
 // 16. Test Google OAuth User Creation & Retrieval
 $googleTestId = 'goog_oauth_' . bin2hex(random_bytes(8));
 $googleSub = '1092837465' . rand(100000, 999999);
-$googleTestEmail = 'google_user_' . time() . '@gmail.com';
+$googleTestEmail = 'google_user_' . $fixtureSuffix . '@test.invalid';
 $googleUserData = [
     'user_id' => $googleTestId,
-    'first_name' => 'Sergey',
+    'first_name' => 'OAuth',
     'middle_name' => null,
-    'last_name' => 'Brin',
-    'search_name' => 'SERGEY BRIN',
-    'contact_number' => '0000000000',
+    'last_name' => 'Fixture',
+    'search_name' => 'OAUTH FIXTURE',
+    'contact_number' => null,
     'email_address' => $googleTestEmail,
     'user_password' => password_hash('random-oauth-hash', PASSWORD_DEFAULT),
     'profile_picture' => 'images/logo.png',
@@ -323,7 +375,7 @@ $normUserData = [
     'last_name' => 'Tester',
     'search_name' => 'NORMALIZE DB TESTER',
     'contact_number' => '09123456789',
-    'email_address' => 'norm_' . time() . '@example.com',
+    'email_address' => 'norm_' . $fixtureSuffix . '@test.invalid',
     'user_password' => password_hash('password123', PASSWORD_DEFAULT),
     'profile_picture' => 'images/logo.png',
     'work_start_time' => '10:00',
@@ -413,7 +465,7 @@ if (!empty($appConfig['google_redirect_uri']) &&
 }
 
 // 22. Test Header Notification Feed Generation
-$notifs = $apptModel->getUserNotifications('Z4whw2o3jDnHkyQA7tIR');
+$notifs = $apptModel->getUserNotifications($receiverId);
 if (!empty($notifs) && isset($notifs[0]['title']) && isset($notifs[0]['message']) && isset($notifs[0]['badge_color'])) {
     echo "[PASS] Header notifications engine correctly aggregated schedule events (" . count($notifs) . " items).\n";
 } else {
@@ -424,7 +476,7 @@ if (!empty($notifs) && isset($notifs[0]['title']) && isset($notifs[0]['message']
 // 23. Test Schedule Sorting & Filtering Engine
 $_GET['sort'] = 'name_desc';
 $_GET['status'] = 'all';
-$_SESSION['userId'] = 'Z4whw2o3jDnHkyQA7tIR';
+$_SESSION['userId'] = $receiverId;
 $apptCtrl = new class extends \App\Modules\Appointment\Controllers\AppointmentController {
     public $viewData = [];
     protected function renderView($viewName, $data = [], $layout = 'main') {

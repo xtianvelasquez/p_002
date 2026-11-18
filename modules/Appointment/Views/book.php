@@ -146,7 +146,7 @@ $websiteUrl = trim($websiteUrl ?? '');
 
             <!-- Headline / Slogan -->
             <p class="text-secondary fw-medium small mb-2 mt-1">
-              <?= htmlspecialchars($headline ?: 'Dream • Create • Innovate', ENT_QUOTES, 'UTF-8') ?>
+              <?= htmlspecialchars($headline ?: 'No professional headline added', ENT_QUOTES, 'UTF-8') ?>
             </p>
 
             <!-- Pill Badges (Skills & Highlights, max 5) -->

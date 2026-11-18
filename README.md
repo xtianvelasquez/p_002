@@ -110,7 +110,7 @@ The importer refuses to replace existing application tables by default. `php imp
 For an existing database, review and apply the SQL in `database/migrations/` in filename order. Resolve duplicate account identifiers before the identity migration, and repair any invalid legacy appointment or availability values before the integrity migration. The migrations run transactionally and stop with an error when they find data that needs review.
 The SQL file contains `DROP TABLE` statements. Import it directly only into a new or empty database.
 
-`p_002.sql` is a legacy MariaDB dump. The application uses the PostgreSQL schema in `p_002_postgres.sql`.
+`p_002.sql` is a legacy MariaDB schema dump. The application uses the PostgreSQL schema in `p_002_postgres.sql`. Both schema files contain no sample accounts, profiles, or appointments.
 
 ### 5. Run the Local Server
 Serve from the `public` directory:

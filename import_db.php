@@ -83,7 +83,7 @@ try {
     $dbPdo->beginTransaction();
     $dbPdo->exec($sql);
     $dbPdo->commit();
-    echo "Database schema and seed data imported successfully into '{$config['dbname']}'!\n";
+    echo "Database schema imported successfully into '{$config['dbname']}'. No sample account or appointment data was added.\n";
 } catch (Exception $e) {
     if (isset($dbPdo) && $dbPdo->inTransaction()) $dbPdo->rollBack();
     die("Import failed: " . $e->getMessage() . "\n");

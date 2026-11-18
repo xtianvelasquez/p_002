@@ -76,7 +76,7 @@ $myFullName = trim($firstName . ' ' . $lastName);
         <?= htmlspecialchars($myFullName, ENT_QUOTES, 'UTF-8') ?>
         <i class="bi bi-patch-check-fill text-primary" style="font-size: 0.95rem;" title="Verified Profile"></i>
       </h2>
-      <p class="text-muted small mb-3 text-center"><?= htmlspecialchars($headline ?: ($jobTitle ?: 'Dream • Create • Innovate'), ENT_QUOTES, 'UTF-8') ?></p>
+      <p class="text-muted small mb-3 text-center"><?= htmlspecialchars($headline ?: ($jobTitle ?: 'No professional headline added'), ENT_QUOTES, 'UTF-8') ?></p>
       
       <!-- Nav Tabs -->
       <nav class="nav nav-pills flex-column profile-nav-tabs" role="tablist">
